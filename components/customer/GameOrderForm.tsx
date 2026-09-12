@@ -1,21 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import type { MockGame } from '@/lib/data/games';
+import type { GameWithDetails } from '@/lib/games/queries';
 import { Check, AlertCircle } from 'lucide-react';
 
-export function GameOrderForm({ game }: { game: MockGame }) {
+export function GameOrderForm({ game }: { game: GameWithDetails }) {
   const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
   const [playerData, setPlayerData] = useState<Record<string, string>>({});
   const [contact, setContact] = useState({ email: '', phone: '' });
   const [submitted, setSubmitted] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
 
-  const pkg = game.packages.find((p) => p.id === selectedPkg);
+  const pkg = game.products.find((p) => p.id === selectedPkg);
 
   const canSubmit =
     selectedPkg &&
-    game.fields.every((f) => !f.required || (playerData[f.name]?.trim() ?? '') !== '') &&
+    game.game_fields.every(
+      (f) => !f.required || (playerData[f.name]?.trim() ?? '') !== ''
+    ) &&
     (contact.email.trim() !== '' || contact.phone.trim() !== '');
 
   function handleSubmit(e: React.FormEvent) {
@@ -36,10 +38,7 @@ export function GameOrderForm({ game }: { game: MockGame }) {
         <p className="text-zinc-400 text-sm">
           หมายเลขออเดอร์: <span className="font-mono text-white font-bold">{orderNumber}</span>
         </p>
-        <p className="text-sm text-zinc-500">
-          Phase 1 — ยังไม่เชื่อม Payment จริง<br />
-          ระบบชำระเงิน + เติมอัตโนมัติจะพร้อมใน Phase 6–7
-        </p>
+        <p className="text-sm text-zinc-500">Phase 3 — เกมจากฐานข้อมูล · ชำระเงินจริง Phase 6</p>
         <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4 text-left text-sm space-y-1">
           <p><span className="text-zinc-500">เกม:</span> {game.name}</p>
           <p><span className="text-zinc-500">แพ็ก:</span> {pkg?.name}</p>
@@ -68,7 +67,7 @@ export function GameOrderForm({ game }: { game: MockGame }) {
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6">
         <h2 className="font-semibold mb-4">1. เลือกแพ็กเกจ</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {game.packages.map((p) => (
+          {game.products.map((p) => (
             <button
               key={p.id}
               type="button"
@@ -80,7 +79,7 @@ export function GameOrderForm({ game }: { game: MockGame }) {
               }`}
             >
               <span className="font-medium text-sm">{p.name}</span>
-              <span className="font-bold text-red-400">฿{p.price}</span>
+              <span className="font-bold text-red-400">฿{Number(p.price)}</span>
             </button>
           ))}
         </div>
@@ -89,15 +88,15 @@ export function GameOrderForm({ game }: { game: MockGame }) {
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6">
         <h2 className="font-semibold mb-4">2. กรอกข้อมูลผู้เล่น</h2>
         <div className="space-y-4">
-          {game.fields.map((f) => (
-            <div key={f.name}>
+          {game.game_fields.map((f) => (
+            <div key={f.id}>
               <label className="block text-sm font-medium text-zinc-300 mb-1.5">
                 {f.label}
                 {f.required && <span className="text-red-400 ml-0.5">*</span>}
               </label>
               <input
                 type="text"
-                placeholder={f.placeholder}
+                placeholder={f.placeholder ?? ''}
                 value={playerData[f.name] ?? ''}
                 onChange={(e) =>
                   setPlayerData((prev) => ({ ...prev, [f.name]: e.target.value }))
@@ -137,24 +136,20 @@ export function GameOrderForm({ game }: { game: MockGame }) {
             />
           </div>
         </div>
-        <p className="text-xs text-zinc-500 mt-2">กรอกอย่างน้อย 1 ช่อง เพื่อรับหมายเลขออเดอร์</p>
       </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <span className="text-zinc-400 text-sm">ยอดชำระ</span>
-          <span className="text-2xl font-bold text-red-400">฿{pkg?.price ?? 0}</span>
+          <span className="text-2xl font-bold text-red-400">฿{pkg ? Number(pkg.price) : 0}</span>
         </div>
         <button
           type="submit"
           disabled={!canSubmit}
           className="w-full rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed py-3.5 font-bold text-white transition"
         >
-          {pkg ? `ยืนยันออเดอร์ — ฿${pkg.price}` : 'เลือกแพ็กเกจก่อน'}
+          {pkg ? `ยืนยันออเดอร์ — ฿${Number(pkg.price)}` : 'เลือกแพ็กเกจก่อน'}
         </button>
-        <p className="text-xs text-zinc-500 text-center mt-3">
-          Phase 1: สร้างออเดอร์แบบ Mock · ชำระเงินจริงใน Phase 6
-        </p>
       </section>
     </form>
   );
