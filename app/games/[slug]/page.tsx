@@ -2,28 +2,26 @@ import Link from 'next/link';
 import { CustomerLayout } from '@/components/layout/CustomerLayout';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getGameBySlug, MOCK_GAMES } from '@/lib/data/games';
+import { getGameBySlug } from '@/lib/games/queries';
 import { GameOrderForm } from '@/components/customer/GameOrderForm';
 
 type Props = { params: Promise<{ slug: string }> };
 
-export async function generateStaticParams() {
-  return MOCK_GAMES.map((g) => ({ slug: g.slug }));
-}
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const game = getGameBySlug(slug);
+  const game = await getGameBySlug(slug);
   if (!game) return { title: 'ไม่พบเกม' };
   return {
     title: `เติม ${game.name}`,
-    description: game.description,
+    description: game.description ?? undefined,
   };
 }
 
 export default async function GameDetailPage({ params }: Props) {
   const { slug } = await params;
-  const game = getGameBySlug(slug);
+  const game = await getGameBySlug(slug);
   if (!game) notFound();
 
   return (
