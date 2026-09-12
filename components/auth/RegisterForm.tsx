@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signUp } from '@/lib/auth/actions';
+import { createClient } from '@/lib/supabase/client';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -15,16 +15,59 @@ export function RegisterForm() {
     setError(null);
     setSuccess(null);
     setLoading(true);
-    const formData = new FormData(e.currentTarget);
-    const result = await signUp(formData);
-    setLoading(false);
-    if (!result.success) {
-      setError(result.message ?? 'สมัครไม่สำเร็จ');
+
+    const form = e.currentTarget;
+    const fullName = (form.elements.namedItem('full_name') as HTMLInputElement).value.trim();
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value.trim();
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
+
+    if (password.length < 6) {
+      setError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+      setLoading(false);
       return;
     }
-    setSuccess(result.message ?? 'สมัครสำเร็จ');
-    router.push('/account');
-    router.refresh();
+
+    try {
+      const supabase = createClient();
+      const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName },
+        },
+      });
+
+      if (authError) {
+        setError(authError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        await supabase.from('profiles').upsert(
+          {
+            id: data.user.id,
+            email: data.user.email,
+            full_name: fullName || null,
+            role: 'customer',
+          },
+          { onConflict: 'id' }
+        );
+      }
+
+      if (!data.session) {
+        setSuccess('สมัครสำเร็จ — ถ้าเปิด Confirm email ไว้ ให้เช็กอีเมลก่อนเข้าสู่ระบบ');
+        setLoading(false);
+        return;
+      }
+
+      setSuccess('สมัครสำเร็จ');
+      router.push('/account');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'สมัครไม่สำเร็จ');
+      setLoading(false);
+    }
   }
 
   return (

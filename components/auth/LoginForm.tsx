@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn } from '@/lib/auth/actions';
+import { createClient } from '@/lib/supabase/client';
 
 export function LoginForm({ next = '/account' }: { next?: string }) {
   const router = useRouter();
@@ -13,15 +13,30 @@ export function LoginForm({ next = '/account' }: { next?: string }) {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const formData = new FormData(e.currentTarget);
-    const result = await signIn(formData);
-    setLoading(false);
-    if (!result.success) {
-      setError(result.message ?? 'เข้าสู่ระบบไม่สำเร็จ');
-      return;
+
+    const form = e.currentTarget;
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value.trim();
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
+
+    try {
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        setError(authError.message);
+        setLoading(false);
+        return;
+      }
+
+      router.push(next);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'เข้าสู่ระบบไม่สำเร็จ');
+      setLoading(false);
     }
-    router.push(next);
-    router.refresh();
   }
 
   return (
