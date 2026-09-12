@@ -1,6 +1,9 @@
 import { CustomerLayout } from '@/components/layout/CustomerLayout';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { getProfile } from '@/lib/auth/get-user';
+import { LogoutButton } from '@/components/auth/LogoutButton';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = { title: 'บัญชีของฉัน' };
 
@@ -12,18 +15,45 @@ const LINKS = [
   { href: '/account/saved-games', label: 'เกมที่บันทึก' },
 ];
 
-export default function AccountPage() {
+export default async function AccountPage() {
+  const profile = await getProfile();
+  if (!profile) {
+    redirect('/login?next=/account');
+  }
+
   return (
     <CustomerLayout>
       <div className="mx-auto max-w-2xl px-4 py-12">
         <h1 className="text-2xl font-bold mb-2">บัญชีของฉัน</h1>
-        <p className="text-zinc-400 text-sm mb-8">Skeleton — Auth จริงใน Phase 2</p>
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 mb-6">
-          <p className="text-sm text-zinc-500">ยังไม่ได้เข้าสู่ระบบ</p>
-          <Link href="/login" className="inline-block mt-3 text-red-400 hover:underline text-sm">
-            เข้าสู่ระบบ →
-          </Link>
+        <p className="text-zinc-400 text-sm mb-8">จัดการข้อมูลและประวัติของคุณ</p>
+
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 mb-6 space-y-2">
+          <p className="text-sm">
+            <span className="text-zinc-500">ชื่อ:</span>{' '}
+            <span className="text-white">{profile.full_name || '—'}</span>
+          </p>
+          <p className="text-sm">
+            <span className="text-zinc-500">อีเมล:</span>{' '}
+            <span className="text-white">{profile.email || '—'}</span>
+          </p>
+          <p className="text-sm">
+            <span className="text-zinc-500">บทบาท:</span>{' '}
+            <span className="text-red-400 font-medium">{profile.role}</span>
+          </p>
+          <div className="pt-3">
+            <LogoutButton />
+          </div>
         </div>
+
+        {(profile.role === 'admin' || profile.role === 'super_admin') && (
+          <Link
+            href="/admin"
+            className="block mb-6 rounded-xl border border-red-600/40 bg-red-600/10 px-4 py-3 text-sm text-red-400 hover:bg-red-600/20 transition"
+          >
+            ไปหลังบ้าน Admin →
+          </Link>
+        )}
+
         <div className="space-y-2">
           {LINKS.map((l) => (
             <Link

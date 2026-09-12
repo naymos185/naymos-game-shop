@@ -1,7 +1,16 @@
 import Link from 'next/link';
-import { Search, User, ShoppingCart, Menu } from 'lucide-react';
+import { User, ShoppingCart, Menu } from 'lucide-react';
+import { getProfile } from '@/lib/auth/get-user';
+import { LogoutButton } from '@/components/auth/LogoutButton';
 
-export function Header() {
+export async function Header() {
+  let profile = null;
+  try {
+    profile = await getProfile();
+  } catch {
+    profile = null;
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-950/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -13,6 +22,7 @@ export function Header() {
               <span className="text-white"> GameShop</span>
             </span>
           </Link>
+
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-300">
             <Link href="/games" className="hover:text-red-400 transition">เกมทั้งหมด</Link>
             <Link href="/promotions" className="hover:text-red-400 transition">โปรโมชั่น</Link>
@@ -20,15 +30,52 @@ export function Header() {
             <Link href="/faq" className="hover:text-red-400 transition">FAQ</Link>
             <Link href="/order-tracking" className="hover:text-red-400 transition">ติดตามออเดอร์</Link>
           </nav>
+
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/login" className="flex items-center gap-1.5 rounded-xl bg-zinc-900 border border-zinc-800 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-red-600/50 hover:text-red-400 transition">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">เข้าสู่ระบบ</span>
-            </Link>
-            <Link href="/order-tracking" className="flex items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 p-2.5 text-white transition" aria-label="ออเดอร์">
+            {profile ? (
+              <>
+                <Link
+                  href="/account"
+                  className="flex items-center gap-1.5 rounded-xl bg-zinc-900 border border-zinc-800 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-red-600/50 hover:text-red-400 transition max-w-[140px]"
+                >
+                  <User className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline truncate">
+                    {profile.full_name || profile.email || 'บัญชี'}
+                  </span>
+                </Link>
+                {(profile.role === 'admin' || profile.role === 'super_admin') && (
+                  <Link
+                    href="/admin"
+                    className="hidden sm:inline-flex rounded-xl bg-red-600/20 border border-red-600/40 px-3 py-2 text-sm text-red-400 hover:bg-red-600/30 transition"
+                  >
+                    Admin
+                  </Link>
+                )}
+                <LogoutButton />
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 rounded-xl bg-zinc-900 border border-zinc-800 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-red-600/50 hover:text-red-400 transition"
+              >
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">เข้าสู่ระบบ</span>
+              </Link>
+            )}
+
+            <Link
+              href="/order-tracking"
+              className="flex items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 p-2.5 text-white transition"
+              aria-label="ออเดอร์"
+            >
               <ShoppingCart className="h-4 w-4" />
             </Link>
-            <button type="button" className="md:hidden flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 p-2.5 text-zinc-300" aria-label="เมนู">
+
+            <button
+              type="button"
+              className="md:hidden flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 p-2.5 text-zinc-300"
+              aria-label="เมนู"
+            >
               <Menu className="h-5 w-5" />
             </button>
           </div>
