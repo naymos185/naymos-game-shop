@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
@@ -18,8 +18,15 @@ export function ProductRowActions({ id, price, cost, is_active }: Props) {
   const [active, setActive] = useState(is_active);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function save() {
+  useEffect(() => {
+    setP(String(price));
+    setC(String(cost));
+    setActive(is_active);
+  }, [price, cost, is_active]);
+
+  async function save(next: { price?: number; cost?: number; is_active?: boolean }) {
     setLoading(true);
     setMsg(null);
     try {
@@ -28,9 +35,9 @@ export function ProductRowActions({ id, price, cost, is_active }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id,
-          price: Number(p),
-          cost: Number(c),
-          is_active: active,
+          price: next.price ?? Number(p),
+          cost: next.cost ?? Number(c),
+          is_active: next.is_active ?? active,
         }),
       });
       const data = await res.json();
@@ -39,6 +46,7 @@ export function ProductRowActions({ id, price, cost, is_active }: Props) {
       } else {
         setMsg('บันทึกแล้ว');
         router.refresh();
+        setTimeout(() => setMsg(null), 1500);
       }
     } catch {
       setMsg('เชื่อมต่อไม่สำเร็จ');
@@ -46,42 +54,63 @@ export function ProductRowActions({ id, price, cost, is_active }: Props) {
     setLoading(false);
   }
 
+  function scheduleSave(next?: { price?: number; cost?: number; is_active?: boolean }) {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      void save(next ?? {});
+    }, 500);
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <input
         type="number"
         value={p}
-        onChange={(e) => setP(e.target.value)}
+        onChange={(e) => {
+          setP(e.target.value);
+          const n = Number(e.target.value);
+          if (!Number.isNaN(n) && n >= 0) scheduleSave({ price: n });
+        }}
+        onBlur={() => {
+          const n = Number(p);
+          if (!Number.isNaN(n) && n >= 0 && n !== price) void save({ price: n });
+        }}
         className="w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-white"
         min={0}
         step={1}
+        title="ราคา"
       />
       <input
         type="number"
         value={c}
-        onChange={(e) => setC(e.target.value)}
+        onChange={(e) => {
+          setC(e.target.value);
+          const n = Number(e.target.value);
+          if (!Number.isNaN(n) && n >= 0) scheduleSave({ cost: n });
+        }}
+        onBlur={() => {
+          const n = Number(c);
+          if (!Number.isNaN(n) && n >= 0 && n !== cost) void save({ cost: n });
+        }}
         className="w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-300"
         min={0}
         step={1}
         title="ต้นทุน"
       />
-      <label className="flex items-center gap-1 text-xs text-zinc-400">
+      <label className="flex items-center gap-1 text-xs text-zinc-400 cursor-pointer">
         <input
           type="checkbox"
           checked={active}
-          onChange={(e) => setActive(e.target.checked)}
+          onChange={(e) => {
+            const v = e.target.checked;
+            setActive(v);
+            void save({ is_active: v });
+          }}
           className="rounded border-zinc-600"
         />
         เปิด
       </label>
-      <button
-        type="button"
-        onClick={save}
-        disabled={loading}
-        className="rounded-lg bg-red-600/20 border border-red-600/40 px-2 py-1 text-xs text-red-400 hover:bg-red-600/30 disabled:opacity-50"
-      >
-        {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'บันทึก'}
-      </button>
+      {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
       {msg && <span className="text-[10px] text-zinc-500">{msg}</span>}
     </div>
   );
