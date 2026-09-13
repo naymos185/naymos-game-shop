@@ -22,9 +22,26 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [store, setStore] = useState({
+    promptpay_id: '',
+    account_name: 'NayMos GameShop',
+    bank_name: 'พร้อมเพย์',
+  });
 
   useEffect(() => {
     void load();
+    void fetch('/api/settings')
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success && j.settings) {
+          setStore({
+            promptpay_id: j.settings.promptpay_id || '',
+            account_name: j.settings.account_name || 'NayMos GameShop',
+            bank_name: j.settings.bank_name || 'พร้อมเพย์',
+          });
+        }
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderNumber]);
 
@@ -94,7 +111,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
           ออเดอร์ <span className="font-mono text-white">{data.order_number}</span>
         </p>
         <p className="text-sm text-zinc-500">
-          สถานะ: {orderStatusLabel(data.order_status)} · รอระบบเติมเกม (Phase 7)
+          สถานะ: {orderStatusLabel(data.order_status)} · รอระบบเติมเกม
         </p>
         <Link
           href={`/order-tracking?number=${encodeURIComponent(data.order_number)}`}
@@ -106,9 +123,9 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
     );
   }
 
-  const promptpayId = process.env.NEXT_PUBLIC_PROMPTPAY_ID || '';
-  const accountName = process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME || 'NayMos GameShop';
-  const bankName = process.env.NEXT_PUBLIC_BANK_NAME || 'พร้อมเพย์ / โอนธนาคาร';
+  const promptpayId = store.promptpay_id || process.env.NEXT_PUBLIC_PROMPTPAY_ID || '';
+  const accountName = store.account_name || 'NayMos GameShop';
+  const bankName = store.bank_name || 'พร้อมเพย์';
 
   return (
     <div className="space-y-6">
@@ -146,7 +163,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
               {data.qr_data?.slice(0, 48) ?? 'MOCK-QR'}
             </p>
             <p className="mt-2 font-bold text-lg">฿{Number(data.amount)}</p>
-            <p className="text-[10px] mt-1 text-zinc-500">Mock QR · Phase 6</p>
+            <p className="text-[10px] mt-1 text-zinc-500">Mock QR</p>
           </div>
         </div>
         {data.expires_at && (
@@ -166,7 +183,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
           <span className="text-zinc-500">ชื่อบัญชี</span>
           <span className="text-white">{accountName}</span>
         </div>
-        {promptpayId && (
+        {promptpayId ? (
           <div className="flex justify-between gap-2 items-center">
             <span className="text-zinc-500">พร้อมเพย์</span>
             <button
@@ -178,7 +195,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             </button>
           </div>
-        )}
+        ) : null}
         <div className="flex justify-between gap-2 items-center">
           <span className="text-zinc-500">อ้างอิง</span>
           <button
@@ -198,7 +215,6 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
         )}
         <p className="text-xs text-amber-200/90 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mt-2">
           โอนยอดให้ตรงเป๊ะ · หลังโอนแล้วรอแอดมินยืนยัน
-          (ยังไม่เชื่อมธนาคารจริง — โครงสร้าง Phase 6 พร้อมแล้ว)
         </p>
       </div>
 
