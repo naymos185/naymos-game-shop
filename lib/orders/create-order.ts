@@ -68,45 +68,42 @@ export async function createOrder(
   let orderNumber = generateOrderNumber();
   let lastError: string | null = null;
 
+  // Do NOT use .select() after insert — guest RETURNING needs SELECT RLS
   for (let i = 0; i < 5; i++) {
-    const { data: order, error } = await supabase
-      .from('orders')
-      .insert({
-        order_number: orderNumber,
-        user_id: user?.id ?? null,
-        game_id: payload.game_id,
-        product_id: payload.product_id,
-        player_data: payload.player_data,
-        contact_email: email,
-        contact_phone: phone,
-        subtotal: price,
-        discount: 0,
-        fee: 0,
-        total: price,
-        status: 'PENDING_PAYMENT',
-      })
-      .select('id, order_number, status, total')
-      .single();
+    const { error } = await supabase.from('orders').insert({
+      order_number: orderNumber,
+      user_id: user?.id ?? null,
+      game_id: payload.game_id,
+      product_id: payload.product_id,
+      player_data: payload.player_data,
+      contact_email: email,
+      contact_phone: phone,
+      subtotal: price,
+      discount: 0,
+      fee: 0,
+      total: price,
+      status: 'PENDING_PAYMENT',
+    });
 
-    if (!error && order) {
+    if (!error) {
       return {
         success: true,
         order: {
-          id: order.id,
-          order_number: order.order_number,
-          status: order.status,
-          total: Number(order.total),
+          id: '',
+          order_number: orderNumber,
+          status: 'PENDING_PAYMENT',
+          total: price,
         },
       };
     }
 
-    if (error?.code === '23505') {
+    if (error.code === '23505') {
       orderNumber = generateOrderNumber();
       lastError = error.message;
       continue;
     }
 
-    lastError = error?.message ?? 'สร้างออเดอร์ไม่สำเร็จ';
+    lastError = error.message;
     break;
   }
 
