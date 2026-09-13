@@ -23,9 +23,6 @@ export async function createOrder(
   if (!payload.game_id || !payload.product_id) {
     return { success: false, message: 'ข้อมูลเกมหรือแพ็กเกจไม่ครบ' };
   }
-  if (!email && !phone) {
-    return { success: false, message: 'กรุณากรอกอีเมลหรือเบอร์โทรอย่างน้อย 1 ช่อง' };
-  }
 
   if (
     payload.game_id.startsWith('mock-') ||
@@ -68,7 +65,6 @@ export async function createOrder(
   let orderNumber = generateOrderNumber();
   let lastError: string | null = null;
 
-  // Do NOT use .select() after insert — guest RETURNING needs SELECT RLS
   for (let i = 0; i < 5; i++) {
     const { error } = await supabase.from('orders').insert({
       order_number: orderNumber,
