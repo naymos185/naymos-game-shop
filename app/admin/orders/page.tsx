@@ -3,6 +3,7 @@ import { listOrdersAdmin } from '@/lib/orders/queries';
 import { orderStatusColor, orderStatusLabel } from '@/lib/orders/status';
 import { createClient } from '@/lib/supabase/server';
 import { MarkPaidButton } from '@/components/admin/MarkPaidButton';
+import { ProcessTopupButton } from '@/components/admin/ProcessTopupButton';
 
 export const metadata: Metadata = { title: 'จัดการออเดอร์' };
 export const dynamic = 'force-dynamic';
@@ -80,11 +81,15 @@ export default async function AdminOrdersPage() {
                   <td className="px-4 py-3 text-xs text-zinc-500 whitespace-nowrap">
                     {new Date(o.created_at).toLocaleString('th-TH')}
                   </td>
-                  <td className="px-4 py-3">
-                    {o.status === 'PENDING_PAYMENT' ? (
+                  <td className="px-4 py-3 space-y-1">
+                    {o.status === 'PENDING_PAYMENT' && (
                       <MarkPaidButton orderNumber={o.order_number} />
-                    ) : (
-                      <span className="text-xs text-zinc-600">—</span>
+                    )}
+                    {(o.status === 'PAID' || o.status === 'FAILED' || o.status === 'PROCESSING') && (
+                      <ProcessTopupButton orderNumber={o.order_number} />
+                    )}
+                    {o.status === 'SUCCESS' && (
+                      <span className="text-xs text-emerald-500">เติมแล้ว</span>
                     )}
                   </td>
                 </tr>
