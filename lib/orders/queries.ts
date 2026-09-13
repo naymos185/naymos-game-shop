@@ -58,9 +58,9 @@ async function enrichOrder(
   return {
     id: row.id as string,
     order_number: row.order_number as string,
-    status: row.status as string,
     total: Number(row.total),
     subtotal: Number(row.subtotal ?? row.total),
+    status: row.status as string,
     contact_email: (row.contact_email as string) ?? null,
     contact_phone: (row.contact_phone as string) ?? null,
     player_data: (row.player_data as Record<string, unknown>) ?? {},
@@ -78,6 +78,26 @@ export async function listOrdersAdmin(limit = 50) {
   const { data, error } = await supabase
     .from('orders')
     .select('id, order_number, status, total, contact_email, contact_phone, created_at, game_id, product_id')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return data;
+}
+
+export async function listOrdersForCurrentUser(limit = 50) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select(
+      'id, order_number, status, total, contact_email, contact_phone, created_at, game_id, product_id, player_data'
+    )
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(limit);
 
