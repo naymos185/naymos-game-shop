@@ -72,13 +72,17 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
         <p className="text-sm text-zinc-300">
           ยอดชำระ <span className="text-red-400 font-bold">฿{orderTotal}</span>
         </p>
-        <p className="text-sm text-zinc-500">
-          สถานะ: รอชำระเงิน · ระบบชำระเงินจริงจะพร้อมใน Phase 6
-        </p>
+        <p className="text-sm text-zinc-500">สถานะ: รอชำระเงิน — กดปุ่มด้านล่างเพื่อไปหน้าชำระเงิน</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
           <Link
-            href={`/order-tracking?number=${encodeURIComponent(orderNumber)}`}
+            href={`/pay/${encodeURIComponent(orderNumber)}`}
             className="rounded-xl bg-red-600 hover:bg-red-700 px-5 py-2.5 text-sm font-semibold text-white transition"
+          >
+            ไปชำระเงิน
+          </Link>
+          <Link
+            href={`/order-tracking?number=${encodeURIComponent(orderNumber)}`}
+            className="rounded-xl bg-zinc-800 hover:bg-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-200 transition"
           >
             ติดตามออเดอร์
           </Link>
