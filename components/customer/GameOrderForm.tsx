@@ -19,11 +19,10 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
 
   const canSubmit =
     !loading &&
-    selectedPkg &&
+    !!selectedPkg &&
     game.game_fields.every(
       (f) => !f.required || (playerData[f.name]?.trim() ?? '') !== ''
-    ) &&
-    (contact.email.trim() !== '' || contact.phone.trim() !== '');
+    );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -160,7 +159,7 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
       </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6">
-        <h2 className="font-semibold mb-4">3. ข้อมูลติดต่อ</h2>
+        <h2 className="font-semibold mb-4">3. ข้อมูลติดต่อ (ไม่บังคับ)</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-1.5">อีเมล</label>
@@ -183,7 +182,7 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
             />
           </div>
         </div>
-        <p className="text-xs text-zinc-500 mt-2">กรอกอย่างน้อย 1 ช่อง</p>
+        <p className="text-xs text-zinc-500 mt-2">ไม่บังคับกรอก (แนะนำกรอกเพื่อติดต่อกลับ)</p>
       </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6">
