@@ -35,26 +35,39 @@ export async function ensurePaymentForOrder(
   let gameId: string | null = rpc?.game_id ?? null;
   let productId: string | null = rpc?.product_id ?? null;
 
-  if (!orderId) {
+  {
     const { data: orderRows } = await supabase.rpc('get_order_by_number', {
       p_order_number: num,
     });
     const order = Array.isArray(orderRows) ? orderRows[0] : orderRows;
-    if (!order) return { success: false, message: 'ไม่พบออเดอร์' };
-    orderId = order.id;
-    orderStatus = order.status;
-    amount = Number(order.total);
-    gameId = order.game_id;
-    productId = order.product_id;
+    if (!order && !orderId) {
+      return { success: false, message: 'ไม่พบออเดอร์' };
+    }
+    if (order) {
+      orderId = orderId ?? order.id;
+      orderStatus = orderStatus || order.status;
+      const orderTotal = Number(order.total);
+      if (!amount || amount === 0) {
+        amount = orderTotal;
+      }
+      gameId = gameId ?? order.game_id;
+      productId = productId ?? order.product_id;
+    }
+  }
+
+  if (!orderId) {
+    return { success: false, message: 'ไม่พบออเดอร์' };
   }
 
   if (rpc?.payment_id) {
+    const displayAmount =
+      rpc.amount != null && Number(rpc.amount) > 0 ? Number(rpc.amount) : amount;
     const names = await loadNames(supabase, gameId, productId);
     return {
       success: true,
       order_number: num,
       order_status: orderStatus,
-      amount: amount || Number(rpc.amount),
+      amount: displayAmount,
       payment_status: rpc.payment_status ?? 'PENDING',
       payment_reference: rpc.payment_reference ?? null,
       qr_data: rpc.qr_data ?? null,
@@ -79,9 +92,13 @@ export async function ensurePaymentForOrder(
     };
   }
 
+  if (!amount || amount <= 0) {
+    return { success: false, message: 'ยอดออเดอร์ไม่ถูกต้อง' };
+  }
+
   const provider = paymentManager.getDefault();
   const created = await provider.createPayment({
-    orderId: orderId!,
+    orderId,
     amount,
     orderNumber: num,
     expiresInMinutes: 30,
@@ -104,11 +121,12 @@ export async function ensurePaymentForOrder(
     const row = Array.isArray(again) ? again[0] : again;
     if (row?.payment_id) {
       const names = await loadNames(supabase, gameId, productId);
+      const rowAmount = Number(row.amount);
       return {
         success: true,
         order_number: num,
         order_status: orderStatus,
-        amount: Number(row.amount),
+        amount: rowAmount > 0 ? rowAmount : amount,
         payment_status: row.payment_status,
         payment_reference: row.payment_reference,
         qr_data: row.qr_data,
@@ -145,7 +163,11 @@ async function loadNames(
     game_name = data?.name;
   }
   if (productId) {
-    const { data } = await supabase.from('products').select('name').eq('id', productId).maybeSingle();
+    const { data } = await supabase
+      .from('products')
+      .select('name')
+      .eq('id', productId)
+      .maybeSingle();
     product_name = data?.name;
   }
   return { game_name, product_name };
