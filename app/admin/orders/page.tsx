@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { listOrdersAdmin } from '@/lib/orders/queries';
 import { orderStatusColor, orderStatusLabel } from '@/lib/orders/status';
 import { createClient } from '@/lib/supabase/server';
+import { MarkPaidButton } from '@/components/admin/MarkPaidButton';
 
 export const metadata: Metadata = { title: 'จัดการออเดอร์' };
 export const dynamic = 'force-dynamic';
@@ -44,14 +45,10 @@ export default async function AdminOrdersPage() {
       {orders.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 p-10 text-center text-sm text-zinc-500">
           ยังไม่มีออเดอร์ — ลองสร้างจากหน้าเว็บลูกค้า
-          <br />
-          <span className="text-xs mt-2 block">
-            ถ้าว่างทั้งที่สร้างแล้ว ให้รัน 004_orders_policies.sql ใน Supabase
-          </span>
         </div>
       ) : (
         <div className="rounded-xl border border-zinc-800 overflow-x-auto">
-          <table className="w-full text-sm min-w-[640px]">
+          <table className="w-full text-sm min-w-[720px]">
             <thead className="bg-zinc-900 text-zinc-400 text-left">
               <tr>
                 <th className="px-4 py-3 font-medium">หมายเลข</th>
@@ -60,29 +57,20 @@ export default async function AdminOrdersPage() {
                 <th className="px-4 py-3 font-medium">สถานะ</th>
                 <th className="px-4 py-3 font-medium">ติดต่อ</th>
                 <th className="px-4 py-3 font-medium">เวลา</th>
+                <th className="px-4 py-3 font-medium">จัดการ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800">
               {orders.map((o) => (
                 <tr key={o.id} className="bg-zinc-950/50 hover:bg-zinc-900/50">
-                  <td className="px-4 py-3 font-mono text-xs text-white">
-                    {o.order_number}
-                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-white">{o.order_number}</td>
                   <td className="px-4 py-3">
-                    <p className="text-white text-xs">
-                      {names[`g:${o.game_id}`] ?? '—'}
-                    </p>
-                    <p className="text-zinc-500 text-xs">
-                      {names[`p:${o.product_id}`] ?? '—'}
-                    </p>
+                    <p className="text-white text-xs">{names[`g:${o.game_id}`] ?? '—'}</p>
+                    <p className="text-zinc-500 text-xs">{names[`p:${o.product_id}`] ?? '—'}</p>
                   </td>
-                  <td className="px-4 py-3 font-medium text-red-400">
-                    ฿{Number(o.total)}
-                  </td>
+                  <td className="px-4 py-3 font-medium text-red-400">฿{Number(o.total)}</td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs ${orderStatusColor(o.status)}`}
-                    >
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs ${orderStatusColor(o.status)}`}>
                       {orderStatusLabel(o.status)}
                     </span>
                   </td>
@@ -91,6 +79,13 @@ export default async function AdminOrdersPage() {
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-500 whitespace-nowrap">
                     {new Date(o.created_at).toLocaleString('th-TH')}
+                  </td>
+                  <td className="px-4 py-3">
+                    {o.status === 'PENDING_PAYMENT' ? (
+                      <MarkPaidButton orderNumber={o.order_number} />
+                    ) : (
+                      <span className="text-xs text-zinc-600">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
