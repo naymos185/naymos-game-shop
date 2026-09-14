@@ -19,20 +19,9 @@ export async function Header() {
         .in('status', ['pending', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SUCCESS']);
 
       if (orders && orders.length > 0) {
-        const now = Date.now();
-        const TEN_MINUTES_MS = 10 * 60 * 1000;
         activeOrderCount = orders.filter((o) => {
-          // If customer already confirmed receipt, it's moved to history
           const pd = (o.player_data as Record<string, unknown>) || {};
-          if (pd.customer_confirmed === true) return false;
-
-          // If pending payment and over 10 min, expired
-          const isPending = o.status === 'pending' || o.status === 'PENDING_PAYMENT';
-          if (isPending) {
-            const diff = now - new Date(o.created_at).getTime();
-            if (diff > TEN_MINUTES_MS) return false;
-          }
-          return true;
+          return pd.customer_confirmed !== true;
         }).length;
       }
     }
