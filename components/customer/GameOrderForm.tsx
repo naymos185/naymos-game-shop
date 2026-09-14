@@ -5,7 +5,7 @@ import type { GameWithDetails } from '@/lib/games/queries';
 import { Check, AlertCircle, Loader2, X, UploadCloud, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export function GameOrderForm({ game, userRole }: { game: GameWithDetails; userRole?: string }) {
+export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDetails; userRole?: string; isLoggedIn?: boolean }) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
@@ -84,6 +84,12 @@ export function GameOrderForm({ game, userRole }: { game: GameWithDetails; userR
 
   const handleNextToStep2 = () => {
     setError(null);
+    if (!isLoggedIn) {
+      setError('กรุณาเข้าสู่ระบบหรือสมัครสมาชิกก่อนดำเนินการต่อ');
+      router.push(`/login?next=/games/${game.slug || ''}`);
+      return;
+    }
+
     if (!selectedPkg) {
       setError('กรุณาเลือกแพ็กเกจ');
       return;
