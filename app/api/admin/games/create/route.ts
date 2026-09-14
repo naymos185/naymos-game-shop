@@ -23,12 +23,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     const name = String(body.name ?? '').trim();
     if (!name) {
-      return NextResponse.json({ success: false, message: 'ใส่ชื่อเกม' }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'กรุณาระบุชื่อเกม' }, { status: 400 });
     }
     let slug = body.slug ? String(body.slug).trim() : slugify(name);
     slug = slugify(slug);
-    const fieldLabel = String(body.field_label ?? 'UID / Player ID').trim() || 'UID / Player ID';
-    const fieldName = String(body.field_name ?? 'uid').trim() || 'uid';
+    const authType = body.auth_type === 'id_pass' ? 'id_pass' : 'uid';
+    const fieldLabel = String(body.field_label ?? 'UID / OpenID').trim() || 'UID / OpenID';
+    const imageUrl = body.icon ? String(body.icon).trim() : null;
 
     const supabase = await createClient();
     const { data: game, error } = await supabase
@@ -37,7 +38,9 @@ export async function POST(request: Request) {
         name,
         slug,
         description: body.description ? String(body.description) : null,
-        category: body.category ? String(body.category) : 'อื่นๆ',
+        icon: imageUrl,
+        banner: imageUrl,
+        category: body.category ? String(body.category) : 'ทั้งหมด',
         is_active: body.is_active !== false,
         sort_order: Number(body.sort_order ?? 100) || 100,
       })
@@ -46,27 +49,50 @@ export async function POST(request: Request) {
 
     if (error) {
       if (error.code === '23505') {
-        return NextResponse.json({ success: false, message: 'slug ซ้ำ — เปลี่ยนชื่อหรือ slug' }, { status: 400 });
+        return NextResponse.json({ success: false, message: 'slug ซ้ำ — โปรดระบุชื่อหรือระบุ slug ใหม่' }, { status: 400 });
       }
       return NextResponse.json({ success: false, message: error.message }, { status: 400 });
     }
 
     if (game?.id) {
-      await supabase.from('game_fields').insert({
-        game_id: game.id,
-        name: fieldName,
-        label: fieldLabel,
-        type: 'text',
-        placeholder: fieldLabel,
-        required: true,
-        sort_order: 0,
-      });
+      if (authType === 'id_pass') {
+        await supabase.from('game_fields').insert([
+          {
+            game_id: game.id,
+            name: 'username',
+            label: 'Username / ID เกม',
+            type: 'text',
+            placeholder: 'กรอก Username หรือ ID เข้าเกม',
+            required: true,
+            sort_order: 1,
+          },
+          {
+            game_id: game.id,
+            name: 'password',
+            label: 'Password (รหัสผ่าน)',
+            type: 'text',
+            placeholder: 'กรอกรหัสผ่านเพื่อเข้าเติม',
+            required: true,
+            sort_order: 2,
+          }
+        ]);
+      } else {
+        await supabase.from('game_fields').insert({
+          game_id: game.id,
+          name: 'uid',
+          label: fieldLabel,
+          type: 'text',
+          placeholder: fieldLabel,
+          required: true,
+          sort_order: 1,
+        });
+      }
     }
 
     return NextResponse.json({ success: true, id: game?.id, slug });
   } catch (e) {
     return NextResponse.json(
-      { success: false, message: e instanceof Error ? e.message : 'ผิดพลาด' },
+      { success: false, message: e instanceof Error ? e.message : 'เกิดข้อผิดพลาด' },
       { status: 500 }
     );
   }
