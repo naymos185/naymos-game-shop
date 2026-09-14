@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/auth/get-user';
 
 export async function POST(request: Request) {
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'ข้อมูลไม่ถูกต้อง' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { error } = await supabase
       .from('profiles')
       .update({ role, updated_at: new Date().toISOString() })
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: error.message }, { status: 400 });
     }
     return NextResponse.json({ success: true });
-  } catch (e) {
-    return NextResponse.json({ success: false, message: 'เกิดข้อผิดพลาด' }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json({ success: false, message: e?.message || 'เกิดข้อผิดพลาด' }, { status: 500 });
   }
 }
