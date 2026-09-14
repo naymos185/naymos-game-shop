@@ -4,6 +4,7 @@ import { User, ShoppingCart, Sparkles, Gamepad2, Gift, HelpCircle } from 'lucide
 import { getProfile } from '@/lib/auth/get-user';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 import { createClient } from '@/lib/supabase/server';
+import { HeaderNav } from './HeaderNav';
 
 export async function Header() {
   let profile = null;
@@ -56,45 +57,7 @@ export async function Header() {
           </Link>
 
           {/* Navigation Pills */}
-          <nav className="hidden md:flex items-center gap-1.5 text-sm font-semibold text-slate-600">
-            <Link
-              href="/games"
-              className="px-3.5 py-1.5 rounded-full hover:bg-sky-50 hover:text-sky-600 transition flex items-center gap-1.5"
-            >
-              <Gamepad2 className="w-4 h-4 text-sky-500" />
-              เกมทั้งหมด
-            </Link>
-            <Link
-              href="/promotions"
-              className="px-3.5 py-1.5 rounded-full hover:bg-sky-50 hover:text-sky-600 transition flex items-center gap-1.5"
-            >
-              <Gift className="w-4 h-4 text-sky-500" />
-              โปรโมชั่น
-            </Link>
-            <Link
-              href="/how-to"
-              className="px-3.5 py-1.5 rounded-full hover:bg-sky-50 hover:text-sky-600 transition"
-            >
-              วิธีเติมเกม
-            </Link>
-            <Link
-              href="/faq"
-              className="px-3.5 py-1.5 rounded-full hover:bg-sky-50 hover:text-sky-600 transition"
-            >
-              คำถามพบบ่อย
-            </Link>
-            <Link
-              href="/order-tracking"
-              className="relative px-3.5 py-1.5 rounded-full hover:bg-sky-50 hover:text-sky-600 transition flex items-center gap-1.5"
-            >
-              ติดตามออเดอร์
-              {activeOrderCount > 0 && (
-                <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-sky-500 rounded-full animate-bounce">
-                  {activeOrderCount}
-                </span>
-              )}
-            </Link>
-          </nav>
+          <HeaderNav activeOrderCount={activeOrderCount} />
 
           {/* User actions */}
           <div className="flex items-center gap-2 sm:gap-3">
