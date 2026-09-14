@@ -14,8 +14,12 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
   const [orderTotal, setOrderTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponMsg, setCouponMsg] = useState<string | null>(null);
+  const [discount, setDiscount] = useState(0);
 
   const pkg = game.products.find((p) => p.id === selectedPkg);
+  const displayTotal = pkg ? Math.max(0, Number(pkg.price) - discount) : 0;
 
   const canSubmit =
     !loading &&
@@ -40,6 +44,7 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
           player_data: playerData,
           contact_email: contact.email.trim() || undefined,
           contact_phone: contact.phone.trim() || undefined,
+          coupon_code: couponCode.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -92,6 +97,9 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
               setSelectedPkg(null);
               setPlayerData({});
               setError(null);
+              setDiscount(0);
+              setCouponCode('');
+              setCouponMsg(null);
             }}
             className="rounded-xl bg-zinc-800 hover:bg-zinc-700 px-5 py-2.5 text-sm text-zinc-300 transition"
           >
@@ -117,7 +125,11 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
             <button
               key={p.id}
               type="button"
-              onClick={() => setSelectedPkg(p.id)}
+              onClick={() => {
+                setSelectedPkg(p.id);
+                setDiscount(0);
+                setCouponMsg(null);
+              }}
               className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left transition ${
                 selectedPkg === p.id
                   ? 'border-red-500 bg-red-600/10 ring-1 ring-red-500/30'
@@ -186,12 +198,68 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
       </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6">
+        <h2 className="font-semibold mb-4">4. โค้ดส่วนลด (ไม่บังคับ)</h2>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="เช่น NAYMOS10"
+            value={couponCode}
+            onChange={(e) => {
+              setCouponCode(e.target.value.toUpperCase());
+              setDiscount(0);
+              setCouponMsg(null);
+            }}
+            className="flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-mono outline-none focus:border-red-500"
+          />
+          <button
+            type="button"
+            disabled={!pkg || !couponCode.trim()}
+            onClick={async () => {
+              if (!pkg) return;
+              setCouponMsg(null);
+              try {
+                const res = await fetch('/api/coupons/validate', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    code: couponCode,
+                    subtotal: Number(pkg.price),
+                  }),
+                });
+                const data = await res.json();
+                if (!data.success) {
+                  setDiscount(0);
+                  setCouponMsg(data.message ?? 'ใช้คูปองไม่ได้');
+                } else {
+                  setDiscount(Number(data.coupon.discount_amount));
+                  setCouponMsg(`ลด ฿${data.coupon.discount_amount}`);
+                }
+              } catch {
+                setCouponMsg('ตรวจสอบคูปองไม่สำเร็จ');
+              }
+            }}
+            className="rounded-xl bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 px-4 py-3 text-sm font-medium text-white"
+          >
+            ใช้โค้ด
+          </button>
+        </div>
+        {couponMsg && (
+          <p className={`text-xs mt-2 ${discount > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            {couponMsg}
+          </p>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <span className="text-zinc-400 text-sm">ยอดชำระ</span>
-          <span className="text-2xl font-bold text-red-400">
-            ฿{pkg ? Number(pkg.price) : 0}
-          </span>
+          <span className="text-2xl font-bold text-red-400">฿{displayTotal}</span>
         </div>
+        {discount > 0 && pkg && (
+          <p className="text-xs text-zinc-500 mb-3 text-right">
+            ราคา ฿{Number(pkg.price)} − ส่วนลด ฿{discount}
+          </p>
+        )}
         <button
           type="submit"
           disabled={!canSubmit}
@@ -201,7 +269,7 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
           {loading
             ? 'กำลังสร้างออเดอร์...'
             : pkg
-              ? `ยืนยันออเดอร์ — ฿${Number(pkg.price)}`
+              ? `ยืนยันออเดอร์ — ฿${displayTotal}`
               : 'เลือกแพ็กเกจก่อน'}
         </button>
       </section>
