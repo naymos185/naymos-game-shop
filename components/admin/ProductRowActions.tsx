@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, Check } from 'lucide-react';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 type Props = {
@@ -22,19 +22,29 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
   const [rp, setRp] = useState(reseller_price != null ? String(reseller_price) : '');
   const [active, setActive] = useState(is_active);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Synchronize when props change externally without overriding local edits during typing
   useEffect(() => {
     setP(String(price));
+  }, [price]);
+
+  useEffect(() => {
     setC(String(cost));
+  }, [cost]);
+
+  useEffect(() => {
     setRp(reseller_price != null ? String(reseller_price) : '');
+  }, [reseller_price]);
+
+  useEffect(() => {
     setActive(is_active);
-  }, [price, cost, is_active]);
+  }, [is_active]);
 
   async function save(next: { price?: number; cost?: number; reseller_price?: number | null; is_active?: boolean }) {
     setLoading(true);
-    setMsg(null);
+    setErrorMsg(null);
     try {
       const res = await fetch('/api/admin/products/update', {
         method: 'POST',
@@ -49,15 +59,15 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
       });
       const data = await res.json();
       if (!data.success) {
-        setMsg(data.message ?? 'ไม่สำเร็จ');
+        setErrorMsg(data.message ?? 'บันทึกไม่สำเร็จ');
       } else {
-        setMsg('บันทึกแล้ว');
+        setSaved(true);
         if (next.is_active !== undefined) setActive(next.is_active);
         router.refresh();
-        setTimeout(() => setMsg(null), 1500);
+        setTimeout(() => setSaved(false), 2000);
       }
     } catch {
-      setMsg('เชื่อมต่อไม่สำเร็จ');
+      setErrorMsg('เชื่อมต่อไม่สำเร็จ');
     }
     setLoading(false);
   }
@@ -72,7 +82,7 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
     });
     if (!ok) return;
     setLoading(true);
-    setMsg(null);
+    setErrorMsg(null);
     try {
       const res = await fetch('/api/admin/products/delete', {
         method: 'POST',
@@ -81,120 +91,113 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
       });
       const data = await res.json();
       if (!data.success) {
-        setMsg(data.message ?? 'ลบไม่สำเร็จ');
+        setErrorMsg(data.message ?? 'ลบไม่สำเร็จ');
       } else {
-        setMsg('ลบแล้ว');
         router.refresh();
       }
     } catch {
-      setMsg('เชื่อมต่อไม่สำเร็จ');
+      setErrorMsg('เชื่อมต่อไม่สำเร็จ');
     }
     setLoading(false);
   }
 
-  function scheduleSave(next?: { price?: number; cost?: number; reseller_price?: number | null; is_active?: boolean }) {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      void save(next ?? {});
-    }, 500);
-  }
-
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <input
-        type="number"
-        value={p}
-        onChange={(e) => {
-          setP(e.target.value);
-          const n = Number(e.target.value);
-          if (!Number.isNaN(n) && n >= 0) scheduleSave({ price: n });
-        }}
-        onBlur={() => {
-          const n = Number(p);
-          if (!Number.isNaN(n) && n >= 0 && n !== price) void save({ price: n });
-        }}
-        className="w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-white"
-        min={0}
-        step={1}
-        title="ราคา"
-      />
-      <input
-        type="number"
-        value={c}
-        onChange={(e) => {
-          setC(e.target.value);
-          const n = Number(e.target.value);
-          if (!Number.isNaN(n) && n >= 0) scheduleSave({ cost: n });
-        }}
-        onBlur={() => {
-          const n = Number(c);
-          if (!Number.isNaN(n) && n >= 0 && n !== cost) void save({ cost: n });
-        }}
-        className="w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-300"
-        min={0}
-        step={1}
-        title="ต้นทุน"
-      />
-      <input
-        type="number"
-        value={rp}
-        onChange={(e) => {
-          setRp(e.target.value);
-          const v = e.target.value;
-          scheduleSave({ reseller_price: v === '' ? null : Number(v) });
-        }}
-        onBlur={() => {
-          const val = rp === '' ? null : Number(rp);
-          if (val !== reseller_price) void save({ reseller_price: val });
-        }}
-        className="w-20 rounded-lg border border-emerald-500/40 bg-zinc-950 px-2 py-1 text-xs text-emerald-400 placeholder:text-zinc-600"
-        min={0}
-        step={1}
-        placeholder="ตัวแทน"
-        title="ราคาส่งตัวแทน"
-      />
+    <div className="flex items-center gap-2 min-w-[340px]">
+      <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-zinc-500 font-medium">ราคาปกติ</span>
+          <input
+            type="number"
+            value={p}
+            onChange={(e) => setP(e.target.value)}
+            onBlur={() => {
+              const n = Number(p);
+              if (!Number.isNaN(n) && n >= 0 && n !== price) void save({ price: n });
+            }}
+            className="w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-white focus:border-red-500 focus:outline-none"
+            min={0}
+            step={1}
+            title="ราคาปกติ"
+          />
+        </div>
 
-      <label className="flex items-center gap-1 text-xs text-zinc-400 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={active}
-          onChange={(e) => {
-            const v = e.target.checked;
-            setActive(v);
-            void save({ is_active: v });
-          }}
-          className="rounded border-zinc-600"
-        />
-        เปิด
-      </label>
-      <button
-        type="button"
-        disabled={loading}
-        onClick={async () => {
-          const ok = await confirm({
-            title: 'ปิดการขายแพ็กนี้',
-            description: `ลูกค้าจะไม่เห็น "${label}" อีก แต่ข้อมูลยังอยู่ เปิดกลับได้ทุกเมื่อ`,
-            confirmText: 'ปิดแพ็ก',
-          });
-          if (!ok) return;
-          void save({ is_active: false });
-        }}
-        className="text-[10px] text-zinc-500 hover:text-amber-400 underline"
-      >
-        ปิดแพ็ก
-      </button>
-      <button
-        type="button"
-        disabled={loading}
-        onClick={() => void remove()}
-        title="ลบแพ็กเกจนี้"
-        className="inline-flex items-center gap-1 rounded-lg border border-red-600/40 bg-red-600/10 px-2 py-1 text-[11px] text-red-400 transition hover:bg-red-600/20 disabled:opacity-50"
-      >
-        <Trash2 className="h-3 w-3" />
-        ลบ
-      </button>
-      {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
-      {msg && <span className="text-[10px] text-zinc-500">{msg}</span>}
+        <div className="flex flex-col">
+          <span className="text-[10px] text-zinc-500 font-medium">ต้นทุน</span>
+          <input
+            type="number"
+            value={c}
+            onChange={(e) => setC(e.target.value)}
+            onBlur={() => {
+              const n = Number(c);
+              if (!Number.isNaN(n) && n >= 0 && n !== cost) void save({ cost: n });
+            }}
+            className="w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-300 focus:border-red-500 focus:outline-none"
+            min={0}
+            step={1}
+            title="ต้นทุน"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <span className="text-[10px] text-emerald-400 font-medium">ราคาส่ง</span>
+          <input
+            type="number"
+            value={rp}
+            onChange={(e) => setRp(e.target.value)}
+            onBlur={() => {
+              const val = rp === '' ? null : Number(rp);
+              if (val !== (reseller_price ?? null)) void save({ reseller_price: val });
+            }}
+            className="w-20 rounded-lg border border-emerald-500/40 bg-zinc-950 px-2 py-1 text-xs text-emerald-400 placeholder:text-zinc-600 focus:border-emerald-400 focus:outline-none"
+            min={0}
+            step={1}
+            placeholder="ตัวแทน"
+            title="ราคาส่งตัวแทน"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 shrink-0 pt-3">
+        <label className="flex items-center gap-1 text-xs text-zinc-400 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={active}
+            onChange={(e) => {
+              const v = e.target.checked;
+              setActive(v);
+              void save({ is_active: v });
+            }}
+            className="rounded border-zinc-600 accent-red-600"
+          />
+          <span className="text-[11px]">เปิด</span>
+        </label>
+
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => void remove()}
+          title="ลบแพ็กเกจนี้"
+          className="inline-flex items-center gap-1 rounded-lg border border-red-600/40 bg-red-600/10 px-2 py-1 text-[11px] text-red-400 transition hover:bg-red-600/20 disabled:opacity-50"
+        >
+          <Trash2 className="h-3 w-3" />
+          ลบ
+        </button>
+      </div>
+
+      {/* Fixed status indicator width so table layout never jumps */}
+      <div className="w-16 flex items-center justify-start shrink-0 pt-3">
+        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400" />}
+        {!loading && saved && (
+          <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-400 font-medium">
+            <Check className="h-3 w-3" /> บันทึก
+          </span>
+        )}
+        {!loading && errorMsg && (
+          <span className="text-[10px] text-red-400" title={errorMsg}>
+            ล้มเหลว
+          </span>
+        )}
+      </div>
     </div>
   );
 }
