@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Trash2, Edit, X } from 'lucide-react';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 export function GameRowActions({
   id,
@@ -16,6 +17,7 @@ export function GameRowActions({
   is_active: boolean;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [active, setActive] = useState(is_active);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -69,9 +71,15 @@ export function GameRowActions({
   }
 
   async function handleDelete() {
-    if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบเกม "${name || 'นี้'}"? (ข้อมูลแพ็กเกจของเกมนี้จะถูกลบไปด้วย)`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: `ลบเกม "${name || 'นี้'}"?`,
+      description: 'ข้อมูลแพ็กเกจและรายการทั้งหมดของเกมนี้จะถูกลบออกอย่างถาวรและกู้คืนไม่ได้',
+      confirmText: 'ลบถาวร',
+      cancelText: 'ยกเลิก',
+      tone: 'danger',
+    });
+    if (!ok) return;
+
     setDeleting(true);
     try {
       const res = await fetch('/api/admin/games/delete', {

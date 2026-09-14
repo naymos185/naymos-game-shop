@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Trash2 } from 'lucide-react';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 export function CouponToggle({ id, is_active }: { id: string; is_active: boolean }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [active, setActive] = useState(is_active);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -19,17 +21,24 @@ export function CouponToggle({ id, is_active }: { id: string; is_active: boolean
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, is_active: v }),
       });
-      const data = await res.json();
-      if (!data.success) setActive(!v);
-      else window.location.reload();
+      if (!res.ok) setActive(!v);
+      else router.refresh();
     } catch {
       setActive(!v);
     }
     setLoading(false);
   }
 
-  async function handleDelete() {
-    if (!window.confirm('คุณแน่ใจว่าต้องการลบคูปองนี้?')) return;
+  async function remove() {
+    const ok = await confirm({
+      title: 'ลบคูปองนี้?',
+      description: 'คุณแน่ใจว่าต้องการลบคูปองส่วนลดนี้อย่างถาวรหรือไม่? ลูกค้าจะไม่สามารถใช้คูปองนี้ได้อีก',
+      confirmText: 'ลบถาวร',
+      cancelText: 'ยกเลิก',
+      tone: 'danger',
+    });
+    if (!ok) return;
+
     setDeleting(true);
     try {
       const res = await fetch('/api/admin/coupons/delete', {
@@ -37,17 +46,19 @@ export function CouponToggle({ id, is_active }: { id: string; is_active: boolean
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       });
-      const data = await res.json();
-      if (data.success) window.location.reload();
-      else alert(data.message || 'ลบไม่สำเร็จ');
+      if (res.ok) {
+        router.refresh();
+      } else {
+        alert('ลบคูปองไม่สำเร็จ');
+      }
     } catch {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      alert('เกิดข้อผิดพลาด');
     }
     setDeleting(false);
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer">
         <input
           type="checkbox"
@@ -56,13 +67,13 @@ export function CouponToggle({ id, is_active }: { id: string; is_active: boolean
           className="rounded border-zinc-600"
         />
         {active ? 'เปิด' : 'ปิด'}
-        {loading && <Loader2 className="h-3 w-3 animate-spin" />}
+        {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
       </label>
       <button
         type="button"
         disabled={deleting}
-        onClick={handleDelete}
-        className="p-1.5 rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition"
+        onClick={remove}
+        className="p-1 rounded text-red-400 hover:text-red-300 transition"
         title="ลบคูปอง"
       >
         {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}

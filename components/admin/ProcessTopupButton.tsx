@@ -2,43 +2,69 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Play, Loader2 } from 'lucide-react';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
-export function ProcessTopupButton({ orderNumber }: { orderNumber: string }) {
+export function ProcessTopupButton({
+  orderId,
+  orderNumber,
+}: {
+  orderId: string;
+  orderNumber: string;
+}) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function onClick() {
-    if (!confirm(`รันเติมเกมสำหรับ ${orderNumber}?`)) return;
+  async function handleProcess() {
+    const ok = await confirm({
+      title: 'รันเติมเกม?',
+      description: `ต้องการเริ่มกระบวนการเติมเกมสำหรับออเดอร์ ${orderNumber} ทันทีใช่หรือไม่?`,
+      confirmText: 'เริ่มเติมเกม',
+      cancelText: 'ยกเลิก',
+      tone: 'default',
+    });
+    if (!ok) return;
+
     setLoading(true);
-    setMsg(null);
+    setError(null);
+
     try {
       const res = await fetch('/api/admin/orders/process-topup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_number: orderNumber }),
+        body: JSON.stringify({ orderId }),
       });
+
       const data = await res.json();
-      setMsg(data.message ?? (data.success ? 'สำเร็จ' : 'ไม่สำเร็จ'));
-      router.refresh();
+      if (!res.ok || !data.success) {
+        setError(data.message || 'ไม่สามารถทำรายการได้');
+      } else {
+        router.refresh();
+      }
     } catch {
-      setMsg('เชื่อมต่อไม่สำเร็จ');
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (
-    <div className="inline-flex flex-col items-start gap-1">
+    <div className="flex flex-col items-start gap-1">
       <button
-        type="button"
-        onClick={onClick}
+        onClick={handleProcess}
         disabled={loading}
-        className="rounded-lg bg-blue-600/20 border border-blue-600/40 px-2.5 py-1 text-xs text-blue-400 hover:bg-blue-600/30 disabled:opacity-50 transition"
+        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 transition disabled:opacity-50"
       >
-        {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'เติมเกม'}
+        {loading ? (
+          <Loader2 className="w-3 h-3 animate-spin" />
+        ) : (
+          <Play className="w-3 h-3" />
+        )}
+        รันเติมเกม
       </button>
-      {msg && <span className="text-[10px] text-zinc-500 max-w-[120px]">{msg}</span>}
+      {error && <span className="text-[10px] text-red-400">{error}</span>}
     </div>
   );
 }

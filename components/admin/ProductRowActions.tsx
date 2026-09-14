@@ -2,17 +2,20 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 type Props = {
   id: string;
+  name?: string;
   price: number;
   cost: number;
   is_active: boolean;
 };
 
-export function ProductRowActions({ id, price, cost, is_active }: Props) {
+export function ProductRowActions({ id, name, price, cost, is_active }: Props) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [p, setP] = useState(String(price));
   const [c, setC] = useState(String(cost));
   const [active, setActive] = useState(is_active);
@@ -48,6 +51,36 @@ export function ProductRowActions({ id, price, cost, is_active }: Props) {
         if (next.is_active !== undefined) setActive(next.is_active);
         router.refresh();
         setTimeout(() => setMsg(null), 1500);
+      }
+    } catch {
+      setMsg('เชื่อมต่อไม่สำเร็จ');
+    }
+    setLoading(false);
+  }
+
+  const label = name ?? 'แพ็กเกจนี้';
+
+  async function remove() {
+    const ok = await confirm({
+      title: 'ลบแพ็กเกจนี้?',
+      description: `"${label}" จะถูกลบออกอย่างถาวรและกู้คืนไม่ได้ หากมีออเดอร์เก่าอ้างอิงอยู่ ระบบจะแนะนำให้ปิดแพ็กแทน`,
+      confirmText: 'ลบถาวร',
+    });
+    if (!ok) return;
+    setLoading(true);
+    setMsg(null);
+    try {
+      const res = await fetch('/api/admin/products/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, hard: true }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setMsg(data.message ?? 'ลบไม่สำเร็จ');
+      } else {
+        setMsg('ลบแล้ว');
+        router.refresh();
       }
     } catch {
       setMsg('เชื่อมต่อไม่สำเร็จ');
@@ -114,13 +147,28 @@ export function ProductRowActions({ id, price, cost, is_active }: Props) {
       <button
         type="button"
         disabled={loading}
-        onClick={() => {
-          if (!confirm('ปิดแพ็กนี้ไม่ให้ขาย?')) return;
+        onClick={async () => {
+          const ok = await confirm({
+            title: 'ปิดการขายแพ็กนี้',
+            description: `ลูกค้าจะไม่เห็น "${label}" อีก แต่ข้อมูลยังอยู่ เปิดกลับได้ทุกเมื่อ`,
+            confirmText: 'ปิดแพ็ก',
+          });
+          if (!ok) return;
           void save({ is_active: false });
         }}
-        className="text-[10px] text-zinc-500 hover:text-red-400 underline"
+        className="text-[10px] text-zinc-500 hover:text-amber-400 underline"
       >
         ปิดแพ็ก
+      </button>
+      <button
+        type="button"
+        disabled={loading}
+        onClick={() => void remove()}
+        title="ลบแพ็กเกจนี้"
+        className="inline-flex items-center gap-1 rounded-lg border border-red-600/40 bg-red-600/10 px-2 py-1 text-[11px] text-red-400 transition hover:bg-red-600/20 disabled:opacity-50"
+      >
+        <Trash2 className="h-3 w-3" />
+        ลบ
       </button>
       {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
       {msg && <span className="text-[10px] text-zinc-500">{msg}</span>}

@@ -5,17 +5,27 @@ import { useRouter } from 'next/navigation';
 import { Loader2, Trash2 } from 'lucide-react';
 import { MarkPaidButton } from '@/components/admin/MarkPaidButton';
 import { ProcessTopupButton } from '@/components/admin/ProcessTopupButton';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 export function AdminOrderRowActions({ order }: { order: any }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [deleting, setDeleting] = useState(false);
 
   const isPending = order.status === 'pending' || order.status === 'PENDING_PAYMENT';
   const isPaidOrProcessing = order.status === 'PAID' || order.status === 'PROCESSING';
 
   async function handleDelete() {
-    if (deleting) return; // Prevent double click
-    if (!window.confirm(`คุณแน่ใจว่าต้องการลบออเดอร์ ${order.order_number}?`)) return;
+    if (deleting) return;
+    const ok = await confirm({
+      title: 'ลบออเดอร์นี้?',
+      description: `คุณแน่ใจว่าต้องการลบออเดอร์ "${order.order_number}" หรือไม่? ข้อมูลการชำระเงินและรายการที่เกี่ยวข้องจะถูกลบออกอย่างถาวร`,
+      confirmText: 'ลบถาวร',
+      cancelText: 'ยกเลิก',
+      tone: 'danger',
+    });
+    if (!ok) return;
+
     setDeleting(true);
     try {
       const res = await fetch('/api/admin/orders/delete', {
