@@ -2,12 +2,15 @@ import { createClient } from '@/lib/supabase/server';
 
 export type DashboardStats = {
   salesToday: number;
+  profitToday: number;
   ordersToday: number;
   ordersTotal: number;
   successCount: number;
   successRate: number;
   pendingCount: number;
-  customers: number;
+  customerCount: number;
+  resellerCount: number;
+  adminCount: number;
   gamesActive: number;
   recentOrders: Array<{
     order_number: string;
@@ -26,12 +29,15 @@ function startOfTodayISO() {
 export async function getDashboardStats(): Promise<DashboardStats> {
   const empty: DashboardStats = {
     salesToday: 0,
+    profitToday: 0,
     ordersToday: 0,
     ordersTotal: 0,
     successCount: 0,
     successRate: 0,
     pendingCount: 0,
-    customers: 0,
+    customerCount: 0,
+    resellerCount: 0,
+    adminCount: 0,
     gamesActive: 0,
     recentOrders: [],
   };
@@ -45,13 +51,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       { count: totalCount },
       { count: successCount },
       { count: pendingCount },
-      { count: customerCount },
+      { data: profiles },
       { count: gamesCount },
       { data: recent },
     ] = await Promise.all([
       supabase
         .from('orders')
-        .select('total, status, created_at')
+        .select('total, status, product_id, created_at')
         .gte('created_at', todayStart),
       supabase.from('orders').select('*', { count: 'exact', head: true }),
       supabase
@@ -62,7 +68,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         .from('orders')
         .select('*', { count: 'exact', head: true })
         .in('status', ['PENDING_PAYMENT', 'PAID', 'PROCESSING']),
-      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('profiles').select('role'),
       supabase
         .from('games')
         .select('*', { count: 'exact', head: true })
@@ -75,9 +81,38 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     ]);
 
     const list = todayOrders ?? [];
-    const salesToday = list
-      .filter((o) => ['SUCCESS', 'PAID', 'PROCESSING'].includes(o.status))
-      .reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const paidToday = list.filter((o) => ['SUCCESS', 'PAID', 'PROCESSING'].includes(o.status));
+    const salesToday = paidToday.reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+    // Calculate Today's Profit: total minus product cost for paid orders
+    let profitToday = 0;
+    const productIds = [...new Set(paidToday.map((o) => o.product_id).filter(Boolean))];
+    if (productIds.length > 0) {
+      const { data: prods } = await supabase
+        .from('products')
+        .select('id, cost')
+        .in('id', productIds);
+      const costMap: Record<string, number> = {};
+      (prods ?? []).forEach((p) => {
+        costMap[p.id] = Number(p.cost ?? 0);
+      });
+      profitToday = paidToday.reduce((sum, o) => {
+        const cost = costMap[o.product_id] ?? 0;
+        return sum + (Number(o.total || 0) - cost);
+      }, 0);
+    } else {
+      profitToday = salesToday;
+    }
+
+    // Role breakdown
+    let customerCount = 0;
+    let resellerCount = 0;
+    let adminCount = 0;
+    (profiles ?? []).forEach((p) => {
+      if (p.role === 'reseller') resellerCount++;
+      else if (p.role === 'admin' || p.role === 'super_admin') adminCount++;
+      else customerCount++;
+    });
 
     const ordersToday = list.length;
     const success = successCount ?? 0;
@@ -86,12 +121,15 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
     return {
       salesToday,
+      profitToday,
       ordersToday,
       ordersTotal: total,
       successCount: success,
       successRate,
       pendingCount: pendingCount ?? 0,
-      customers: customerCount ?? 0,
+      customerCount,
+      resellerCount,
+      adminCount,
       gamesActive: gamesCount ?? 0,
       recentOrders: (recent ?? []).map((o) => ({
         order_number: o.order_number,
