@@ -3,14 +3,22 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 export function MarkPaidButton({ orderNumber }: { orderNumber: string }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function onClick() {
-    if (!confirm(`ยืนยันว่าออเดอร์ ${orderNumber} ชำระเงินแล้ว?`)) return;
+    const ok = await confirm({
+      title: 'ยืนยันการชำระเงิน',
+      description: `ยืนยันว่าออเดอร์ ${orderNumber} ชำระเงินเรียบร้อยแล้ว?`,
+      confirmText: 'ยืนยันชำระ',
+      tone: 'default',
+    });
+    if (!ok) return;
     setLoading(true);
     setMsg(null);
     try {
