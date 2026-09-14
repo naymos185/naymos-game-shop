@@ -5,6 +5,7 @@ export type AdminProductRow = {
   name: string;
   price: number;
   cost: number;
+  reseller_price?: number | null;
   is_active: boolean;
   sort_order: number;
   game_id: string;
@@ -16,7 +17,7 @@ export async function listProductsAdmin(limit = 200): Promise<AdminProductRow[]>
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, price, cost, is_active, sort_order, game_id, created_at')
+    .select('id, name, price, cost, reseller_price, is_active, sort_order, game_id, created_at')
     .order('sort_order', { ascending: true })
     .limit(limit);
 
@@ -36,6 +37,7 @@ export async function listProductsAdmin(limit = 200): Promise<AdminProductRow[]>
     name: p.name,
     price: Number(p.price),
     cost: Number(p.cost ?? 0),
+    reseller_price: p.reseller_price != null ? Number(p.reseller_price) : null,
     is_active: p.is_active,
     sort_order: p.sort_order ?? 0,
     game_id: p.game_id,
