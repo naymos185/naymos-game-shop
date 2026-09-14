@@ -14,6 +14,7 @@ export function AdminOrderRowActions({ order }: { order: any }) {
   const isPaidOrProcessing = order.status === 'PAID' || order.status === 'PROCESSING';
 
   async function handleDelete() {
+    if (deleting) return; // Prevent double click
     if (!window.confirm(`คุณแน่ใจว่าต้องการลบออเดอร์ ${order.order_number}?`)) return;
     setDeleting(true);
     try {
@@ -30,8 +31,9 @@ export function AdminOrderRowActions({ order }: { order: any }) {
       }
     } catch {
       alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    } finally {
+      setDeleting(false);
     }
-    setDeleting(false);
   }
 
   return (
@@ -44,7 +46,7 @@ export function AdminOrderRowActions({ order }: { order: any }) {
         type="button"
         disabled={deleting}
         onClick={handleDelete}
-        className="p-1.5 rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition"
+        className="p-1.5 rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
         title="ลบออเดอร์"
       >
         {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
