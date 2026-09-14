@@ -1,6 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { generateOrderNumber } from './order-number';
 import type { Order } from '@/types/order';
+import {
+  validateCoupon,
+  incrementCouponUsage,
+} from '@/lib/coupons/validate';
 
 export type CreateOrderPayload = {
   game_id: string;
@@ -8,10 +12,17 @@ export type CreateOrderPayload = {
   player_data: Record<string, string>;
   contact_email?: string;
   contact_phone?: string;
+  coupon_code?: string;
 };
 
 export type CreateOrderResult =
-  | { success: true; order: Pick<Order, 'id' | 'order_number' | 'status' | 'total'> }
+  | {
+      success: true;
+      order: Pick<Order, 'id' | 'order_number' | 'status' | 'total'> & {
+        discount?: number;
+        subtotal?: number;
+      };
+    }
   | { success: false; message: string };
 
 export async function createOrder(
@@ -61,12 +72,25 @@ export async function createOrder(
     return { success: false, message: 'แพ็กเกจไม่ตรงกับเกม' };
   }
 
-  const price = Number(product.price);
+  const subtotal = Number(product.price);
+  let discount = 0;
+  let couponCode: string | null = null;
+
+  if (payload.coupon_code?.trim()) {
+    const coupon = await validateCoupon(payload.coupon_code, subtotal);
+    if (!coupon.valid) {
+      return { success: false, message: coupon.message };
+    }
+    discount = coupon.discount_amount;
+    couponCode = coupon.code;
+  }
+
+  const total = Math.max(0, Math.round((subtotal - discount) * 100) / 100);
   let orderNumber = generateOrderNumber();
   let lastError: string | null = null;
 
   for (let i = 0; i < 5; i++) {
-    const { error } = await supabase.from('orders').insert({
+    const row: Record<string, unknown> = {
       order_number: orderNumber,
       user_id: user?.id ?? null,
       game_id: payload.game_id,
@@ -74,23 +98,60 @@ export async function createOrder(
       player_data: payload.player_data,
       contact_email: email,
       contact_phone: phone,
-      subtotal: price,
-      discount: 0,
+      subtotal,
+      discount,
       fee: 0,
-      total: price,
+      total,
       status: 'PENDING_PAYMENT',
-    });
+    };
+    if (couponCode) row.coupon_code = couponCode;
+
+    const { error } = await supabase.from('orders').insert(row);
 
     if (!error) {
+      if (couponCode) {
+        try {
+          await incrementCouponUsage(couponCode);
+        } catch {
+          /* best-effort */
+        }
+      }
       return {
         success: true,
         order: {
           id: '',
           order_number: orderNumber,
           status: 'PENDING_PAYMENT',
-          total: price,
+          total,
+          discount,
+          subtotal,
         },
       };
+    }
+
+    if (error.message?.includes('coupon_code') && couponCode) {
+      delete row.coupon_code;
+      const { error: e2 } = await supabase.from('orders').insert(row);
+      if (!e2) {
+        try {
+          await incrementCouponUsage(couponCode);
+        } catch {
+          /* ignore */
+        }
+        return {
+          success: true,
+          order: {
+            id: '',
+            order_number: orderNumber,
+            status: 'PENDING_PAYMENT',
+            total,
+            discount,
+            subtotal,
+          },
+        };
+      }
+      lastError = e2.message;
+      break;
     }
 
     if (error.code === '23505') {
