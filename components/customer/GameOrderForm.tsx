@@ -201,7 +201,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                       onClick={() => setSelectedPkg(p.id)}
                       className={`relative rounded-xl border p-3.5 text-left transition ${
                         isSelected
-                          ? 'border-sky-500 bg-sky-500/10 text-white'
+                          ? 'border-2 border-sky-500 bg-sky-50 text-slate-900 shadow-xs'
                           : 'border-sky-100 bg-white/50 text-slate-600 hover:border-sky-200'
                       }`}
                     >
@@ -249,7 +249,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                       value={playerData[key] || ''}
                       onChange={(e) => setPlayerData({ ...playerData, [key]: e.target.value })}
                       placeholder={f.placeholder || `กรอก ${f.label}`}
-                      className="w-full rounded-xl border border-sky-100 bg-white px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-sky-500 focus:outline-none"
+                      className="w-full rounded-xl border border-sky-100 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-sky-500 focus:outline-none"
                     />
                   </div>
                 );
@@ -268,24 +268,24 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                 onClick={() => setPaymentMethod('promptpay')}
                 className={`rounded-xl border p-3.5 text-center transition ${
                   paymentMethod === 'promptpay'
-                    ? 'border-sky-500 bg-sky-500/10 text-white'
+                    ? 'border-2 border-sky-500 bg-sky-50 text-slate-900 shadow-xs'
                     : 'border-sky-100 bg-white/50 text-slate-500 hover:border-sky-200'
                 }`}
               >
-                <div className="font-semibold text-sm">พร้อมเพย์ QR</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">PromptPay</div>
+                <div className="font-bold text-sm text-slate-800">พร้อมเพย์ QR</div>
+                <div className="text-[11px] text-sky-600 font-semibold mt-0.5">PromptPay</div>
               </button>
               <button
                 type="button"
                 onClick={() => setPaymentMethod('truemoney')}
                 className={`rounded-xl border p-3.5 text-center transition ${
                   paymentMethod === 'truemoney'
-                    ? 'border-sky-500 bg-sky-500/10 text-white'
+                    ? 'border-2 border-sky-500 bg-sky-50 text-slate-900 shadow-xs'
                     : 'border-sky-100 bg-white/50 text-slate-500 hover:border-sky-200'
                 }`}
               >
-                <div className="font-semibold text-sm">ทรูมันนี่ QR</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">TrueMoney QR</div>
+                <div className="font-bold text-sm text-slate-800">ทรูมันนี่ QR</div>
+                <div className="text-[11px] text-sky-600 font-semibold mt-0.5">TrueMoney QR</div>
               </button>
             </div>
           </div>
@@ -350,11 +350,11 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
               <div className="rounded-xl border border-sky-100 bg-white/70 p-4 space-y-2.5 text-xs">
                 <div className="flex justify-between py-1 border-b border-sky-100/80">
                   <span className="text-slate-500">เกม:</span>
-                  <span className="font-semibold text-white">{game.name}</span>
+                  <span className="font-bold text-slate-800">{game.name}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-sky-100/80">
                   <span className="text-slate-500">แพ็กเกจ:</span>
-                  <span className="font-semibold text-white">{selectedProduct?.name}</span>
+                  <span className="font-bold text-slate-800">{selectedProduct?.name}</span>
                 </div>
                 {fields.map((f: any) => {
                   const key = f.name || f.field_key || 'uid';
@@ -369,11 +369,11 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                 })}
                 <div className="flex justify-between py-1 border-b border-sky-100/80">
                   <span className="text-slate-500">ช่องทางชำระเงิน:</span>
-                  <span className="text-white capitalize font-medium">{paymentMethod === 'promptpay' ? 'พร้อมเพย์ QR' : 'ทรูมันนี่ QR'}</span>
+                  <span className="text-slate-800 capitalize font-bold">{paymentMethod === 'promptpay' ? 'พร้อมเพย์ QR' : 'ทรูมันนี่ QR'}</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-slate-500">ราคาปกติ:</span>
-                  <span className="text-white">฿{Number(basePrice).toLocaleString()}</span>
+                  <span className="text-slate-800 font-bold">฿{Number(basePrice).toLocaleString()}</span>
                 </div>
                 {couponDiscount > 0 && (
                   <div className="flex justify-between py-1 text-emerald-400">
@@ -382,7 +382,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                   </div>
                 )}
                 <div className="flex justify-between pt-2 border-t border-sky-100 text-sm font-bold">
-                  <span className="text-white">ยอดชำระสุทธิ:</span>
+                  <span className="text-slate-800 font-bold">ยอดชำระสุทธิ:</span>
                   <span className="text-sky-600 font-black">฿{Number(totalPayable).toLocaleString()}</span>
                 </div>
               </div>
@@ -395,7 +395,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="กรอกโค้ดส่วนลด"
-                    className="flex-1 rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-white placeholder-zinc-500 uppercase focus:border-sky-500 focus:outline-none"
+                    className="flex-1 rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-slate-800 placeholder-slate-400 uppercase focus:border-sky-500 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -444,7 +444,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
 
       {/* Step 3: Exact UI from Image 2 */}
       {step === 3 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div className="relative w-full max-w-md rounded-3xl border border-sky-100 bg-sky-50/60 p-6 shadow-2xl space-y-5">
             <button
               type="button"
@@ -456,7 +456,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
 
             <div className="text-center space-y-1">
               <span className="text-xs font-bold uppercase tracking-widest text-amber-500">สแกนชำระเงิน</span>
-              <h3 className="text-xl font-black text-white">พร้อมเพย์ / QR Payment</h3>
+              <h3 className="text-xl font-black text-slate-900">พร้อมเพย์ / QR Payment</h3>
               <p className="text-xs text-slate-500 font-mono">ออเดอร์: {orderNumber}</p>
             </div>
 

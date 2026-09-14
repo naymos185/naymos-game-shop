@@ -87,7 +87,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-16 text-zinc-400 text-sm">
+      <div className="flex items-center justify-center gap-2 py-16 text-slate-500 text-sm">
         <Loader2 className="h-5 w-5 animate-spin" />
         กำลังเตรียมการชำระเงิน...
       </div>
@@ -120,15 +120,15 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
           <Check className="h-7 w-7 text-emerald-400" />
         </div>
         <h2 className="text-xl font-bold text-emerald-300">ชำระเงินแล้ว</h2>
-        <p className="text-sm text-zinc-400">
-          ออเดอร์ <span className="font-mono text-white">{data.order_number}</span>
+        <p className="text-sm text-slate-500">
+          ออเดอร์ <span className="font-mono text-slate-800">{data.order_number}</span>
         </p>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-slate-400">
           สถานะ: {orderStatusLabel(data.order_status)} · รอระบบเติมเกม
         </p>
         <Link
           href={`/order-tracking?number=${encodeURIComponent(data.order_number)}`}
-          className="inline-flex mt-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 px-5 py-2.5 text-sm text-zinc-200 transition"
+          className="inline-flex mt-2 rounded-xl bg-sky-100 text-sky-800 hover:bg-zinc-700 px-5 py-2.5 text-sm text-slate-700 transition"
         >
           ดูสถานะออเดอร์
         </Link>
@@ -142,33 +142,33 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 space-y-3">
+      <div className="rounded-2xl border border-sky-100 bg-white p-6 space-y-3">
         <div className="flex items-center gap-2 text-red-400 mb-2">
           <CreditCard className="h-5 w-5" />
-          <h2 className="font-semibold text-white">ชำระเงินออเดอร์</h2>
+          <h2 className="font-semibold text-slate-800">ชำระเงินออเดอร์</h2>
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-zinc-500 text-xs">หมายเลข</p>
-            <p className="font-mono font-bold text-white">{data.order_number}</p>
+            <p className="text-slate-400 text-xs">หมายเลข</p>
+            <p className="font-mono font-bold text-slate-800">{data.order_number}</p>
           </div>
           <div>
-            <p className="text-zinc-500 text-xs">ยอดชำระ</p>
+            <p className="text-slate-400 text-xs">ยอดชำระ</p>
             <p className="text-2xl font-bold text-red-400">฿{Number(data.amount).toLocaleString()}</p>
           </div>
           <div>
-            <p className="text-zinc-500 text-xs">เกม</p>
-            <p className="text-white">{data.game_name ?? '—'}</p>
+            <p className="text-slate-400 text-xs">เกม</p>
+            <p className="text-slate-800">{data.game_name ?? '—'}</p>
           </div>
           <div>
-            <p className="text-zinc-500 text-xs">แพ็กเกจ</p>
-            <p className="text-white">{data.product_name ?? '—'}</p>
+            <p className="text-slate-400 text-xs">แพ็กเกจ</p>
+            <p className="text-slate-800">{data.product_name ?? '—'}</p>
           </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-center space-y-4">
-        <p className="text-sm text-zinc-400">สแกน QR หรือโอนตามรายละเอียดด้านล่าง</p>
+      <div className="rounded-2xl border border-sky-100 bg-white p-6 text-center space-y-4">
+        <p className="text-sm text-slate-500">สแกน QR หรือโอนตามรายละเอียดด้านล่าง</p>
         <div className="mx-auto w-48 h-48 rounded-xl bg-white p-3 flex items-center justify-center">
           <div className="text-zinc-900 text-center text-xs leading-tight">
             <p className="font-bold text-sm mb-1">PromptPay QR</p>
@@ -176,33 +176,33 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
               {data.qr_data?.slice(0, 48) ?? 'MOCK-QR'}
             </p>
             <p className="mt-2 font-bold text-lg">฿{Number(data.amount)}</p>
-            <p className="text-[10px] mt-1 text-zinc-500">Mock QR</p>
+            <p className="text-[10px] mt-1 text-slate-400">Mock QR</p>
           </div>
         </div>
         {data.expires_at && (
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-slate-400">
             หมดอายุ: {new Date(data.expires_at).toLocaleString('th-TH')}
           </p>
         )}
       </div>
 
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 space-y-3 text-sm">
+      <div className="rounded-2xl border border-sky-100 bg-white p-6 space-y-3 text-sm">
         <h3 className="font-semibold">รายละเอียดการโอน</h3>
         <div className="flex justify-between gap-2">
-          <span className="text-zinc-500">ช่องทาง</span>
-          <span className="text-white">{bankName}</span>
+          <span className="text-slate-400">ช่องทาง</span>
+          <span className="text-slate-800">{bankName}</span>
         </div>
         <div className="flex justify-between gap-2">
-          <span className="text-zinc-500">ชื่อบัญชี</span>
-          <span className="text-white">{accountName}</span>
+          <span className="text-slate-400">ชื่อบัญชี</span>
+          <span className="text-slate-800">{accountName}</span>
         </div>
         {promptpayId ? (
           <div className="flex justify-between gap-2 items-center">
-            <span className="text-zinc-500">พร้อมเพย์</span>
+            <span className="text-slate-400">พร้อมเพย์</span>
             <button
               type="button"
               onClick={() => copyText(promptpayId)}
-              className="flex items-center gap-1.5 text-white font-mono text-xs hover:text-red-400"
+              className="flex items-center gap-1.5 text-slate-800 font-mono text-xs hover:text-red-400"
             >
               {promptpayId}
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
@@ -210,11 +210,11 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
           </div>
         ) : null}
         <div className="flex justify-between gap-2 items-center">
-          <span className="text-zinc-500">อ้างอิง</span>
+          <span className="text-slate-400">อ้างอิง</span>
           <button
             type="button"
             onClick={() => copyText(data.order_number)}
-            className="flex items-center gap-1.5 text-white font-mono text-xs hover:text-red-400"
+            className="flex items-center gap-1.5 text-slate-800 font-mono text-xs hover:text-red-400"
           >
             {data.order_number}
             <Copy className="h-3.5 w-3.5" />
@@ -222,8 +222,8 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
         </div>
         {data.payment_reference && (
           <div className="flex justify-between gap-2">
-            <span className="text-zinc-500">รหัสชำระ</span>
-            <span className="font-mono text-xs text-zinc-300">{data.payment_reference}</span>
+            <span className="text-slate-400">รหัสชำระ</span>
+            <span className="font-mono text-xs text-slate-600">{data.payment_reference}</span>
           </div>
         )}
         <p className="text-xs text-amber-200/90 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mt-2">
@@ -232,16 +232,16 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
       </div>
 
       <div className="rounded-2xl border border-emerald-900/40 bg-emerald-950/20 p-4 space-y-2">
-        <p className="text-sm text-zinc-300 font-medium">ชำระด้วย Wallet (สมาชิก)</p>
+        <p className="text-sm text-slate-600 font-medium">ชำระด้วย Wallet (สมาชิก)</p>
         {walletLoggedIn ? (
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-slate-500">
             เครดิตคงเหลือ{' '}
             <span className="text-emerald-400 font-semibold">
               ฿{(walletBalance ?? 0).toLocaleString()}
             </span>
           </p>
         ) : (
-          <p className="text-xs text-zinc-500">ต้องล็อกอินและมียอดเครดิตพอ · Admin เติมได้ที่หลังบ้าน</p>
+          <p className="text-xs text-slate-400">ต้องล็อกอินและมียอดเครดิตพอ · Admin เติมได้ที่หลังบ้าน</p>
         )}
         <button
           type="button"
@@ -268,7 +268,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
             }
             setWalletLoading(false);
           }}
-          className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 py-2.5 text-sm font-semibold text-white"
+          className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 py-2.5 text-sm font-semibold text-slate-800"
         >
           {walletLoading ? 'กำลังตัดเครดิต...' : 'จ่ายด้วย Wallet'}
         </button>
@@ -283,13 +283,13 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
         <button
           type="button"
           onClick={() => void load()}
-          className="flex-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 py-3 text-sm font-medium text-zinc-200 transition"
+          className="flex-1 rounded-xl bg-sky-100 text-sky-800 hover:bg-zinc-700 py-3 text-sm font-medium text-slate-700 transition"
         >
           รีเฟรชสถานะ
         </button>
         <Link
           href={`/order-tracking?number=${encodeURIComponent(data.order_number)}`}
-          className="flex-1 text-center rounded-xl border border-zinc-700 py-3 text-sm text-zinc-300 hover:border-red-600/40 transition"
+          className="flex-1 text-center rounded-xl border border-zinc-700 py-3 text-sm text-slate-600 hover:border-red-600/40 transition"
         >
           ติดตามออเดอร์
         </Link>
