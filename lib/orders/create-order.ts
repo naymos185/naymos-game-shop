@@ -13,6 +13,8 @@ export type CreateOrderPayload = {
   contact_email?: string;
   contact_phone?: string;
   coupon_code?: string;
+  /** points to redeem: 10 pts = 1 THB */
+  points_to_use?: number;
 };
 
 export type CreateOrderResult =
@@ -85,9 +87,50 @@ export async function createOrder(
     couponCode = coupon.code;
   }
 
+  let pointsUsed = 0;
+  const ptsReq = Math.floor(Number(payload.points_to_use ?? 0));
+  if (ptsReq > 0) {
+    if (!user) {
+      return { success: false, message: 'ต้องล็อกอินเพื่อใช้คะแนน' };
+    }
+    const { data: balRow } = await supabase
+      .from('point_balances')
+      .select('balance')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const available = Number(balRow?.balance ?? 0);
+    const maxBySub = Math.floor((subtotal - discount) * 10);
+    pointsUsed = Math.min(ptsReq, available, maxBySub);
+    pointsUsed = Math.floor(pointsUsed / 10) * 10;
+    if (pointsUsed < 10) {
+      pointsUsed = 0;
+    } else {
+      discount += Math.floor(pointsUsed / 10);
+    }
+  }
+
   const total = Math.max(0, Math.round((subtotal - discount) * 100) / 100);
   let orderNumber = generateOrderNumber();
   let lastError: string | null = null;
+
+  async function redeemIfNeeded() {
+    if (pointsUsed > 0 && user) {
+      try {
+        const { data: ord } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('order_number', orderNumber)
+          .maybeSingle();
+        await supabase.rpc('redeem_points_for_order', {
+          p_user_id: user.id,
+          p_points: pointsUsed,
+          p_order_id: ord?.id ?? null,
+        });
+      } catch {
+        /* best-effort */
+      }
+    }
+  }
 
   for (let i = 0; i < 5; i++) {
     const row: Record<string, unknown> = {
@@ -116,6 +159,7 @@ export async function createOrder(
           /* best-effort */
         }
       }
+      await redeemIfNeeded();
       return {
         success: true,
         order: {
@@ -138,6 +182,7 @@ export async function createOrder(
         } catch {
           /* ignore */
         }
+        await redeemIfNeeded();
         return {
           success: true,
           order: {
