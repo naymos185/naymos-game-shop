@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { GameWithDetails } from '@/lib/games/queries';
-import { Check, AlertCircle, Loader2, Info, X, UploadCloud, ArrowRight } from 'lucide-react';
+import { Check, AlertCircle, Loader2, X, UploadCloud, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function GameOrderForm({ game }: { game: GameWithDetails }) {
@@ -28,7 +28,14 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
   const [submittingSlip, setSubmittingSlip] = useState(false);
   const [slipMsg, setSlipMsg] = useState<string | null>(null);
 
-  const selectedProduct = game.products.find((p) => p.id === selectedPkg);
+  // Normalize products and fields
+  const products = game.products || (game as any).packages || [];
+  const rawFields = game.game_fields || (game as any).fields || [];
+  const fields = rawFields.length > 0 ? rawFields : [
+    { id: 'default-uid', name: 'uid', label: 'UID / Player ID', type: 'text', placeholder: 'กรอก UID ผู้เล่น', required: true }
+  ];
+
+  const selectedProduct = products.find((p: any) => p.id === selectedPkg);
   const basePrice = selectedProduct?.price ?? 0;
   const totalPayable = Math.max(0, basePrice - couponDiscount);
 
@@ -39,17 +46,17 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
     try {
       const res = await fetch('/api/admin/coupons');
       if (res.ok) {
-        const coupons = await res.json();
+        const data = await res.json();
+        const coupons = data.coupons || data;
         const found = coupons.find(
-          (c: { code: string; is_active: boolean; discount_amount?: number; discount_percent?: number }) =>
-            c.code.toUpperCase() === couponCode.trim().toUpperCase() && c.is_active
+          (c: any) => c.code.toUpperCase() === couponCode.trim().toUpperCase() && c.is_active
         );
         if (found) {
           let disc = 0;
-          if (found.discount_percent) {
-            disc = (basePrice * found.discount_percent) / 100;
-          } else if (found.discount_amount) {
-            disc = found.discount_amount;
+          if (found.discount_type === 'percent') {
+            disc = (basePrice * Number(found.discount_value)) / 100;
+          } else {
+            disc = Number(found.discount_value);
           }
           setCouponDiscount(disc);
           setCouponMsg(`ใช้โค้ดสำเร็จ ลด ฿${disc.toLocaleString()}`);
@@ -74,8 +81,9 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
       setError('กรุณาเลือกแพ็กเกจ');
       return;
     }
-    for (const f of game.fields) {
-      if (f.required && !playerData[f.field_key]?.trim()) {
+    for (const f of fields) {
+      const key = f.name || (f as any).field_key;
+      if (f.required && !playerData[key]?.trim()) {
         setError(`กรุณากรอก ${f.label}`);
         return;
       }
@@ -115,7 +123,7 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
 
       setOrderNumber(data.order_number || data.orderNumber || '');
       setFinalAmount(totalPayable);
-      setStep(3); // Show Step 3 Modal (IMG_8202 style)
+      setStep(3);
     } catch {
       setError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่');
     }
@@ -167,31 +175,35 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] font-bold text-white">1</span>
               เลือกแพ็กเกจ
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {game.products.map((p) => {
-                const isSelected = selectedPkg === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setSelectedPkg(p.id)}
-                    className={`relative rounded-xl border p-3.5 text-left transition ${
-                      isSelected
-                        ? 'border-red-500 bg-red-600/10 text-white'
-                        : 'border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:border-zinc-700'
-                    }`}
-                  >
-                    <div className="font-semibold text-sm">{p.name}</div>
-                    <div className="text-xs text-red-400 font-bold mt-1">฿{Number(p.price).toLocaleString()}</div>
-                    {isSelected && (
-                      <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white">
-                        <Check className="h-2.5 w-2.5 stroke-[3]" />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {products.length === 0 ? (
+              <p className="text-xs text-zinc-500">ยังไม่มีแพ็กเกจในเกมนี้ (เพิ่มได้ในหน้าจัดการสินค้าหลังบ้าน)</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {products.map((p: any) => {
+                  const isSelected = selectedPkg === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedPkg(p.id)}
+                      className={`relative rounded-xl border p-3.5 text-left transition ${
+                        isSelected
+                          ? 'border-red-500 bg-red-600/10 text-white'
+                          : 'border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:border-zinc-700'
+                      }`}
+                    >
+                      <div className="font-semibold text-sm">{p.name}</div>
+                      <div className="text-xs text-red-400 font-bold mt-1">฿{Number(p.price).toLocaleString()}</div>
+                      {isSelected && (
+                        <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white">
+                          <Check className="h-2.5 w-2.5 stroke-[3]" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div>
@@ -200,20 +212,23 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
               ข้อมูลผู้เล่น
             </h3>
             <div className="space-y-3">
-              {game.fields.map((f) => (
-                <div key={f.id}>
-                  <label className="block text-xs text-zinc-400 mb-1">
-                    {f.label} {f.required && <span className="text-red-500">*</span>}
-                  </label>
-                  <input
-                    type={f.field_key.includes('pass') ? 'password' : 'text'}
-                    value={playerData[f.field_key] || ''}
-                    onChange={(e) => setPlayerData({ ...playerData, [f.field_key]: e.target.value })}
-                    placeholder={f.placeholder || `กรอก ${f.label}`}
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-red-500 focus:outline-none"
-                  />
-                </div>
-              ))}
+              {fields.map((f: any) => {
+                const key = f.name || f.field_key || 'uid';
+                return (
+                  <div key={f.id || key}>
+                    <label className="block text-xs text-zinc-400 mb-1">
+                      {f.label} {f.required && <span className="text-red-500">*</span>}
+                    </label>
+                    <input
+                      type={key.includes('pass') ? 'password' : 'text'}
+                      value={playerData[key] || ''}
+                      onChange={(e) => setPlayerData({ ...playerData, [key]: e.target.value })}
+                      placeholder={f.placeholder || `กรอก ${f.label}`}
+                      className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-red-500 focus:outline-none"
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -316,14 +331,17 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
                   <span className="text-zinc-400">แพ็กเกจ:</span>
                   <span className="font-semibold text-white">{selectedProduct?.name}</span>
                 </div>
-                {game.fields.map((f) => (
-                  <div key={f.id} className="flex justify-between py-1 border-b border-zinc-800/80">
-                    <span className="text-zinc-400">{f.label}:</span>
-                    <span className="font-mono text-zinc-200">
-                      {f.field_key.includes('pass') ? '••••••••' : playerData[f.field_key]}
-                    </span>
-                  </div>
-                ))}
+                {fields.map((f: any) => {
+                  const key = f.name || f.field_key || 'uid';
+                  return (
+                    <div key={f.id || key} className="flex justify-between py-1 border-b border-zinc-800/80">
+                      <span className="text-zinc-400">{f.label}:</span>
+                      <span className="font-mono text-zinc-200">
+                        {key.includes('pass') ? '••••••••' : playerData[key]}
+                      </span>
+                    </div>
+                  );
+                })}
                 <div className="flex justify-between py-1 border-b border-zinc-800/80">
                   <span className="text-zinc-400">ช่องทางชำระเงิน:</span>
                   <span className="text-white capitalize font-medium">{paymentMethod === 'promptpay' ? 'พร้อมเพย์ QR' : 'ทรูมันนี่ QR'}</span>
@@ -399,7 +417,7 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
         </div>
       )}
 
-      {/* Step 3: Exact UI from Image 2 (No 10-minute timer, Slip upload + Confirm) */}
+      {/* Step 3: Exact UI from Image 2 */}
       {step === 3 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="relative w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl space-y-5">
