@@ -12,6 +12,7 @@ export async function POST(request: Request) {
       contact_email: body.contact_email ? String(body.contact_email) : undefined,
       contact_phone: body.contact_phone ? String(body.contact_phone) : undefined,
       coupon_code: body.coupon_code ? String(body.coupon_code) : undefined,
+      points_to_use: body.points_to_use != null ? Number(body.points_to_use) : undefined,
     });
 
     if (!result.success) {
