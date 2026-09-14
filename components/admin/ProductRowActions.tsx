@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Trash2, Check } from 'lucide-react';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
@@ -25,7 +25,6 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
   const [saved, setSaved] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Synchronize when props change externally without overriding local edits during typing
   useEffect(() => {
     setP(String(price));
   }, [price]);
@@ -53,7 +52,7 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
           id,
           price: next.price ?? Number(p),
           cost: next.cost ?? Number(c),
-          reseller_price: next.reseller_price !== undefined ? next.reseller_price : (rp === '' ? null : Number(rp)),
+          reseller_price: next.reseller_price !== undefined ? next.reseller_price : (rp.trim() === '' ? null : Number(rp)),
           is_active: next.is_active ?? active,
         }),
       });
@@ -102,7 +101,7 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
   }
 
   return (
-    <div className="flex items-center gap-2 min-w-[340px]">
+    <div className="flex items-center gap-2 w-full">
       <div className="flex items-center gap-1.5 shrink-0">
         <div className="flex flex-col">
           <span className="text-[10px] text-zinc-500 font-medium">ราคาปกติ</span>
@@ -114,7 +113,7 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
               const n = Number(p);
               if (!Number.isNaN(n) && n >= 0 && n !== price) void save({ price: n });
             }}
-            className="w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-white focus:border-red-500 focus:outline-none"
+            className="w-16 sm:w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-white focus:border-red-500 focus:outline-none"
             min={0}
             step={1}
             title="ราคาปกติ"
@@ -131,7 +130,7 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
               const n = Number(c);
               if (!Number.isNaN(n) && n >= 0 && n !== cost) void save({ cost: n });
             }}
-            className="w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-300 focus:border-red-500 focus:outline-none"
+            className="w-16 sm:w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-300 focus:border-red-500 focus:outline-none"
             min={0}
             step={1}
             title="ต้นทุน"
@@ -145,10 +144,10 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
             value={rp}
             onChange={(e) => setRp(e.target.value)}
             onBlur={() => {
-              const val = rp === '' ? null : Number(rp);
+              const val = rp.trim() === '' ? null : Number(rp);
               if (val !== (reseller_price ?? null)) void save({ reseller_price: val });
             }}
-            className="w-20 rounded-lg border border-emerald-500/40 bg-zinc-950 px-2 py-1 text-xs text-emerald-400 placeholder:text-zinc-600 focus:border-emerald-400 focus:outline-none"
+            className="w-16 sm:w-20 rounded-lg border border-emerald-500/40 bg-zinc-950 px-2 py-1 text-xs text-emerald-400 placeholder:text-zinc-600 focus:border-emerald-400 focus:outline-none"
             min={0}
             step={1}
             placeholder="ตัวแทน"
@@ -157,7 +156,7 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0 pt-3">
+      <div className="flex items-center gap-1.5 shrink-0 pt-3">
         <label className="flex items-center gap-1 text-xs text-zinc-400 cursor-pointer">
           <input
             type="checkbox"
@@ -184,8 +183,8 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
         </button>
       </div>
 
-      {/* Fixed status indicator width so table layout never jumps */}
-      <div className="w-16 flex items-center justify-start shrink-0 pt-3">
+      {/* Fixed status indicator width so nothing shifts */}
+      <div className="w-14 flex items-center justify-start shrink-0 pt-3">
         {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400" />}
         {!loading && saved && (
           <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-400 font-medium">
@@ -193,8 +192,8 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
           </span>
         )}
         {!loading && errorMsg && (
-          <span className="text-[10px] text-red-400" title={errorMsg}>
-            ล้มเหลว
+          <span className="text-[10px] text-red-400 truncate" title={errorMsg}>
+            พลาด
           </span>
         )}
       </div>
