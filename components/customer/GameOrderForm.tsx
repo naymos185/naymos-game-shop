@@ -1,99 +1,96 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { GameWithDetails } from '@/lib/games/queries';
-import { Check, AlertCircle, Loader2, Info, ArrowLeft, X, Clock } from 'lucide-react';
-import Link from 'next/link';
+import { Check, AlertCircle, Loader2, Info, X, UploadCloud, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function GameOrderForm({ game }: { game: GameWithDetails }) {
   const router = useRouter();
-
-  // 1 = เลือกแพ็กเกจ & กรอกข้อมูล, 2 = ตรวจสอบเงื่อนไขและรายละเอียด, 3 = Popup QR Modal
   const [step, setStep] = useState<1 | 2 | 3>(1);
-
   const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
   const [playerData, setPlayerData] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState<'promptpay' | 'truemoney'>('promptpay');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsError, setTermsError] = useState(false);
-
-  // ส่วนลด / คูปอง
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
   const [checkingCoupon, setCheckingCoupon] = useState(false);
-
-  // สร้างคำสั่งซื้อ
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState('');
   const [finalAmount, setFinalAmount] = useState(0);
 
-  // เวลานับถอยหลัง 10 นาที (600 วินาที)
-  const [timeLeft, setTimeLeft] = useState(600);
+  // Slip upload state for Step 3 modal
+  const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipPreview, setSlipPreview] = useState<string | null>(null);
+  const [submittingSlip, setSubmittingSlip] = useState(false);
+  const [slipMsg, setSlipMsg] = useState<string | null>(null);
 
-  const pkg = game.products.find((p) => p.id === selectedPkg);
-  const basePrice = pkg ? Number(pkg.price) : 0;
+  const selectedProduct = game.products.find((p) => p.id === selectedPkg);
+  const basePrice = selectedProduct?.price ?? 0;
   const totalPayable = Math.max(0, basePrice - couponDiscount);
 
-  useEffect(() => {
-    if (step !== 3) return;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [step]);
-
-  const formatTimer = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  };
-
-  async function applyCoupon() {
+  const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
     setCheckingCoupon(true);
     setCouponMsg(null);
     try {
-      const res = await fetch('/api/coupons/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: couponCode.trim(), amount: basePrice }),
-      });
-      const data = await res.json();
-      if (data.valid && data.discount) {
-        setCouponDiscount(Number(data.discount));
-        setCouponMsg(`ใช้ส่วนลดสำเร็จ: -฿${data.discount}`);
+      const res = await fetch('/api/admin/coupons');
+      if (res.ok) {
+        const coupons = await res.json();
+        const found = coupons.find(
+          (c: { code: string; is_active: boolean; discount_amount?: number; discount_percent?: number }) =>
+            c.code.toUpperCase() === couponCode.trim().toUpperCase() && c.is_active
+        );
+        if (found) {
+          let disc = 0;
+          if (found.discount_percent) {
+            disc = (basePrice * found.discount_percent) / 100;
+          } else if (found.discount_amount) {
+            disc = found.discount_amount;
+          }
+          setCouponDiscount(disc);
+          setCouponMsg(`ใช้โค้ดสำเร็จ ลด ฿${disc.toLocaleString()}`);
+        } else {
+          setCouponDiscount(0);
+          setCouponMsg('โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุ');
+        }
       } else {
         setCouponDiscount(0);
-        setCouponMsg(data.message ?? 'โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุ');
+        setCouponMsg('ไม่สามารถตรวจสอบโค้ดได้');
       }
     } catch {
-      setCouponMsg('ไม่สามารถตรวจสอบโค้ดส่วนลดได้');
+      setCouponDiscount(0);
+      setCouponMsg('เกิดข้อผิดพลาดในการตรวจสอบโค้ด');
     }
     setCheckingCoupon(false);
-  }
+  };
 
-  const canProceedToReview =
-    !!selectedPkg &&
-    game.game_fields.every((f) => !f.required || (playerData[f.name]?.trim() ?? '') !== '');
+  const handleNextToStep2 = () => {
+    setError(null);
+    if (!selectedPkg) {
+      setError('กรุณาเลือกแพ็กเกจ');
+      return;
+    }
+    for (const f of game.fields) {
+      if (f.required && !playerData[f.field_key]?.trim()) {
+        setError(`กรุณากรอก ${f.label}`);
+        return;
+      }
+    }
+    setStep(2);
+  };
 
-  async function handleConfirmOrder() {
+  const handleSubmitOrder = async () => {
     if (!acceptedTerms) {
       setTermsError(true);
       return;
     }
-    if (!pkg) return;
-
-    setError(null);
+    setTermsError(false);
     setLoading(true);
+    setError(null);
 
     try {
       const res = await fetch('/api/orders', {
@@ -101,39 +98,75 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           game_id: game.id,
-          product_id: pkg.id,
+          product_id: selectedPkg,
           player_data: playerData,
-          coupon_code: couponCode.trim() || undefined,
+          coupon_code: couponDiscount > 0 ? couponCode : undefined,
+          payment_method: paymentMethod,
         }),
       });
+
       const data = await res.json();
-      if (!data.success) {
-        setError(data.message ?? 'สร้างออเดอร์ไม่สำเร็จ');
+
+      if (!res.ok || !data.success) {
+        setError(data.message || 'สร้างคำสั่งซื้อไม่สำเร็จ');
         setLoading(false);
         return;
       }
 
-      setOrderNumber(data.order.order_number);
-      setFinalAmount(Number(data.order.total ?? totalPayable));
-      setTimeLeft(600);
-      setStep(3);
+      setOrderNumber(data.order_number || data.orderNumber || '');
+      setFinalAmount(totalPayable);
+      setStep(3); // Show Step 3 Modal (IMG_8202 style)
     } catch {
-      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่');
     }
     setLoading(false);
-  }
+  };
 
-  const qrImageSrc = `https://promptpay.io/0812345678/${finalAmount || totalPayable}.png`;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSlipFile(file);
+      const reader = new FileReader();
+      reader.onload = () => setSlipPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmitSlip = async () => {
+    if (!orderNumber || !slipFile) return;
+    setSubmittingSlip(true);
+    setSlipMsg(null);
+    try {
+      const res = await fetch('/api/orders/pay-slip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_number: orderNumber,
+          slip_image: slipPreview,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        router.push('/order-tracking');
+      } else {
+        setSlipMsg(data.message || 'ส่งสลิปไม่สำเร็จ');
+      }
+    } catch {
+      setSlipMsg('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    }
+    setSubmittingSlip(false);
+  };
 
   return (
-    <div className="w-full">
+    <div>
+      {/* Step 1: Selection */}
       {step === 1 && (
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/90 p-5 space-y-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-red-600 text-xs flex items-center justify-center font-bold">1</span>
-              เลือกแพ็กเกจที่ต้องการเติม
-            </h2>
+        <div className="space-y-8">
+          <div>
+            <h3 className="text-sm font-semibold text-zinc-300 mb-3 flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] font-bold text-white">1</span>
+              เลือกแพ็กเกจ
+            </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {game.products.map((p) => {
                 const isSelected = selectedPkg === p.id;
@@ -142,17 +175,17 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
                     key={p.id}
                     type="button"
                     onClick={() => setSelectedPkg(p.id)}
-                    className={`rounded-xl border p-3 text-left transition-all relative ${
+                    className={`relative rounded-xl border p-3.5 text-left transition ${
                       isSelected
-                        ? 'border-red-500 bg-red-950/30 ring-1 ring-red-500'
-                        : 'border-zinc-800 bg-zinc-950/50 hover:border-zinc-700'
+                        ? 'border-red-500 bg-red-600/10 text-white'
+                        : 'border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:border-zinc-700'
                     }`}
                   >
-                    <p className="font-semibold text-sm text-zinc-100">{p.name}</p>
-                    <p className="text-xs text-red-400 font-bold mt-1">฿{Number(p.price).toLocaleString()}</p>
+                    <div className="font-semibold text-sm">{p.name}</div>
+                    <div className="text-xs text-red-400 font-bold mt-1">฿{Number(p.price).toLocaleString()}</div>
                     {isSelected && (
-                      <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px]">
-                        ✓
+                      <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white">
+                        <Check className="h-2.5 w-2.5 stroke-[3]" />
                       </span>
                     )}
                   </button>
@@ -161,124 +194,95 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/90 p-5 space-y-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-red-600 text-xs flex items-center justify-center font-bold">2</span>
-              กรอกข้อมูลสำหรับเติมเกม
-            </h2>
+          <div>
+            <h3 className="text-sm font-semibold text-zinc-300 mb-3 flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] font-bold text-white">2</span>
+              ข้อมูลผู้เล่น
+            </h3>
             <div className="space-y-3">
-              {game.game_fields.map((f) => (
-                <div key={f.id} className="space-y-1">
-                  <label className="text-xs font-medium text-zinc-300 flex items-center gap-1">
-                    {f.label}
-                    {f.required && <span className="text-red-500">*</span>}
+              {game.fields.map((f) => (
+                <div key={f.id}>
+                  <label className="block text-xs text-zinc-400 mb-1">
+                    {f.label} {f.required && <span className="text-red-500">*</span>}
                   </label>
                   <input
-                    type={f.name.toLowerCase().includes('pass') ? 'password' : 'text'}
-                    placeholder={f.placeholder ?? f.label}
-                    value={playerData[f.name] ?? ''}
-                    onChange={(e) =>
-                      setPlayerData((prev) => ({ ...prev, [f.name]: e.target.value }))
-                    }
-                    className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-red-500"
+                    type={f.field_key.includes('pass') ? 'password' : 'text'}
+                    value={playerData[f.field_key] || ''}
+                    onChange={(e) => setPlayerData({ ...playerData, [f.field_key]: e.target.value })}
+                    placeholder={f.placeholder || `กรอก ${f.label}`}
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-red-500 focus:outline-none"
                   />
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/90 p-5 space-y-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-red-600 text-xs flex items-center justify-center font-bold">3</span>
+          <div>
+            <h3 className="text-sm font-semibold text-zinc-300 mb-3 flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] font-bold text-white">3</span>
               เลือกช่องทางชำระเงิน
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setPaymentMethod('promptpay')}
-                className={`rounded-xl border p-4 text-left flex items-center justify-between transition-all ${
+                className={`rounded-xl border p-3.5 text-center transition ${
                   paymentMethod === 'promptpay'
-                    ? 'border-red-500 bg-red-950/20 ring-1 ring-red-500'
-                    : 'border-zinc-800 bg-zinc-950/50 hover:border-zinc-700'
+                    ? 'border-red-500 bg-red-600/10 text-white'
+                    : 'border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700'
                 }`}
               >
-                <div>
-                  <p className="font-semibold text-sm text-zinc-100">QR PromptPay</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">สแกนจ่ายได้ทุกธนาคาร ไม่มีค่าธรรมเนียม</p>
-                </div>
-                {paymentMethod === 'promptpay' && <Check className="h-5 w-5 text-red-500" />}
+                <div className="font-semibold text-sm">พร้อมเพย์ QR</div>
+                <div className="text-[11px] text-zinc-500 mt-0.5">PromptPay</div>
               </button>
-
               <button
                 type="button"
                 onClick={() => setPaymentMethod('truemoney')}
-                className={`rounded-xl border p-4 text-left flex items-center justify-between transition-all ${
+                className={`rounded-xl border p-3.5 text-center transition ${
                   paymentMethod === 'truemoney'
-                    ? 'border-red-500 bg-red-950/20 ring-1 ring-red-500'
-                    : 'border-zinc-800 bg-zinc-950/50 hover:border-zinc-700'
+                    ? 'border-red-500 bg-red-600/10 text-white'
+                    : 'border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700'
                 }`}
               >
-                <div>
-                  <p className="font-semibold text-sm text-zinc-100">TrueMoney PromptPay</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">TrueMoney Wallet สแกนจ่าย ไม่มีค่าธรรมเนียม</p>
-                </div>
-                {paymentMethod === 'truemoney' && <Check className="h-5 w-5 text-red-500" />}
+                <div className="font-semibold text-sm">ทรูมันนี่ QR</div>
+                <div className="text-[11px] text-zinc-500 mt-0.5">TrueMoney QR</div>
               </button>
             </div>
           </div>
 
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl bg-red-600/15 border border-red-600/30 p-3 text-xs text-red-400">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <button
             type="button"
-            disabled={!canProceedToReview}
-            onClick={() => setStep(2)}
-            className="w-full rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 py-3 text-sm font-bold text-white shadow-lg transition-all"
+            onClick={handleNextToStep2}
+            className="w-full rounded-xl bg-red-600 hover:bg-red-700 py-3 text-sm font-bold text-white transition shadow-lg"
           >
             ไปที่หน้ารายละเอียดคำสั่งซื้อ
           </button>
         </div>
       )}
 
-      {step === 2 && pkg && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/95 overflow-hidden flex flex-col justify-between">
-            <div className="p-6 space-y-4">
-              <h2 className="text-center text-lg font-bold text-zinc-100 pb-2 border-b border-zinc-800">
-                เงื่อนไขการให้บริการ
-              </h2>
-              <ul className="text-sm text-zinc-300 space-y-3 leading-relaxed">
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>
-                    <strong className="text-white">กรุณาใส่เลข ID ให้ถูกต้อง</strong> ตัวอย่างการดูเลขอยู่ด้านข้างกดตรงเครื่องหมาย{' '}
-                    <Info className="inline h-4 w-4 text-zinc-400" />{' '}
-                    <span className="text-red-400 block mt-1 font-semibold">
-                      หากลูกค้ากรอกเลข ID มาผิด ทางเราจะไม่รับผิดชอบและไม่มีการคืนเงินใด ๆ ทั้งสิ้น
-                    </span>
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>
-                    หลังจากสั่งซื้อสำเร็จ จะขึ้นสถานะคำสั่งซื้อว่า <strong className="text-amber-400">รอดำเนินการ</strong> และ <strong className="text-emerald-400">สำเร็จ</strong> ตามลำดับ กรุณารอ 5 - 60 นาที ยอดเงินจะเข้าเกม
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>
-                    <strong className="text-white">ไม่มีการยกเลิกรายการ</strong> และไม่สามารถขอคืนเงินหรือเครดิตได้ หลังการทำรายการแล้ว
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>
-                    หากมีข้อสงสัยหรือเกิดปัญหา ให้แจ้งทางเจ้าหน้าที่ของเราผ่านช่องทางติดต่อบนหน้าเว็บไซต์ได้ทุกช่องทาง
-                  </span>
-                </li>
-              </ul>
-            </div>
+      {/* Step 2: Details & Terms */}
+      {step === 2 && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">เงื่อนไขการให้บริการ</h4>
+              <div className="h-56 overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs text-zinc-400 leading-relaxed space-y-2">
+                <p className="font-semibold text-zinc-300">1. การสั่งซื้อและการเติมเกม</p>
+                <p>กรุณาตรวจสอบความถูกต้องของ UID หรือ บัญชีผู้ใช้ ก่อนทำการสั่งซื้อ ทางร้านจะไม่รับผิดชอบหากกรอกข้อมูลผิดพลาด</p>
+                <p className="font-semibold text-zinc-300">2. ระยะเวลาดำเนินการ</p>
+                <p>การเติมเงินจะดำเนินการภายใน 5-15 นาทีหลังยืนยันการชำระเงินและแนบสลิปเรียบร้อย</p>
+                <p className="font-semibold text-zinc-300">3. นโยบายการคืนเงิน</p>
+                <p>หากการเติมเงินสำเร็จแล้ว จะไม่สามารถขอคืนเงินหรือยกเลิกคำสั่งซื้อได้ในทุกกรณี</p>
+              </div>
 
-            <div className="p-6 bg-zinc-950/60 border-t border-zinc-800">
-              <label className="flex items-center gap-3 cursor-pointer select-none">
+              <label className="flex items-start gap-2.5 cursor-pointer pt-2">
                 <input
                   type="checkbox"
                   checked={acceptedTerms}
@@ -286,191 +290,193 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
                     setAcceptedTerms(e.target.checked);
                     if (e.target.checked) setTermsError(false);
                   }}
-                  className="w-5 h-5 rounded text-red-600 border-zinc-600 focus:ring-red-500 bg-zinc-900"
+                  className="mt-0.5 h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-red-600 focus:ring-red-500"
                 />
-                <span className="text-sm font-semibold text-zinc-200">
-                  ฉันยอมรับเงื่อนไขการให้บริการ
+                <span className="text-xs text-zinc-300 select-none">
+                  ฉันยอมรับเงื่อนไขการให้บริการ <span className="text-red-500">*</span>
                 </span>
               </label>
+
+              {termsError && (
+                <p className="text-xs text-red-400 flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  กรุณากดยอมรับเงื่อนไขการให้บริการก่อนกดยืนยัน
+                </p>
+              )}
             </div>
-          </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/95 p-6 space-y-4">
-            <h2 className="text-lg font-bold text-zinc-100 pb-2 border-b border-zinc-800">
-              รายละเอียดคำสั่งซื้อ
-            </h2>
-
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between py-1">
-                <span className="text-zinc-400">เกม</span>
-                <span className="font-semibold text-white">{game.name}</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-zinc-400">สินค้า</span>
-                <span className="font-semibold text-white">{pkg.name}</span>
-              </div>
-
-              <div className="border-t border-zinc-800/80 pt-2 pb-1">
-                <p className="text-xs text-zinc-400 mb-1">ข้อมูลสำหรับเติมเกม</p>
-                {Object.entries(playerData).map(([key, val]) => (
-                  <div key={key} className="flex justify-between text-xs py-0.5">
-                    <span className="text-zinc-400 capitalize">{key}:</span>
-                    <span className="font-mono text-zinc-200 font-semibold">{val}</span>
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">สรุปรายการคำสั่งซื้อ</h4>
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 space-y-2.5 text-xs">
+                <div className="flex justify-between py-1 border-b border-zinc-800/80">
+                  <span className="text-zinc-400">เกม:</span>
+                  <span className="font-semibold text-white">{game.name}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-zinc-800/80">
+                  <span className="text-zinc-400">แพ็กเกจ:</span>
+                  <span className="font-semibold text-white">{selectedProduct?.name}</span>
+                </div>
+                {game.fields.map((f) => (
+                  <div key={f.id} className="flex justify-between py-1 border-b border-zinc-800/80">
+                    <span className="text-zinc-400">{f.label}:</span>
+                    <span className="font-mono text-zinc-200">
+                      {f.field_key.includes('pass') ? '••••••••' : playerData[f.field_key]}
+                    </span>
                   </div>
                 ))}
-              </div>
-
-              <div className="flex justify-between py-1 border-t border-zinc-800/80">
-                <span className="text-zinc-400">ช่องทางชำระเงิน</span>
-                <div className="text-right">
-                  <span className="font-semibold text-white block">
-                    {paymentMethod === 'truemoney' ? 'Truemoney PromptPay' : 'QR PromptPay'}
-                  </span>
-                  <span className="text-xs text-zinc-400">ไม่มีค่าธรรมเนียม</span>
+                <div className="flex justify-between py-1 border-b border-zinc-800/80">
+                  <span className="text-zinc-400">ช่องทางชำระเงิน:</span>
+                  <span className="text-white capitalize font-medium">{paymentMethod === 'promptpay' ? 'พร้อมเพย์ QR' : 'ทรูมันนี่ QR'}</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-zinc-400">ราคาปกติ:</span>
+                  <span className="text-white">฿{Number(basePrice).toLocaleString()}</span>
+                </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between py-1 text-emerald-400">
+                    <span>ส่วนลด:</span>
+                    <span>-฿{Number(couponDiscount).toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between pt-2 border-t border-zinc-800 text-sm font-bold">
+                  <span className="text-white">ยอดชำระสุทธิ:</span>
+                  <span className="text-red-400 font-black">฿{Number(totalPayable).toLocaleString()}</span>
                 </div>
               </div>
 
-              <div className="border-t border-zinc-800/80 pt-3">
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">โค้ดส่วนลด</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="กรอกโค้ดส่วนลด"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    className="flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs text-white uppercase outline-none focus:border-red-500"
+                    placeholder="กรอกโค้ดส่วนลด"
+                    className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white placeholder-zinc-500 uppercase focus:border-red-500 focus:outline-none"
                   />
                   <button
                     type="button"
+                    onClick={handleApplyCoupon}
                     disabled={checkingCoupon || !couponCode.trim()}
-                    onClick={applyCoupon}
-                    className="rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs px-3 py-1.5 text-white disabled:opacity-50"
+                    className="rounded-xl bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 px-3.5 py-2 text-xs font-semibold text-zinc-200"
                   >
-                    {checkingCoupon ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'ใช้โค้ด'}
+                    {checkingCoupon ? <Loader2 className="h-3 w-3 animate-spin" /> : 'ใช้โค้ด'}
                   </button>
                 </div>
                 {couponMsg && (
-                  <p className={`text-xs mt-1.5 ${couponDiscount > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <p className={`text-[11px] mt-1.5 ${couponDiscount > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
                     {couponMsg}
                   </p>
                 )}
               </div>
-
-              <div className="border-t border-zinc-800 pt-3 space-y-1.5">
-                <div className="flex justify-between text-zinc-400 text-xs">
-                  <span>รวมราคาสินค้า</span>
-                  <span>฿ {basePrice.toFixed(2)}</span>
-                </div>
-                {couponDiscount > 0 && (
-                  <div className="flex justify-between text-emerald-400 text-xs font-semibold">
-                    <span>ส่วนลด</span>
-                    <span>-฿ {couponDiscount.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-zinc-200 text-sm font-semibold">
-                  <span>ยอดรวม</span>
-                  <span>฿ {totalPayable.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-white text-base font-bold pt-1 border-t border-zinc-800/60">
-                  <span>ยอดต้องชำระ</span>
-                  <span className="text-red-400">฿ {totalPayable.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {termsError && !acceptedTerms && (
-                <div className="rounded-xl bg-red-950/40 border border-red-800/60 p-2.5 text-xs text-red-400 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>ท่านต้องกดยอมรับเงื่อนไขการให้บริการก่อนยืนยันการสั่งซื้อ</span>
-                </div>
-              )}
-
-              {error && (
-                <p className="text-xs text-red-400">{error}</p>
-              )}
-
-              <div className="space-y-2 pt-2">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={handleConfirmOrder}
-                  className="w-full rounded-xl bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 py-3 text-sm font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2"
-                >
-                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  ยืนยันการสั่งซื้อ
-                </button>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="rounded-xl border border-zinc-700 bg-zinc-950/50 hover:bg-zinc-800 py-2 text-xs font-semibold text-zinc-300"
-                  >
-                    ย้อนกลับ
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStep(1);
-                      setSelectedPkg(null);
-                      setPlayerData({});
-                    }}
-                    className="rounded-xl border border-zinc-700 bg-zinc-950/50 hover:bg-zinc-800 py-2 text-xs font-semibold text-zinc-400"
-                  >
-                    ยกเลิก
-                  </button>
-                </div>
-              </div>
             </div>
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl bg-red-600/15 border border-red-600/30 p-3 text-xs text-red-400">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="rounded-xl border border-zinc-700 hover:bg-zinc-800 px-5 py-3 text-xs font-semibold text-zinc-300 transition"
+            >
+              ย้อนกลับ
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={handleSubmitOrder}
+              className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 py-3 text-sm font-bold text-white transition shadow-lg flex items-center justify-center gap-2"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'ยืนยันการชำระเงิน'}
+            </button>
           </div>
         </div>
       )}
 
+      {/* Step 3: Exact UI from Image 2 (No 10-minute timer, Slip upload + Confirm) */}
       {step === 3 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-950 p-6 space-y-4 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-center font-bold text-lg text-white">
-              {paymentMethod === 'truemoney' ? 'Truemoney PromptPay' : 'QR PromptPay'}
-            </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl space-y-5">
+            <button
+              type="button"
+              onClick={() => router.push('/order-tracking')}
+              className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-white rounded-full bg-zinc-900 border border-zinc-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
 
-            <div className="flex justify-between items-center text-xs px-1">
-              <span className="font-mono text-zinc-400 font-semibold">{orderNumber}</span>
-              <div className="flex items-center gap-1 rounded-full bg-zinc-800/80 px-2.5 py-1 text-amber-400 font-mono font-bold">
-                <Clock className="h-3 w-3" />
-                <span>{formatTimer(timeLeft)}</span>
-              </div>
+            <div className="text-center space-y-1">
+              <span className="text-xs font-bold uppercase tracking-widest text-amber-500">สแกนชำระเงิน</span>
+              <h3 className="text-xl font-black text-white">พร้อมเพย์ / QR Payment</h3>
+              <p className="text-xs text-zinc-400 font-mono">ออเดอร์: {orderNumber}</p>
             </div>
 
-            <div className="flex justify-between items-center px-1 text-sm">
-              <span className="text-zinc-400">ยอดชำระเงิน</span>
-              <span className="text-base font-bold text-white">{finalAmount.toFixed(2)} บาท</span>
-            </div>
-
-            <div className="relative rounded-2xl bg-white p-4 flex flex-col items-center justify-center overflow-hidden shadow-inner">
+            <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white mx-auto w-fit shadow-inner">
               <img
-                src={qrImageSrc}
-                alt="QR Code สำหรับชำระเงิน"
-                className="w-56 h-56 object-contain"
+                src={`https://promptpay.io/0812345678/${finalAmount || totalPayable}.png`}
+                alt="QR Code"
+                className="w-48 h-48 object-contain"
               />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
-                <span className="text-center text-red-600 font-bold text-sm bg-white/80 px-2 py-1 rounded shadow">
-                  ใช้สำหรับเติมเกม<br />โปรดระวังมิจฉาชีพแอบอ้าง
-                </span>
+              <span className="text-[11px] font-bold text-zinc-800 mt-1">PromptPay QR</span>
+            </div>
+
+            <div className="text-center">
+              <p className="text-xs text-zinc-400">ยอดชำระสุทธิ</p>
+              <p className="text-2xl font-black text-red-400">฿{Number(finalAmount || totalPayable).toLocaleString()} บาท</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-zinc-300">
+                แนบรูปภาพสลิปการโอนเงิน (จำเป็น)
+              </label>
+              <div className="relative border-2 border-dashed border-zinc-700 hover:border-amber-500/80 rounded-2xl p-4 text-center cursor-pointer transition bg-zinc-900/50">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                {slipPreview ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <img src={slipPreview} alt="Slip Preview" className="w-12 h-12 object-cover rounded-lg border border-zinc-700" />
+                    <div className="text-left">
+                      <p className="text-xs font-medium text-emerald-400">เลือกรูปสลิปแล้ว</p>
+                      <p className="text-[10px] text-zinc-500">คลิกเพื่อเปลี่ยนรูป</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1.5 text-zinc-400">
+                    <UploadCloud className="w-6 h-6 text-amber-400" />
+                    <span className="text-xs font-medium">กดเพื่อเลือกรูปภาพสลิปจากเครื่อง</span>
+                    <span className="text-[10px] text-zinc-500">รองรับไฟล์ JPG, PNG</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex justify-center items-center gap-2 pt-1 text-[10px] text-zinc-400">
-              <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">ธนาคารทุกแห่ง</span>
-              <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">TrueMoney</span>
-              <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">PromptPay</span>
-            </div>
+            {slipMsg && <p className="text-center text-xs text-red-400">{slipMsg}</p>}
 
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => router.push('/account/orders')}
-                className="w-full rounded-xl border border-pink-600/50 hover:bg-pink-950/20 py-2.5 text-sm font-semibold text-pink-300 transition-all"
-              >
-                ปิด
-              </button>
-            </div>
+            <button
+              type="button"
+              disabled={!slipFile || submittingSlip}
+              onClick={handleSubmitSlip}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:hover:bg-amber-500 py-3 text-sm font-black text-black transition shadow-lg"
+            >
+              {submittingSlip ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  ยืนยันการชำระเงิน
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
