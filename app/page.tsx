@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { getActiveGames } from '@/lib/games/queries';
 import { getActivePromotions } from '@/lib/promotions/queries';
+import { getActiveBanners } from '@/lib/banners/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,7 @@ const FEATURES = [
 export default async function HomePage() {
   const games = await getActiveGames();
   const promotions = await getActivePromotions();
+  const banners = await getActiveBanners();
 
   return (
     <CustomerLayout>
@@ -70,6 +72,30 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {banners.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 -mt-4 pb-4">
+          <div className="grid sm:grid-cols-2 gap-3">
+            {banners.slice(0, 4).map((b) => (
+              <Link
+                key={b.id}
+                href={b.link_url || '/games'}
+                className="relative overflow-hidden rounded-2xl border border-red-900/30 bg-gradient-to-r from-red-950/60 to-zinc-900 p-5 sm:p-6 hover:border-red-600/50 transition group"
+              >
+                <p className="text-lg font-bold text-white group-hover:text-red-100">{b.title}</p>
+                {b.subtitle && (
+                  <p className="text-sm text-zinc-400 mt-1">{b.subtitle}</p>
+                )}
+                {b.button_text && (
+                  <span className="inline-flex mt-3 text-xs font-semibold text-red-400 group-hover:text-red-300">
+                    {b.button_text} →
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {promotions.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
