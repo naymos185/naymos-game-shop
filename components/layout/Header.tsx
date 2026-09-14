@@ -47,7 +47,7 @@ export async function Header() {
             <div className="flex flex-col">
               <span className="font-extrabold text-lg tracking-tight text-sky-950 flex items-center gap-1">
                 NayMos <span className="text-sky-500 font-black">GameShop</span>
-                <span className="text-xs">✨</span>
+                
               </span>
               <span className="text-[10px] text-sky-600 font-medium tracking-wide">
                 บริการเติมเกมออนไลน์ 100%
@@ -119,7 +119,7 @@ export async function Header() {
                 )}
                 {profile.role === 'reseller' && (
                   <span className="hidden sm:inline-flex items-center rounded-full bg-emerald-50 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-700 shadow-xs">
-                    🏷️ ตัวแทนจำหน่าย
+                    ตัวแทนจำหน่าย
                   </span>
                 )}
                 <LogoutButton />

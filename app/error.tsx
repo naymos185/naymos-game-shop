@@ -17,7 +17,7 @@ export default function Error({
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center p-6">
       <div className="max-w-md w-full text-center space-y-6">
-        <div className="text-6xl">⚠️</div>
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-black text-2xl mx-auto">!</div>
         <h1 className="text-2xl font-bold text-red-500">เกิดข้อผิดพลาด</h1>
         <p className="text-zinc-400">
           ขออภัย ระบบพบปัญหาชั่วคราว กรุณาลองใหม่อีกครั้ง

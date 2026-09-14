@@ -21,11 +21,11 @@ import { getActiveBanners } from '@/lib/banners/queries';
 export const dynamic = 'force-dynamic';
 
 const STEPS = [
-  { step: '1', title: 'เลือกเกม', desc: 'เลือกเกมที่ต้องการเติม', icon: '🎮' },
-  { step: '2', title: 'เลือกแพ็ก', desc: 'เลือกจำนวนเพชร/คูปอง', icon: '💎' },
-  { step: '3', title: 'กรอกข้อมูล', desc: 'ใส่ UID / Player ID ของคุณ', icon: '📝' },
-  { step: '4', title: 'ชำระเงิน', desc: 'สแกน QR PromptPay หรือ TrueMoney', icon: '💳' },
-  { step: '5', title: 'รับไอเทม', desc: 'ระบบเติมให้อัตโนมัติในไม่กี่นาที', icon: '✨' },
+  { step: '1', title: 'เลือกเกม', desc: 'เลือกเกมที่ต้องการเติม', icon: '1' },
+  { step: '2', title: 'เลือกแพ็ก', desc: 'เลือกจำนวนเพชร/คูปอง', icon: '2' },
+  { step: '3', title: 'กรอกข้อมูล', desc: 'ใส่ UID / Player ID ของคุณ', icon: '3' },
+  { step: '4', title: 'ชำระเงิน', desc: 'สแกน QR PromptPay หรือ TrueMoney', icon: '4' },
+  { step: '5', title: 'รับไอเทม', desc: 'ระบบเติมให้อัตโนมัติในไม่กี่นาที', icon: '5' },
 ];
 
 const FEATURES = [
@@ -86,7 +86,7 @@ export default async function HomePage() {
               </div>
               <div className="text-center sm:text-left">
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center justify-center sm:justify-start gap-1.5">
-                  บริการเติมเกมออนไลน์ <span className="text-sky-500">NayMos GameShop</span> ✨
+                  บริการเติมเกมออนไลน์ <span className="text-sky-500">NayMos GameShop</span>
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium">
                   เติมง่าย สะดวก ปลอดภัย 100% ราคาคุ้มค่า ดูแลทุกออเดอร์
@@ -147,7 +147,7 @@ export default async function HomePage() {
         <section className="mx-auto max-w-7xl px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
-              <span className="text-sky-500">🎁</span> โปรโมชันสุดคุ้ม
+              โปรโมชันสุดคุ้ม
             </h2>
             <Link href="/promotions" className="text-xs sm:text-sm font-bold text-sky-600 hover:text-sky-700">
               ดูทั้งหมด →
@@ -184,7 +184,7 @@ export default async function HomePage() {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
         <div className="text-center max-w-2xl mx-auto mb-8">
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-bold mb-2">
-            ✨ ทำไมต้องเติมกับเรา
+            ทำไมต้องเติมกับเรา
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
             บริการเติมเกมที่เชื่อถือได้มากที่สุด
@@ -218,7 +218,7 @@ export default async function HomePage() {
         <div className="rounded-3xl bg-white border border-sky-100 p-6 sm:p-10 shadow-xs">
           <div className="text-center max-w-xl mx-auto mb-8">
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-bold mb-2">
-              💙 ง่ายใน 5 ขั้นตอน
+              ง่ายใน 5 ขั้นตอน
             </span>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900">
               ขั้นตอนการเติมเกมกับ NayMos
@@ -247,7 +247,7 @@ export default async function HomePage() {
         <div className="rounded-3xl bg-gradient-to-r from-sky-400 via-sky-500 to-blue-600 p-8 sm:p-12 text-center text-white relative overflow-hidden shadow-lg shadow-sky-200">
           <div className="relative z-10 max-w-xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-black mb-2">
-              พร้อมเติมเกมกับเราแล้วหรือยัง? ✨
+              พร้อมเติมเกมกับเราแล้วหรือยัง?
             </h2>
             <p className="text-sky-100 text-xs sm:text-sm mb-6 leading-relaxed">
               สมัครง่าย เติมไว ไม่ต้องใช้รหัสผ่าน พร้อมรับสิทธิ์ราคาพิเศษสำหรับสมาชิก
@@ -257,7 +257,7 @@ export default async function HomePage() {
                 href="/games"
                 className="rounded-full bg-white hover:bg-sky-50 text-sky-700 px-8 py-3.5 font-bold text-sm shadow-md transition"
               >
-                เริ่มเติมเกมเลย 🎮
+                เริ่มเติมเกมเลย
               </Link>
               <Link
                 href="/register"

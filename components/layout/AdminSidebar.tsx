@@ -48,7 +48,7 @@ export function AdminSidebar() {
     <aside className="w-56 shrink-0 border-r border-slate-800 bg-zinc-900 hidden lg:flex flex-col">
       <div className="p-4 border-b border-slate-800">
         <Link href="/admin" className="flex items-center gap-2">
-          <span className="text-lg">⚙️</span>
+          
           <span className="font-bold text-sm">
             <span className="text-red-500">Admin</span> Panel
           </span>
