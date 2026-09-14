@@ -24,6 +24,8 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
   const [copied, setCopied] = useState(false);
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletMsg, setWalletMsg] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletLoggedIn, setWalletLoggedIn] = useState(false);
   const [store, setStore] = useState({
     promptpay_id: '',
     account_name: 'NayMos GameShop',
@@ -41,6 +43,15 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
             account_name: j.settings.account_name || 'NayMos GameShop',
             bank_name: j.settings.bank_name || 'พร้อมเพย์',
           });
+        }
+      })
+      .catch(() => {});
+    void fetch('/api/wallet/balance')
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success) {
+          setWalletLoggedIn(Boolean(j.loggedIn));
+          setWalletBalance(j.loggedIn ? Number(j.balance ?? 0) : null);
         }
       })
       .catch(() => {});
@@ -222,7 +233,16 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
 
       <div className="rounded-2xl border border-emerald-900/40 bg-emerald-950/20 p-4 space-y-2">
         <p className="text-sm text-zinc-300 font-medium">ชำระด้วย Wallet (สมาชิก)</p>
-        <p className="text-xs text-zinc-500">ต้องล็อกอินและมียอดเครดิตพอ · Admin เติมได้ที่หลังบ้าน</p>
+        {walletLoggedIn ? (
+          <p className="text-xs text-zinc-400">
+            เครดิตคงเหลือ{' '}
+            <span className="text-emerald-400 font-semibold">
+              ฿{(walletBalance ?? 0).toLocaleString()}
+            </span>
+          </p>
+        ) : (
+          <p className="text-xs text-zinc-500">ต้องล็อกอินและมียอดเครดิตพอ · Admin เติมได้ที่หลังบ้าน</p>
+        )}
         <button
           type="button"
           disabled={walletLoading}
@@ -240,6 +260,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
                 setWalletMsg(json.message ?? 'ไม่สำเร็จ');
               } else {
                 setWalletMsg('ชำระด้วย Wallet สำเร็จ');
+                if (typeof json.balance === 'number') setWalletBalance(json.balance);
                 await load();
               }
             } catch {
