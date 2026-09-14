@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { providerManager } from '@/lib/providers/provider-manager';
+import { awardPointsForOrder } from '@/lib/points/queries';
 
 export type ProcessTopupResult = {
   success: boolean;
@@ -10,7 +11,6 @@ export type ProcessTopupResult = {
 
 /**
  * After payment is confirmed (PAID), call top-up provider and update order.
- * Phase 7 uses MockProvider. Replace with real provider later.
  */
 export async function processTopupForOrder(
   orderNumber: string
@@ -23,7 +23,7 @@ export async function processTopupForOrder(
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .select(
-      'id, order_number, status, product_id, player_data, total, provider_transaction_id'
+      'id, order_number, status, product_id, player_data, total, provider_transaction_id, user_id'
     )
     .eq('order_number', num)
     .maybeSingle();
@@ -98,6 +98,14 @@ export async function processTopupForOrder(
         updated_at: new Date().toISOString(),
       })
       .eq('id', order.id);
+
+    if (order.user_id) {
+      try {
+        await awardPointsForOrder(order.id);
+      } catch {
+        /* best-effort */
+      }
+    }
 
     return {
       success: true,
