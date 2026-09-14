@@ -26,7 +26,7 @@ export default async function AdminProductsPage() {
       <div>
         <h1 className="text-xl font-bold">Products</h1>
         <p className="text-sm text-zinc-500">
-          แยกตามเกม · {products.length} แพ็ก · แก้ไขตัวเลขแล้วคลิกออกข้างนอกเพื่อบันทึก
+          แยกตามเกม · {products.length} แพ็ก · แก้ไขราคาหรือราคาส่งแล้วคลิกออกข้างนอกเพื่อบันทึก
         </p>
       </div>
 
@@ -48,35 +48,52 @@ export default async function AdminProductsPage() {
                 <span className="text-zinc-500 font-normal">({items.length} แพ็ก)</span>
               </h2>
               <div className="rounded-xl border border-zinc-800 overflow-x-auto">
-                <table className="w-full text-sm min-w-[720px] table-fixed">
+                <table className="w-full text-sm min-w-[800px] table-fixed">
                   <thead className="bg-zinc-900 text-zinc-400 text-left">
                     <tr>
-                      <th className="w-[30%] px-4 py-2.5 font-medium">แพ็กเกจ</th>
-                      <th className="w-[15%] px-4 py-2.5 font-medium">กำไร</th>
-                      <th className="w-[55%] px-4 py-2.5 font-medium">จัดการราคา / สถานะ</th>
+                      <th className="w-[28%] px-4 py-2.5 font-medium">แพ็กเกจ</th>
+                      <th className="w-[14%] px-4 py-2.5 font-medium">กำไรปกติ</th>
+                      <th className="w-[14%] px-4 py-2.5 font-medium">กำไรตัวแทน</th>
+                      <th className="w-[44%] px-4 py-2.5 font-medium">ราคา / ต้นทุน / ราคาส่ง / จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800">
-                    {items.map((p) => (
-                      <tr key={p.id} className="bg-zinc-950/50 hover:bg-zinc-900/50">
-                        <td className="px-4 py-3 text-zinc-200 font-medium truncate" title={p.name}>
-                          {p.name}
-                        </td>
-                        <td className="px-4 py-3 text-emerald-400 text-xs font-semibold whitespace-nowrap">
-                          ฿{(p.price - p.cost).toLocaleString()}
-                        </td>
-                        <td className="px-4 py-3">
-                          <ProductRowActions
-                            id={p.id}
-                            name={p.name}
-                            price={p.price}
-                            cost={p.cost}
-                            reseller_price={p.reseller_price}
-                            is_active={p.is_active}
-                          />
-                        </td>
-                      </tr>
-                    ))}
+                    {items.map((p) => {
+                      const normalProfit = p.price - p.cost;
+                      const resellerProfit = p.reseller_price != null ? (p.reseller_price - p.cost) : null;
+
+                      return (
+                        <tr key={p.id} className="bg-zinc-950/50 hover:bg-zinc-900/50">
+                          <td className="px-4 py-3 text-zinc-200 font-medium truncate" title={p.name}>
+                            {p.name}
+                          </td>
+                          <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap">
+                            <span className={normalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                              ฿{normalProfit.toLocaleString()}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap">
+                            {resellerProfit != null ? (
+                              <span className={resellerProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                                ฿{resellerProfit.toLocaleString()}
+                              </span>
+                            ) : (
+                              <span className="text-zinc-500 font-normal">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <ProductRowActions
+                              id={p.id}
+                              name={p.name}
+                              price={p.price}
+                              cost={p.cost}
+                              reseller_price={p.reseller_price}
+                              is_active={p.is_active}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
