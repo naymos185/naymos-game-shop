@@ -185,7 +185,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
         <div className="space-y-8">
           <div>
             <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-[11px] font-bold text-white">1</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold text-sky-700 border border-sky-300">1</span>
               เลือกแพ็กเกจ
             </h3>
             {products.length === 0 ? (
@@ -220,7 +220,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                         )}
                       </div>
                       {isSelected && (
-                        <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-sky-500 text-white">
+                        <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-sky-100 text-sky-700 border border-sky-300">
                           <Check className="h-2.5 w-2.5 stroke-[3]" />
                         </span>
                       )}
@@ -233,7 +233,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
 
           <div>
             <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-[11px] font-bold text-white">2</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold text-sky-700 border border-sky-300">2</span>
               ข้อมูลผู้เล่น
             </h3>
             <div className="space-y-3">
@@ -249,7 +249,8 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                       value={playerData[key] || ''}
                       onChange={(e) => setPlayerData({ ...playerData, [key]: e.target.value })}
                       placeholder={f.placeholder || `กรอก ${f.label}`}
-                      className="w-full rounded-xl border border-sky-100 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-sky-500 focus:outline-none"
+                      style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
+                      className="w-full rounded-xl border-2 border-sky-200 bg-white px-3.5 py-2.5 text-sm font-semibold !text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-200/50 focus:outline-none"
                     />
                   </div>
                 );
@@ -259,7 +260,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
 
           <div>
             <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-[11px] font-bold text-white">3</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold text-sky-700 border border-sky-300">3</span>
               เลือกช่องทางชำระเงิน
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -267,25 +268,21 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                 type="button"
                 onClick={() => setPaymentMethod('promptpay')}
                 className={`rounded-xl border p-3.5 text-center transition ${
-                  paymentMethod === 'promptpay'
-                    ? 'border-2 border-sky-500 bg-sky-50 text-slate-900 shadow-xs'
-                    : 'border-sky-100 bg-white/50 text-slate-500 hover:border-sky-200'
+                  paymentMethod === 'promptpay' ? 'border-2 border-sky-500 bg-sky-100/70 text-sky-900 shadow-sm ring-2 ring-sky-300' : 'border-sky-100 bg-white text-slate-600 hover:border-sky-200'
                 }`}
               >
-                <div className="font-bold text-sm text-slate-800">พร้อมเพย์ QR</div>
-                <div className="text-[11px] text-sky-600 font-semibold mt-0.5">PromptPay</div>
+                <div className="font-bold text-sm text-sky-800">พร้อมเพย์ QR</div>
+                <div className="text-xs text-sky-600 font-bold mt-0.5">PromptPay</div>
               </button>
               <button
                 type="button"
                 onClick={() => setPaymentMethod('truemoney')}
                 className={`rounded-xl border p-3.5 text-center transition ${
-                  paymentMethod === 'truemoney'
-                    ? 'border-2 border-sky-500 bg-sky-50 text-slate-900 shadow-xs'
-                    : 'border-sky-100 bg-white/50 text-slate-500 hover:border-sky-200'
+                  paymentMethod === 'truemoney' ? 'border-2 border-amber-500 bg-amber-50 text-amber-900 shadow-sm ring-2 ring-amber-300' : 'border-sky-100 bg-white text-slate-600 hover:border-sky-200'
                 }`}
               >
-                <div className="font-bold text-sm text-slate-800">ทรูมันนี่ QR</div>
-                <div className="text-[11px] text-sky-600 font-semibold mt-0.5">TrueMoney QR</div>
+                <div className="font-bold text-sm text-amber-800">ทรูมันนี่ QR</div>
+                <div className="text-xs text-amber-600 font-bold mt-0.5">TrueMoney QR</div>
               </button>
             </div>
           </div>
@@ -395,7 +392,8 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="กรอกโค้ดส่วนลด"
-                    className="flex-1 rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-slate-800 placeholder-slate-400 uppercase focus:border-sky-500 focus:outline-none"
+                    style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
+                    className="flex-1 rounded-xl border-2 border-sky-200 bg-white px-3 py-2 text-xs font-semibold !text-slate-900 placeholder:text-slate-400 uppercase focus:border-sky-500 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -456,7 +454,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
 
             <div className="text-center space-y-1">
               <span className="text-xs font-bold uppercase tracking-widest text-amber-500">สแกนชำระเงิน</span>
-              <h3 className="text-xl font-black text-slate-900">พร้อมเพย์ / QR Payment</h3>
+              <h3 className="text-xl font-black text-sky-900">พร้อมเพย์ / QR Payment</h3>
               <p className="text-xs text-slate-500 font-mono">ออเดอร์: {orderNumber}</p>
             </div>
 
@@ -466,7 +464,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                 alt="QR Code"
                 className="w-48 h-48 object-contain"
               />
-              <span className="text-[11px] font-bold text-zinc-800 mt-1">PromptPay QR</span>
+              <span className="text-xs font-bold text-sky-700 mt-1">PromptPay QR</span>
             </div>
 
             <div className="text-center">
