@@ -105,7 +105,7 @@ export default async function AccountOrdersPage() {
                       <p className="text-xs text-zinc-400">
                         {gName} · {pName}
                       </p>
-                      <p className="text-[11px] text-zinc-500">
+                      <p suppressHydrationWarning className="text-[11px] text-zinc-500">
                         {new Date(o.created_at).toLocaleString('th-TH')}
                       </p>
                     </div>
