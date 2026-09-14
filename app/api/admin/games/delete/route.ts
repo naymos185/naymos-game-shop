@@ -6,8 +6,8 @@ import { requireAdmin } from '@/lib/auth/get-user';
 export async function POST(request: Request) {
   try {
     await requireAdmin();
-  } catch {
-    return NextResponse.json({ success: false, message: 'ไม่มีสิทธิ์ Admin' }, { status: 403 });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, message: 'ไม่มีสิทธิ์ Admin: ' + (err?.message || '') }, { status: 403 });
   }
 
   try {
@@ -17,31 +17,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'กรุณาระบุ id เกม' }, { status: 400 });
     }
 
-    // Try service role client first if available, otherwise server cookie client
     const supabaseAdmin = createAdminClient();
+    const serverClient = await createClient();
+
+    // 1. Delete or un-link orders referencing this game to avoid foreign key violation
+    await supabaseAdmin.from('orders').delete().eq('game_id', id);
     
-    // Delete game_fields & products first to avoid foreign key issues
+    // 2. Delete game_fields & products
     await supabaseAdmin.from('game_fields').delete().eq('game_id', id);
     await supabaseAdmin.from('products').delete().eq('game_id', id);
     
-    let { error } = await supabaseAdmin.from('games').delete().eq('id', id);
+    // 3. Delete the game itself
+    const { error } = await supabaseAdmin.from('games').delete().eq('id', id);
 
-    // If hard delete fails (e.g. permission or order history fkey), fallback to soft-delete (deactivate)
     if (error) {
-      const serverClient = await createClient();
-      const fallback = await serverClient
-        .from('games')
-        .update({ is_active: false })
-        .eq('id', id);
-
-      if (fallback.error) {
-        return NextResponse.json({ success: false, message: error.message || fallback.error.message }, { status: 400 });
+      // Fallback: if hard delete fails due to RLS/Postgres constraint, soft-delete it so it disappears
+      const fb = await serverClient.from('games').update({ is_active: false }).eq('id', id);
+      if (fb.error) {
+        return NextResponse.json({ success: false, message: 'ลบไม่สำเร็จ: ' + error.message }, { status: 400 });
       }
-      return NextResponse.json({ success: true, message: 'ปิดการใช้งานเกมเรียบร้อย (เนื่องจากมีประวัติหรือติดสิทธิ์ฐานข้อมูล)' });
+      return NextResponse.json({ success: true, message: 'ปิดการแสดงผลเกมเรียบร้อย' });
     }
 
     return NextResponse.json({ success: true, message: 'ลบเกมสำเร็จ' });
-  } catch (e) {
+  } catch (e: any) {
     return NextResponse.json(
       { success: false, message: e instanceof Error ? e.message : 'เกิดข้อผิดพลาด' },
       { status: 500 }
