@@ -3,14 +3,22 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 export function ProcessTopupButton({ orderNumber }: { orderNumber: string }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function onClick() {
-    if (!confirm(`รันเติมเกมสำหรับ ${orderNumber}?`)) return;
+    const ok = await confirm({
+      title: 'เริ่มเติมเกม',
+      description: `รันเติมเกมสำหรับออเดอร์ ${orderNumber}?`,
+      confirmText: 'เริ่มเติมเกม',
+      tone: 'default',
+    });
+    if (!ok) return;
     setLoading(true);
     setMsg(null);
     try {
