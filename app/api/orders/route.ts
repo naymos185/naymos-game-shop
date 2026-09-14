@@ -11,6 +11,7 @@ export async function POST(request: Request) {
       player_data: (body.player_data ?? {}) as Record<string, string>,
       contact_email: body.contact_email ? String(body.contact_email) : undefined,
       contact_phone: body.contact_phone ? String(body.contact_phone) : undefined,
+      coupon_code: body.coupon_code ? String(body.coupon_code) : undefined,
     });
 
     if (!result.success) {
