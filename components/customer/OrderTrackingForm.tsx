@@ -62,9 +62,9 @@ export function OrderTrackingForm() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={onSubmit} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 space-y-4">
+      <form onSubmit={onSubmit} className="rounded-2xl border border-sky-100 bg-white p-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1.5">
+          <label className="block text-sm font-medium text-slate-600 mb-1.5">
             หมายเลขออเดอร์
           </label>
           <input
@@ -72,13 +72,13 @@ export function OrderTrackingForm() {
             value={number}
             onChange={(e) => setNumber(e.target.value.toUpperCase())}
             placeholder="เช่น NM-20260912-XXXX"
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-mono outline-none focus:border-red-500"
+            className="w-full rounded-xl border border-sky-200 bg-sky-50/50 px-4 py-3 text-sm font-mono outline-none focus:border-red-500"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-zinc-700 py-3 font-semibold text-white transition flex items-center justify-center gap-2"
+          className="w-full rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-500 hover:to-blue-700 disabled:bg-zinc-700 py-3 font-semibold text-white transition flex items-center justify-center gap-2"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {loading ? 'กำลังค้นหา...' : 'ค้นหา'}
@@ -92,7 +92,7 @@ export function OrderTrackingForm() {
       )}
 
       {order && (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 space-y-3 text-sm">
+        <div className="rounded-2xl border border-sky-100 bg-white p-6 space-y-3 text-sm">
           <div className="flex items-center justify-between gap-3">
             <span className="text-zinc-500">หมายเลข</span>
             <span className="font-mono font-bold text-white">{order.order_number}</span>
@@ -117,10 +117,10 @@ export function OrderTrackingForm() {
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-zinc-500">สร้างเมื่อ</span>
-            <span className="text-zinc-300">{new Date(order.created_at).toLocaleString('th-TH')}</span>
+            <span className="text-slate-600">{new Date(order.created_at).toLocaleString('th-TH')}</span>
           </div>
           {order.player_data && Object.keys(order.player_data).length > 0 && (
-            <div className="pt-2 border-t border-zinc-800">
+            <div className="pt-2 border-t border-sky-100">
               <p className="text-zinc-500 mb-2">ข้อมูลผู้เล่น</p>
               {Object.entries(order.player_data).map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-2 py-0.5">

@@ -124,12 +124,12 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
 
   if (orders.length === 0) {
     return (
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-10 text-center">
-        <div className="mx-auto w-12 h-12 rounded-full bg-zinc-800/80 flex items-center justify-center text-zinc-400 mb-3">
+      <div className="rounded-2xl border border-sky-100 bg-white/60 p-10 text-center">
+        <div className="mx-auto w-12 h-12 rounded-full bg-zinc-800/80 flex items-center justify-center text-slate-500 mb-3">
           <Clock className="w-6 h-6" />
         </div>
         <h3 className="text-lg font-bold text-white mb-1">ไม่มีออเดอร์ที่รอดำเนินการ</h3>
-        <p className="text-sm text-zinc-400 mb-6">
+        <p className="text-sm text-slate-500 mb-6">
           คุณไม่มีคำสั่งซื้อที่ค้างอยู่ หรือออเดอร์ได้รับการยืนยันและย้ายไปที่หน้าประวัติแล้ว
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -141,7 +141,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
           </Link>
           <Link
             href="/account/orders"
-            className="rounded-xl border border-zinc-700 hover:bg-zinc-800 px-5 py-2.5 text-sm font-medium text-zinc-300 transition"
+            className="rounded-xl border border-zinc-700 hover:bg-zinc-800 px-5 py-2.5 text-sm font-medium text-slate-600 transition"
           >
             ดูประวัติทั้งหมด
           </Link>
@@ -160,7 +160,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
         return (
           <div
             key={o.id}
-            className="rounded-2xl border border-zinc-800 bg-zinc-900/90 p-5 shadow-lg transition-all hover:border-zinc-700"
+            className="rounded-2xl border border-sky-100 bg-white/90 p-5 shadow-lg transition-all hover:border-zinc-700"
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1.5">
@@ -190,7 +190,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
                 </div>
 
                 <p className="text-sm font-medium text-zinc-200">
-                  {o.game_name || 'เกม'} · <span className="text-zinc-400">{o.product_name || 'แพ็กเกจ'}</span>
+                  {o.game_name || 'เกม'} · <span className="text-slate-500">{o.product_name || 'แพ็กเกจ'}</span>
                 </p>
 
                 <p suppressHydrationWarning className="text-xs text-zinc-500">
@@ -199,7 +199,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
               </div>
 
               {/* Action buttons & Price */}
-              <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-3 sm:pt-0 border-t border-zinc-800/80 sm:border-0">
+              <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-3 sm:pt-0 border-t border-sky-100/80 sm:border-0">
                 <div className="text-left sm:text-right">
                   <span className="text-xs text-zinc-500 block">ยอดรวม</span>
                   <span className="text-lg font-black text-red-400">฿{Number(o.total).toLocaleString()}</span>
@@ -241,7 +241,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
                   )}
 
                   {isProcessing && (
-                    <span className="inline-block text-xs font-medium text-zinc-400 bg-zinc-800/80 rounded-lg px-3 py-1.5">
+                    <span className="inline-block text-xs font-medium text-slate-500 bg-zinc-800/80 rounded-lg px-3 py-1.5">
                       กำลังเติม กรุณารอสักครู่...
                     </span>
                   )}
@@ -273,11 +273,11 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
       {/* QR & Slip Upload Modal */}
       {payingOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl space-y-5">
+          <div className="relative w-full max-w-md rounded-3xl border border-sky-100 bg-sky-50/50 p-6 shadow-2xl space-y-5">
             <button
               type="button"
               onClick={() => setPayingOrder(null)}
-              className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-white rounded-full bg-zinc-900 border border-zinc-800"
+              className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white rounded-full bg-white border border-sky-100"
             >
               <X className="w-4 h-4" />
             </button>
@@ -285,7 +285,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
             <div className="text-center space-y-1">
               <span className="text-xs font-bold uppercase tracking-widest text-amber-500">สแกนชำระเงิน</span>
               <h3 className="text-xl font-black text-white">พร้อมเพย์ / QR Payment</h3>
-              <p className="text-xs text-zinc-400 font-mono">ออเดอร์: {payingOrder.order_number}</p>
+              <p className="text-xs text-slate-500 font-mono">ออเดอร์: {payingOrder.order_number}</p>
             </div>
 
             {/* QR Code */}
@@ -299,16 +299,16 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
             </div>
 
             <div className="text-center">
-              <p className="text-xs text-zinc-400">ยอดชำระสุทธิ</p>
+              <p className="text-xs text-slate-500">ยอดชำระสุทธิ</p>
               <p className="text-2xl font-black text-red-400">฿{Number(payingOrder.total).toLocaleString()} บาท</p>
             </div>
 
             {/* Slip Upload Box */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-zinc-300">
+              <label className="block text-xs font-semibold text-slate-600">
                 แนบรูปภาพสลิปการโอนเงิน (จำเป็น)
               </label>
-              <div className="relative border-2 border-dashed border-zinc-700 hover:border-amber-500/80 rounded-2xl p-4 text-center cursor-pointer transition bg-zinc-900/50">
+              <div className="relative border-2 border-dashed border-zinc-700 hover:border-amber-500/80 rounded-2xl p-4 text-center cursor-pointer transition bg-white/50">
                 <input
                   type="file"
                   accept="image/*"
@@ -324,7 +324,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-1.5 text-zinc-400">
+                  <div className="flex flex-col items-center gap-1.5 text-slate-500">
                     <UploadCloud className="w-6 h-6 text-amber-400" />
                     <span className="text-xs font-medium">กดเพื่อเลือกรูปภาพสลิปจากเครื่อง</span>
                     <span className="text-[10px] text-zinc-500">รองรับไฟล์ JPG, PNG</span>

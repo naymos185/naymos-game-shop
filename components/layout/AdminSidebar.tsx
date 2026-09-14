@@ -45,8 +45,8 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 shrink-0 border-r border-zinc-800 bg-zinc-900 hidden lg:flex flex-col">
-      <div className="p-4 border-b border-zinc-800">
+    <aside className="w-56 shrink-0 border-r border-slate-800 bg-zinc-900 hidden lg:flex flex-col">
+      <div className="p-4 border-b border-slate-800">
         <Link href="/admin" className="flex items-center gap-2">
           <span className="text-lg">⚙️</span>
           <span className="font-bold text-sm">
@@ -78,7 +78,7 @@ export function AdminSidebar() {
           );
         })}
       </nav>
-      <div className="p-3 border-t border-zinc-800">
+      <div className="p-3 border-t border-slate-800">
         <Link
           href="/"
           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-500 hover:text-zinc-300 transition"

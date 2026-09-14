@@ -184,12 +184,12 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
       {step === 1 && (
         <div className="space-y-8">
           <div>
-            <h3 className="text-sm font-semibold text-zinc-300 mb-3 flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] font-bold text-white">1</span>
+            <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-[11px] font-bold text-white">1</span>
               เลือกแพ็กเกจ
             </h3>
             {products.length === 0 ? (
-              <p className="text-xs text-zinc-500">ยังไม่มีแพ็กเกจในเกมนี้ (เพิ่มได้ในหน้าจัดการสินค้าหลังบ้าน)</p>
+              <p className="text-xs text-slate-400">ยังไม่มีแพ็กเกจในเกมนี้ (เพิ่มได้ในหน้าจัดการสินค้าหลังบ้าน)</p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {products.map((p: any) => {
@@ -201,8 +201,8 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                       onClick={() => setSelectedPkg(p.id)}
                       className={`relative rounded-xl border p-3.5 text-left transition ${
                         isSelected
-                          ? 'border-red-500 bg-red-600/10 text-white'
-                          : 'border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:border-zinc-700'
+                          ? 'border-sky-500 bg-sky-500/10 text-white'
+                          : 'border-sky-100 bg-white/50 text-slate-600 hover:border-sky-200'
                       }`}
                     >
                       <div className="font-semibold text-sm">{p.name}</div>
@@ -212,15 +212,15 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                             <span className="inline-block text-[10px] text-emerald-400 font-medium">ราคาส่งตัวแทน</span>
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs text-emerald-400 font-bold">฿{Number(p.reseller_price).toLocaleString()}</span>
-                              <span className="text-[11px] text-zinc-500 line-through">฿{Number(p.price).toLocaleString()}</span>
+                              <span className="text-[11px] text-slate-400 line-through">฿{Number(p.price).toLocaleString()}</span>
                             </div>
                           </div>
                         ) : (
-                          <div className="text-xs text-red-400 font-bold">฿{Number(p.price).toLocaleString()}</div>
+                          <div className="text-xs text-sky-600 font-bold">฿{Number(p.price).toLocaleString()}</div>
                         )}
                       </div>
                       {isSelected && (
-                        <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white">
+                        <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-sky-500 text-white">
                           <Check className="h-2.5 w-2.5 stroke-[3]" />
                         </span>
                       )}
@@ -232,8 +232,8 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-zinc-300 mb-3 flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] font-bold text-white">2</span>
+            <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-[11px] font-bold text-white">2</span>
               ข้อมูลผู้เล่น
             </h3>
             <div className="space-y-3">
@@ -241,15 +241,15 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                 const key = f.name || f.field_key || 'uid';
                 return (
                   <div key={f.id || key}>
-                    <label className="block text-xs text-zinc-400 mb-1">
-                      {f.label} {f.required && <span className="text-red-500">*</span>}
+                    <label className="block text-xs text-slate-500 mb-1">
+                      {f.label} {f.required && <span className="text-sky-600">*</span>}
                     </label>
                     <input
                       type={key.includes('pass') ? 'password' : 'text'}
                       value={playerData[key] || ''}
                       onChange={(e) => setPlayerData({ ...playerData, [key]: e.target.value })}
                       placeholder={f.placeholder || `กรอก ${f.label}`}
-                      className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-red-500 focus:outline-none"
+                      className="w-full rounded-xl border border-sky-100 bg-white px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-sky-500 focus:outline-none"
                     />
                   </div>
                 );
@@ -258,8 +258,8 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-zinc-300 mb-3 flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] font-bold text-white">3</span>
+            <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-[11px] font-bold text-white">3</span>
               เลือกช่องทางชำระเงิน
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -268,30 +268,30 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                 onClick={() => setPaymentMethod('promptpay')}
                 className={`rounded-xl border p-3.5 text-center transition ${
                   paymentMethod === 'promptpay'
-                    ? 'border-red-500 bg-red-600/10 text-white'
-                    : 'border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700'
+                    ? 'border-sky-500 bg-sky-500/10 text-white'
+                    : 'border-sky-100 bg-white/50 text-slate-500 hover:border-sky-200'
                 }`}
               >
                 <div className="font-semibold text-sm">พร้อมเพย์ QR</div>
-                <div className="text-[11px] text-zinc-500 mt-0.5">PromptPay</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">PromptPay</div>
               </button>
               <button
                 type="button"
                 onClick={() => setPaymentMethod('truemoney')}
                 className={`rounded-xl border p-3.5 text-center transition ${
                   paymentMethod === 'truemoney'
-                    ? 'border-red-500 bg-red-600/10 text-white'
-                    : 'border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700'
+                    ? 'border-sky-500 bg-sky-500/10 text-white'
+                    : 'border-sky-100 bg-white/50 text-slate-500 hover:border-sky-200'
                 }`}
               >
                 <div className="font-semibold text-sm">ทรูมันนี่ QR</div>
-                <div className="text-[11px] text-zinc-500 mt-0.5">TrueMoney QR</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">TrueMoney QR</div>
               </button>
             </div>
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-red-600/15 border border-red-600/30 p-3 text-xs text-red-400">
+            <div className="flex items-center gap-2 rounded-xl bg-sky-500/15 border border-sky-500/30 p-3 text-xs text-sky-600">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -300,7 +300,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
           <button
             type="button"
             onClick={handleNextToStep2}
-            className="w-full rounded-xl bg-red-600 hover:bg-red-700 py-3 text-sm font-bold text-white transition shadow-lg"
+            className="w-full rounded-xl bg-gradient-to-r from-sky-400 via-sky-500 to-blue-600 hover:from-sky-500 hover:to-blue-700 py-3 text-sm font-bold text-white transition shadow-lg"
           >
             ไปที่หน้ารายละเอียดคำสั่งซื้อ
           </button>
@@ -312,13 +312,13 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
         <div className="space-y-6 animate-fade-in">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
-              <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">เงื่อนไขการให้บริการ</h4>
-              <div className="h-56 overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs text-zinc-400 leading-relaxed space-y-2">
-                <p className="font-semibold text-zinc-300">1. การสั่งซื้อและการเติมเกม</p>
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">เงื่อนไขการให้บริการ</h4>
+              <div className="h-56 overflow-y-auto rounded-xl border border-sky-100 bg-white/60 p-4 text-xs text-slate-500 leading-relaxed space-y-2">
+                <p className="font-semibold text-slate-600">1. การสั่งซื้อและการเติมเกม</p>
                 <p>กรุณาตรวจสอบความถูกต้องของ UID หรือ บัญชีผู้ใช้ ก่อนทำการสั่งซื้อ ทางร้านจะไม่รับผิดชอบหากกรอกข้อมูลผิดพลาด</p>
-                <p className="font-semibold text-zinc-300">2. ระยะเวลาดำเนินการ</p>
+                <p className="font-semibold text-slate-600">2. ระยะเวลาดำเนินการ</p>
                 <p>การเติมเงินจะดำเนินการภายใน 5-15 นาทีหลังยืนยันการชำระเงินและแนบสลิปเรียบร้อย</p>
-                <p className="font-semibold text-zinc-300">3. นโยบายการคืนเงิน</p>
+                <p className="font-semibold text-slate-600">3. นโยบายการคืนเงิน</p>
                 <p>หากการเติมเงินสำเร็จแล้ว จะไม่สามารถขอคืนเงินหรือยกเลิกคำสั่งซื้อได้ในทุกกรณี</p>
               </div>
 
@@ -330,15 +330,15 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                     setAcceptedTerms(e.target.checked);
                     if (e.target.checked) setTermsError(false);
                   }}
-                  className="mt-0.5 h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-red-600 focus:ring-red-500"
+                  className="mt-0.5 h-4 w-4 rounded border-sky-200 bg-white text-red-600 focus:ring-red-500"
                 />
-                <span className="text-xs text-zinc-300 select-none">
-                  ฉันยอมรับเงื่อนไขการให้บริการ <span className="text-red-500">*</span>
+                <span className="text-xs text-slate-600 select-none">
+                  ฉันยอมรับเงื่อนไขการให้บริการ <span className="text-sky-600">*</span>
                 </span>
               </label>
 
               {termsError && (
-                <p className="text-xs text-red-400 flex items-center gap-1.5">
+                <p className="text-xs text-sky-600 flex items-center gap-1.5">
                   <AlertCircle className="h-3.5 w-3.5" />
                   กรุณากดยอมรับเงื่อนไขการให้บริการก่อนกดยืนยัน
                 </p>
@@ -346,33 +346,33 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">สรุปรายการคำสั่งซื้อ</h4>
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 space-y-2.5 text-xs">
-                <div className="flex justify-between py-1 border-b border-zinc-800/80">
-                  <span className="text-zinc-400">เกม:</span>
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">สรุปรายการคำสั่งซื้อ</h4>
+              <div className="rounded-xl border border-sky-100 bg-white/70 p-4 space-y-2.5 text-xs">
+                <div className="flex justify-between py-1 border-b border-sky-100/80">
+                  <span className="text-slate-500">เกม:</span>
                   <span className="font-semibold text-white">{game.name}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-zinc-800/80">
-                  <span className="text-zinc-400">แพ็กเกจ:</span>
+                <div className="flex justify-between py-1 border-b border-sky-100/80">
+                  <span className="text-slate-500">แพ็กเกจ:</span>
                   <span className="font-semibold text-white">{selectedProduct?.name}</span>
                 </div>
                 {fields.map((f: any) => {
                   const key = f.name || f.field_key || 'uid';
                   return (
-                    <div key={f.id || key} className="flex justify-between py-1 border-b border-zinc-800/80">
-                      <span className="text-zinc-400">{f.label}:</span>
-                      <span className="font-mono text-zinc-200">
+                    <div key={f.id || key} className="flex justify-between py-1 border-b border-sky-100/80">
+                      <span className="text-slate-500">{f.label}:</span>
+                      <span className="font-mono text-slate-700">
                         {key.includes('pass') ? '••••••••' : playerData[key]}
                       </span>
                     </div>
                   );
                 })}
-                <div className="flex justify-between py-1 border-b border-zinc-800/80">
-                  <span className="text-zinc-400">ช่องทางชำระเงิน:</span>
+                <div className="flex justify-between py-1 border-b border-sky-100/80">
+                  <span className="text-slate-500">ช่องทางชำระเงิน:</span>
                   <span className="text-white capitalize font-medium">{paymentMethod === 'promptpay' ? 'พร้อมเพย์ QR' : 'ทรูมันนี่ QR'}</span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-zinc-400">ราคาปกติ:</span>
+                  <span className="text-slate-500">ราคาปกติ:</span>
                   <span className="text-white">฿{Number(basePrice).toLocaleString()}</span>
                 </div>
                 {couponDiscount > 0 && (
@@ -381,27 +381,27 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                     <span>-฿{Number(couponDiscount).toLocaleString()}</span>
                   </div>
                 )}
-                <div className="flex justify-between pt-2 border-t border-zinc-800 text-sm font-bold">
+                <div className="flex justify-between pt-2 border-t border-sky-100 text-sm font-bold">
                   <span className="text-white">ยอดชำระสุทธิ:</span>
-                  <span className="text-red-400 font-black">฿{Number(totalPayable).toLocaleString()}</span>
+                  <span className="text-sky-600 font-black">฿{Number(totalPayable).toLocaleString()}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs text-zinc-400 mb-1">โค้ดส่วนลด</label>
+                <label className="block text-xs text-slate-500 mb-1">โค้ดส่วนลด</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="กรอกโค้ดส่วนลด"
-                    className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white placeholder-zinc-500 uppercase focus:border-red-500 focus:outline-none"
+                    className="flex-1 rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-white placeholder-zinc-500 uppercase focus:border-sky-500 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleApplyCoupon}
                     disabled={checkingCoupon || !couponCode.trim()}
-                    className="rounded-xl bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 px-3.5 py-2 text-xs font-semibold text-zinc-200"
+                    className="rounded-xl bg-slate-100 hover:bg-zinc-700 disabled:opacity-50 px-3.5 py-2 text-xs font-semibold text-slate-700"
                   >
                     {checkingCoupon ? <Loader2 className="h-3 w-3 animate-spin" /> : 'ใช้โค้ด'}
                   </button>
@@ -416,7 +416,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-red-600/15 border border-red-600/30 p-3 text-xs text-red-400">
+            <div className="flex items-center gap-2 rounded-xl bg-sky-500/15 border border-sky-500/30 p-3 text-xs text-sky-600">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -426,7 +426,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="rounded-xl border border-zinc-700 hover:bg-zinc-800 px-5 py-3 text-xs font-semibold text-zinc-300 transition"
+              className="rounded-xl border border-sky-200 hover:bg-slate-100 px-5 py-3 text-xs font-semibold text-slate-600 transition"
             >
               ย้อนกลับ
             </button>
@@ -434,7 +434,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
               type="button"
               disabled={loading}
               onClick={handleSubmitOrder}
-              className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 py-3 text-sm font-bold text-white transition shadow-lg flex items-center justify-center gap-2"
+              className="flex-1 rounded-xl bg-gradient-to-r from-sky-400 via-sky-500 to-blue-600 hover:from-sky-500 hover:to-blue-700 disabled:opacity-50 py-3 text-sm font-bold text-white transition shadow-lg flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'ยืนยันการชำระเงิน'}
             </button>
@@ -445,11 +445,11 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
       {/* Step 3: Exact UI from Image 2 */}
       {step === 3 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl space-y-5">
+          <div className="relative w-full max-w-md rounded-3xl border border-sky-100 bg-sky-50/60 p-6 shadow-2xl space-y-5">
             <button
               type="button"
               onClick={() => router.push('/order-tracking')}
-              className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-white rounded-full bg-zinc-900 border border-zinc-800"
+              className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white rounded-full bg-white border border-sky-100"
             >
               <X className="w-4 h-4" />
             </button>
@@ -457,7 +457,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
             <div className="text-center space-y-1">
               <span className="text-xs font-bold uppercase tracking-widest text-amber-500">สแกนชำระเงิน</span>
               <h3 className="text-xl font-black text-white">พร้อมเพย์ / QR Payment</h3>
-              <p className="text-xs text-zinc-400 font-mono">ออเดอร์: {orderNumber}</p>
+              <p className="text-xs text-slate-500 font-mono">ออเดอร์: {orderNumber}</p>
             </div>
 
             <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white mx-auto w-fit shadow-inner">
@@ -470,15 +470,15 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
             </div>
 
             <div className="text-center">
-              <p className="text-xs text-zinc-400">ยอดชำระสุทธิ</p>
-              <p className="text-2xl font-black text-red-400">฿{Number(finalAmount || totalPayable).toLocaleString()} บาท</p>
+              <p className="text-xs text-slate-500">ยอดชำระสุทธิ</p>
+              <p className="text-2xl font-black text-sky-600">฿{Number(finalAmount || totalPayable).toLocaleString()} บาท</p>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-zinc-300">
+              <label className="block text-xs font-semibold text-slate-600">
                 แนบรูปภาพสลิปการโอนเงิน (จำเป็น)
               </label>
-              <div className="relative border-2 border-dashed border-zinc-700 hover:border-amber-500/80 rounded-2xl p-4 text-center cursor-pointer transition bg-zinc-900/50">
+              <div className="relative border-2 border-dashed border-sky-200 hover:border-amber-500/80 rounded-2xl p-4 text-center cursor-pointer transition bg-white/50">
                 <input
                   type="file"
                   accept="image/*"
@@ -487,23 +487,23 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                 />
                 {slipPreview ? (
                   <div className="flex items-center justify-center gap-3">
-                    <img src={slipPreview} alt="Slip Preview" className="w-12 h-12 object-cover rounded-lg border border-zinc-700" />
+                    <img src={slipPreview} alt="Slip Preview" className="w-12 h-12 object-cover rounded-lg border border-sky-200" />
                     <div className="text-left">
                       <p className="text-xs font-medium text-emerald-400">เลือกรูปสลิปแล้ว</p>
-                      <p className="text-[10px] text-zinc-500">คลิกเพื่อเปลี่ยนรูป</p>
+                      <p className="text-[10px] text-slate-400">คลิกเพื่อเปลี่ยนรูป</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-1.5 text-zinc-400">
+                  <div className="flex flex-col items-center gap-1.5 text-slate-500">
                     <UploadCloud className="w-6 h-6 text-amber-400" />
                     <span className="text-xs font-medium">กดเพื่อเลือกรูปภาพสลิปจากเครื่อง</span>
-                    <span className="text-[10px] text-zinc-500">รองรับไฟล์ JPG, PNG</span>
+                    <span className="text-[10px] text-slate-400">รองรับไฟล์ JPG, PNG</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {slipMsg && <p className="text-center text-xs text-red-400">{slipMsg}</p>}
+            {slipMsg && <p className="text-center text-xs text-sky-600">{slipMsg}</p>}
 
             <button
               type="button"
