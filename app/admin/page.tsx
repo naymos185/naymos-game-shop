@@ -7,6 +7,9 @@ import {
   CreditCard,
   TrendingUp,
   AlertCircle,
+  ShieldCheck,
+  Briefcase,
+  DollarSign,
 } from 'lucide-react';
 import { getDashboardStats } from '@/lib/admin/dashboard-stats';
 import { orderStatusColor, orderStatusLabel } from '@/lib/orders/status';
@@ -18,21 +21,28 @@ const QUICK_LINKS = [
   { href: '/admin/orders', label: 'จัดการออเดอร์', desc: 'ดูและอัปเดตสถานะ' },
   { href: '/admin/games', label: 'จัดการเกม', desc: 'เพิ่ม/แก้ไขเกม' },
   { href: '/admin/products', label: 'แพ็กเกจ', desc: 'ราคาและต้นทุน' },
-  { href: '/admin/providers', label: 'Provider', desc: 'API เติมเกม' },
-  { href: '/admin/payments', label: 'การชำระเงิน', desc: 'QR / Webhook' },
+  { href: '/admin/customers', label: 'สมาชิกระบบ', desc: 'ปรับยศตัวแทน/ลูกค้า' },
+  { href: '/admin/wallet', label: 'กระเป๋าเงิน', desc: 'เติม/ตัดเครดิต' },
   { href: '/admin/settings', label: 'ตั้งค่า', desc: 'ระบบทั่วไป' },
 ];
 
 export default async function AdminDashboard() {
   const stats = await getDashboardStats();
 
-  const cards = [
+  const primaryCards = [
     {
       label: 'ยอดขายวันนี้',
       value: `฿${stats.salesToday.toLocaleString()}`,
-      sub: 'ออเดอร์ที่ชำระ/สำเร็จวันนี้',
+      sub: 'ยอดชำระวันนี้',
       color: 'text-emerald-400',
       icon: TrendingUp,
+    },
+    {
+      label: 'กำไรวันนี้',
+      value: `฿${stats.profitToday.toLocaleString()}`,
+      sub: 'หักต้นทุนสินค้าแล้ว',
+      color: 'text-teal-400',
+      icon: DollarSign,
     },
     {
       label: 'ออเดอร์วันนี้',
@@ -42,31 +52,41 @@ export default async function AdminDashboard() {
       icon: ShoppingCart,
     },
     {
-      label: 'สำเร็จ',
-      value: String(stats.successCount),
-      sub: `${stats.successRate}% ของทั้งหมด`,
-      color: 'text-green-400',
-      icon: CreditCard,
-    },
-    {
       label: 'รอดำเนินการ',
       value: String(stats.pendingCount),
       sub: 'รอชำระ / กำลังเติม',
       color: 'text-amber-400',
       icon: AlertCircle,
     },
+  ];
+
+  const roleCards = [
     {
-      label: 'ลูกค้า',
-      value: String(stats.customers),
-      sub: 'สมาชิกทั้งหมด',
-      color: 'text-purple-400',
+      label: 'ลูกค้าทั่วไป',
+      value: `${stats.customerCount} คน`,
+      sub: 'สมาชิกซื้อปลีก',
+      color: 'text-sky-400',
       icon: Users,
     },
     {
-      label: 'เกมที่เปิด',
-      value: String(stats.gamesActive),
-      sub: 'จากฐานข้อมูล',
+      label: 'ตัวแทนจำหน่าย',
+      value: `${stats.resellerCount} คน`,
+      sub: 'สมาชิกราคาส่ง',
+      color: 'text-emerald-400',
+      icon: Briefcase,
+    },
+    {
+      label: 'ผู้ดูแลระบบ',
+      value: `${stats.adminCount} คน`,
+      sub: 'Admin / Super Admin',
       color: 'text-red-400',
+      icon: ShieldCheck,
+    },
+    {
+      label: 'เกมที่เปิด',
+      value: `${stats.gamesActive} เกม`,
+      sub: 'พร้อมให้บริการ',
+      color: 'text-violet-400',
       icon: Gamepad2,
     },
   ];
@@ -76,21 +96,40 @@ export default async function AdminDashboard() {
       <div>
         <h1 className="text-xl font-bold">Dashboard</h1>
         <p className="text-sm text-zinc-500 mt-1">
-          NayMos GameShop Backoffice — ข้อมูลจริงจากฐานข้อมูล
+          NayMos GameShop Backoffice — สถิติและข้อมูลเรียลไทม์
         </p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {cards.map((s) => (
-          <div key={s.label} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-zinc-500">{s.label}</p>
-              <s.icon className={`h-4 w-4 ${s.color} opacity-70`} />
+      <div className="space-y-3">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">ภาพรวมวันนี้</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {primaryCards.map((s) => (
+            <div key={s.label} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-zinc-500">{s.label}</p>
+                <s.icon className={`h-4 w-4 ${s.color} opacity-70`} />
+              </div>
+              <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+              <p className="text-[11px] text-zinc-600 mt-1">{s.sub}</p>
             </div>
-            <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-[11px] text-zinc-600 mt-1">{s.sub}</p>
-          </div>
-        ))}
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">โครงสร้างสมาชิก & บริการ</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {roleCards.map((s) => (
+            <div key={s.label} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-zinc-500">{s.label}</p>
+                <s.icon className={`h-4 w-4 ${s.color} opacity-70`} />
+              </div>
+              <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+              <p className="text-[11px] text-zinc-600 mt-1">{s.sub}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -133,7 +172,7 @@ export default async function AdminDashboard() {
         </div>
 
         <div>
-          <h2 className="font-semibold mb-3">ทางลัด</h2>
+          <h2 className="font-semibold mb-3">ทางลัดจัดการ</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {QUICK_LINKS.map((l) => (
               <Link
@@ -147,17 +186,6 @@ export default async function AdminDashboard() {
             ))}
           </div>
         </div>
-      </div>
-
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 text-sm space-y-2">
-        <h2 className="font-semibold mb-2">สถานะระบบ</h2>
-        <p className="text-emerald-400">✓ Customer Website + Admin Layout</p>
-        <p className="text-emerald-400">✓ Auth + Role (customer / admin)</p>
-        <p className="text-emerald-400">✓ Games / Products จากฐานข้อมูล</p>
-        <p className="text-emerald-400">✓ Orders + Tracking + ประวัติสมาชิก</p>
-        <p className="text-emerald-400">✓ Payment (Mock) + Admin ยืนยันชำระ</p>
-        <p className="text-emerald-400">✓ Top-up Provider (Mock)</p>
-        <p className="text-amber-400">○ ชำระเงินจริง / API เติมเกมจริง — ยังไม่เชื่อม</p>
       </div>
     </div>
   );
