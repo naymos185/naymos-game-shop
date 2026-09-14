@@ -16,18 +16,7 @@ export default async function AccountOrdersPage() {
     redirect('/login?next=/account/orders');
   }
 
-  const rawOrders = await listOrdersForCurrentUser(50);
-  const now = Date.now();
-  const TEN_MINUTES_MS = 10 * 60 * 1000;
-
-  // กรองออเดอร์ที่ยังไม่ชำระเงินและเกิน 10 นาทีออกไป (หายไปตามเงื่อนไข)
-  const orders = rawOrders.filter((o) => {
-    const isPendingPayment = o.status === 'pending' || o.status === 'PENDING_PAYMENT';
-    if (!isPendingPayment) return true;
-    const createdTime = new Date(o.created_at).getTime();
-    return now - createdTime <= TEN_MINUTES_MS;
-  });
-
+  const orders = await listOrdersForCurrentUser(50);
   const gameIds = [...new Set(orders.map((o) => o.game_id).filter(Boolean))];
   const productIds = [...new Set(orders.map((o) => o.product_id).filter(Boolean))];
   const names: Record<string, string> = {};
@@ -66,12 +55,12 @@ export default async function AccountOrdersPage() {
 
         <h1 className="text-2xl font-bold mb-2">ประวัติออเดอร์</h1>
         <p className="text-zinc-400 text-sm mb-8">
-          ออเดอร์ที่สร้างตอนล็อกอิน · {orders.length} รายการ
+          ออเดอร์ทั้งหมด · {orders.length} รายการ
         </p>
 
         {orders.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-12 text-center text-zinc-500">
-            ยังไม่มีประวัติออเดอร์ หรือออเดอร์ที่ค้างชำระเกิน 10 นาทีหมดอายุแล้ว
+            ยังไม่มีประวัติออเดอร์
           </div>
         ) : (
           <div className="space-y-3">
@@ -85,7 +74,7 @@ export default async function AccountOrdersPage() {
               return (
                 <Link
                   key={o.id}
-                  href={`/pay/${encodeURIComponent(o.order_number)}`}
+                  href="/order-tracking"
                   className="block rounded-2xl border border-zinc-800 bg-zinc-900/80 hover:border-zinc-700 p-4 transition-all"
                 >
                   <div className="flex items-center justify-between gap-4">
