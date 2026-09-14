@@ -28,19 +28,29 @@ export default async function AccountPage() {
         <h1 className="text-2xl font-bold mb-2">บัญชีของฉัน</h1>
         <p className="text-zinc-400 text-sm mb-8">จัดการข้อมูลและประวัติของคุณ</p>
 
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 mb-6 space-y-2">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 mb-6 space-y-3">
           <p className="text-sm">
             <span className="text-zinc-500">ชื่อ:</span>{' '}
-            <span className="text-white">{profile.full_name || '—'}</span>
+            <span className="text-white font-medium">{profile.full_name || '—'}</span>
           </p>
           <p className="text-sm">
             <span className="text-zinc-500">อีเมล:</span>{' '}
-            <span className="text-white">{profile.email || '—'}</span>
+            <span className="text-white font-medium">{profile.email || '—'}</span>
           </p>
-          <p className="text-sm">
-            <span className="text-zinc-500">บทบาท:</span>{' '}
-            <span className="text-red-400 font-medium">{profile.role}</span>
-          </p>
+          <div className="text-sm flex items-center gap-2">
+            <span className="text-zinc-500">สถานะ:</span>
+            {profile.role === 'reseller' ? (
+              <span className="inline-flex items-center rounded-lg bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
+                ตัวแทนจำหน่าย (ราคาส่ง)
+              </span>
+            ) : profile.role === 'admin' || profile.role === 'super_admin' ? (
+              <span className="inline-flex items-center rounded-lg bg-red-500/15 border border-red-500/40 px-2.5 py-0.5 text-xs font-semibold text-red-400">
+                ผู้ดูแลระบบ ({profile.role})
+              </span>
+            ) : (
+              <span className="text-zinc-300 text-xs font-medium">ลูกค้าทั่วไป</span>
+            )}
+          </div>
           <div className="pt-3">
             <LogoutButton />
           </div>
