@@ -1,12 +1,17 @@
 import type { Metadata } from 'next';
 import { listProductsAdmin } from '@/lib/admin/products';
+import { getAllGamesAdmin } from '@/lib/games/queries';
 import { ProductRowActions } from '@/components/admin/ProductRowActions';
+import { ProductCreateForm } from '@/components/admin/ProductCreateForm';
 
 export const metadata: Metadata = { title: 'จัดการแพ็กเกจ' };
 export const dynamic = 'force-dynamic';
 
 export default async function AdminProductsPage() {
-  const products = await listProductsAdmin();
+  const [products, games] = await Promise.all([
+    listProductsAdmin(),
+    getAllGamesAdmin(),
+  ]);
 
   const byGame = new Map<string, typeof products>();
   for (const p of products) {
@@ -17,17 +22,21 @@ export default async function AdminProductsPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6">
+    <div className="space-y-8">
+      <div>
         <h1 className="text-xl font-bold">Products</h1>
         <p className="text-sm text-zinc-500">
           แยกตามเกม · {products.length} แพ็ก · แก้แล้วบันทึกอัตโนมัติ
         </p>
       </div>
 
+      <ProductCreateForm
+        games={games.map((g) => ({ id: g.id, name: g.name }))}
+      />
+
       {products.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 p-10 text-center text-sm text-zinc-500">
-          ยังไม่มีแพ็กเกจ — รัน 003_games_seed.sql
+          ยังไม่มีแพ็กเกจ — เพิ่มด้านบน หรือรัน 003_games_seed.sql
         </div>
       ) : (
         <div className="space-y-8">
