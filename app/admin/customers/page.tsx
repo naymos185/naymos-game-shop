@@ -12,7 +12,7 @@ export default async function AdminCustomersPage() {
       <div className="mb-6">
         <h1 className="text-xl font-bold">Customers</h1>
         <p className="text-sm text-zinc-500">
-          สมาชิกจากระบบ · {customers.length} คน
+          สมาชิกจากระบบ · {customers.length} คน · คัดลอก User ID ไปเติม Wallet ได้
         </p>
       </div>
 
@@ -22,13 +22,14 @@ export default async function AdminCustomersPage() {
         </div>
       ) : (
         <div className="rounded-xl border border-zinc-800 overflow-x-auto">
-          <table className="w-full text-sm min-w-[560px]">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-zinc-900 text-zinc-400 text-left">
               <tr>
                 <th className="px-4 py-3 font-medium">ชื่อ</th>
                 <th className="px-4 py-3 font-medium">อีเมล</th>
                 <th className="px-4 py-3 font-medium">บทบาท</th>
                 <th className="px-4 py-3 font-medium">ออเดอร์</th>
+                <th className="px-4 py-3 font-medium">User ID</th>
                 <th className="px-4 py-3 font-medium">สมัครเมื่อ</th>
               </tr>
             </thead>
@@ -49,6 +50,12 @@ export default async function AdminCustomersPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-zinc-300">{c.order_count}</td>
+                  <td
+                    className="px-4 py-3 font-mono text-[10px] text-zinc-500 max-w-[140px] truncate"
+                    title={c.id}
+                  >
+                    {c.id}
+                  </td>
                   <td className="px-4 py-3 text-xs text-zinc-500 whitespace-nowrap">
                     {new Date(c.created_at).toLocaleString('th-TH')}
                   </td>

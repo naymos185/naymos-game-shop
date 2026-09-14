@@ -45,6 +45,7 @@ export function ProductRowActions({ id, price, cost, is_active }: Props) {
         setMsg(data.message ?? 'ไม่สำเร็จ');
       } else {
         setMsg('บันทึกแล้ว');
+        if (next.is_active !== undefined) setActive(next.is_active);
         router.refresh();
         setTimeout(() => setMsg(null), 1500);
       }
@@ -110,6 +111,17 @@ export function ProductRowActions({ id, price, cost, is_active }: Props) {
         />
         เปิด
       </label>
+      <button
+        type="button"
+        disabled={loading}
+        onClick={() => {
+          if (!confirm('ปิดแพ็กนี้ไม่ให้ขาย?')) return;
+          void save({ is_active: false });
+        }}
+        className="text-[10px] text-zinc-500 hover:text-red-400 underline"
+      >
+        ปิดแพ็ก
+      </button>
       {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
       {msg && <span className="text-[10px] text-zinc-500">{msg}</span>}
     </div>
