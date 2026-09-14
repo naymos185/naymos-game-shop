@@ -184,13 +184,13 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
                       เติมเสร็จแล้ว
                     </span>
                   )}
-                  <span className="font-mono text-sm font-bold text-white tracking-wide">
+                  <span className="font-mono text-sm font-bold text-slate-800 tracking-wide">
                     {o.order_number}
                   </span>
                 </div>
 
-                <p className="text-sm font-medium text-zinc-200">
-                  {o.game_name || 'เกม'} · <span className="text-slate-500">{o.product_name || 'แพ็กเกจ'}</span>
+                <p className="text-sm">
+                  <span className="font-bold text-slate-900">{o.game_name || 'เกม'}</span> · <span className="font-medium text-slate-600">{o.product_name || 'แพ็กเกจ'}</span>
                 </p>
 
                 <p suppressHydrationWarning className="text-xs text-zinc-500">
