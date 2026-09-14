@@ -41,22 +41,10 @@ export default async function OrderTrackingPage() {
           });
         }
 
-        const now = Date.now();
-        const TEN_MINUTES_MS = 10 * 60 * 1000;
-
         activeOrders = rawOrders
           .filter((o) => {
             const pd = (o.player_data as Record<string, unknown>) || {};
-            // If customer confirmed, archived to history
-            if (pd.customer_confirmed === true) return false;
-
-            // If pending payment and over 10m, expired
-            const isPending = o.status === 'pending' || o.status === 'PENDING_PAYMENT';
-            if (isPending) {
-              const diff = now - new Date(o.created_at).getTime();
-              if (diff > TEN_MINUTES_MS) return false;
-            }
-            return true;
+            return pd.customer_confirmed !== true;
           })
           .map((o) => ({
             id: o.id,
