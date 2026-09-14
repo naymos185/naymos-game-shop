@@ -1,11 +1,16 @@
 import { CustomerLayout } from '@/components/layout/CustomerLayout';
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { getProfile } from '@/lib/auth/get-user';
 import { ActiveOrdersTracker, type ActiveOrder } from '@/components/customer/ActiveOrdersTracker';
 import { OrderTrackingForm } from '@/components/customer/OrderTrackingForm';
+import { Sparkles, Search, Loader2 } from 'lucide-react';
 
-export const metadata: Metadata = { title: 'ติดตามออเดอร์' };
+export const metadata: Metadata = {
+  title: 'ติดตามออเดอร์ | NayMos GameShop',
+  description: 'ตรวจสอบสถานะคำสั่งซื้อ ชำระเงิน และยืนยันการเติมเกม',
+};
 export const dynamic = 'force-dynamic';
 
 export default async function OrderTrackingPage() {
@@ -64,24 +69,41 @@ export default async function OrderTrackingPage() {
 
   return (
     <CustomerLayout>
-      <div className="mx-auto max-w-3xl px-4 py-12">
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black text-white mb-2">ติดตามออเดอร์</h1>
-          <p className="text-sm text-zinc-400">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
+        <div className="mb-6 sm:mb-8">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-bold mb-2 shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>สถานะออเดอร์</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            ติดตามออเดอร์
+          </h1>
+          <p className="text-sm text-slate-500 font-medium mt-1">
             ตรวจสอบขั้นตอนการสั่งซื้อ ชำระเงิน และยืนยันรับการเติมเกม
           </p>
         </div>
 
         {/* Active Orders List */}
-        <div className="mb-12">
+        <div className="mb-8">
           <ActiveOrdersTracker initialOrders={activeOrders} />
         </div>
 
         {/* Fallback Search by order number for guests */}
-        <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/60 p-6">
-          <h2 className="text-sm font-bold text-zinc-300 mb-1">ค้นหาด้วยหมายเลขออเดอร์ (สำหรับผู้ไม่ได้เข้าสู่ระบบ)</h2>
-          <p className="text-xs text-zinc-500 mb-4">หากสั่งซื้อโดยไม่ได้ล็อกอิน สามารถกรอกหมายเลขเพื่อตรวจดูสถานะได้ที่นี่</p>
-          <OrderTrackingForm />
+        <div className="rounded-3xl border border-sky-100 bg-white p-6 sm:p-7 shadow-xs">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="p-1.5 rounded-xl bg-sky-50 text-sky-600">
+              <Search className="w-4 h-4" />
+            </div>
+            <h2 className="text-sm font-bold text-slate-800">
+              ค้นหาด้วยหมายเลขออเดอร์ (สำหรับผู้ไม่ได้เข้าสู่ระบบ)
+            </h2>
+          </div>
+          <p className="text-xs text-slate-500 font-medium mb-5">
+            หากสั่งซื้อโดยไม่ได้ล็อกอิน สามารถกรอกหมายเลขคำสั่งซื้อเพื่อตรวจดูสถานะได้ที่นี่
+          </p>
+          <Suspense fallback={<div className="p-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลดฟอร์มค้นหา...</div>}>
+            <OrderTrackingForm />
+          </Suspense>
         </div>
       </div>
     </CustomerLayout>
