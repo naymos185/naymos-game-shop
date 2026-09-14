@@ -49,7 +49,7 @@ export default async function GameDetailPage({ params }: Props) {
           </div>
         </div>
 
-        <GameOrderForm game={game} userRole={user?.role} />
+        <GameOrderForm game={game} userRole={user?.role} isLoggedIn={!!user} />
       </div>
     </CustomerLayout>
   );
