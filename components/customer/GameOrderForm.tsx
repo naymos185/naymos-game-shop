@@ -358,7 +358,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                   return (
                     <div key={f.id || key} className="flex justify-between py-1 border-b border-sky-100/80">
                       <span className="text-slate-500">{f.label}:</span>
-                      <span className="font-mono text-slate-700">
+                      <span className="font-mono font-bold text-slate-900">
                         {key.includes('pass') ? '••••••••' : playerData[key]}
                       </span>
                     </div>

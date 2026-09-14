@@ -120,6 +120,8 @@ export async function createOrder(
       game_id: payload.game_id,
       product_id: payload.product_id,
       player_data: payload.player_data,
+      subtotal,
+      discount: discount || 0,
       total,
       contact_email: payload.contact_email?.trim() || user.email || null,
       contact_phone: payload.contact_phone?.trim() || null,
