@@ -77,6 +77,13 @@ export async function Header() {
                     Admin
                   </Link>
                 )}
+                {profile.role === 'reseller' && (
+                  <span
+                    className="hidden sm:inline-flex items-center rounded-xl bg-emerald-500/10 border border-emerald-500/40 px-3 py-1.5 text-xs font-semibold text-emerald-400"
+                  >
+                    ตัวแทนจำหน่าย
+                  </span>
+                )}
                 <LogoutButton />
               </>
             ) : (
