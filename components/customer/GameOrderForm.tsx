@@ -16,9 +16,12 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
   const [loading, setLoading] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
-  const [discount, setDiscount] = useState(0);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [pointsToUse, setPointsToUse] = useState('');
+  const [pointsDiscount, setPointsDiscount] = useState(0);
 
   const pkg = game.products.find((p) => p.id === selectedPkg);
+  const discount = couponDiscount + pointsDiscount;
   const displayTotal = pkg ? Math.max(0, Number(pkg.price) - discount) : 0;
 
   const canSubmit =
@@ -45,6 +48,7 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
           contact_email: contact.email.trim() || undefined,
           contact_phone: contact.phone.trim() || undefined,
           coupon_code: couponCode.trim() || undefined,
+          points_to_use: pointsToUse ? Number(pointsToUse) : undefined,
         }),
       });
       const data = await res.json();
@@ -97,7 +101,9 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
               setSelectedPkg(null);
               setPlayerData({});
               setError(null);
-              setDiscount(0);
+              setCouponDiscount(0);
+              setPointsDiscount(0);
+              setPointsToUse('');
               setCouponCode('');
               setCouponMsg(null);
             }}
@@ -127,7 +133,9 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
               type="button"
               onClick={() => {
                 setSelectedPkg(p.id);
-                setDiscount(0);
+                setCouponDiscount(0);
+                setPointsDiscount(0);
+                setPointsToUse('');
                 setCouponMsg(null);
               }}
               className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left transition ${
@@ -194,7 +202,6 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
             />
           </div>
         </div>
-        <p className="text-xs text-zinc-500 mt-2">ไม่บังคับกรอก (แนะนำกรอกเพื่อติดต่อกลับ)</p>
       </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6">
@@ -206,7 +213,7 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
             value={couponCode}
             onChange={(e) => {
               setCouponCode(e.target.value.toUpperCase());
-              setDiscount(0);
+              setCouponDiscount(0);
               setCouponMsg(null);
             }}
             className="flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-mono outline-none focus:border-red-500"
@@ -228,10 +235,10 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
                 });
                 const data = await res.json();
                 if (!data.success) {
-                  setDiscount(0);
+                  setCouponDiscount(0);
                   setCouponMsg(data.message ?? 'ใช้คูปองไม่ได้');
                 } else {
-                  setDiscount(Number(data.coupon.discount_amount));
+                  setCouponDiscount(Number(data.coupon.discount_amount));
                   setCouponMsg(`ลด ฿${data.coupon.discount_amount}`);
                 }
               } catch {
@@ -244,9 +251,31 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
           </button>
         </div>
         {couponMsg && (
-          <p className={`text-xs mt-2 ${discount > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+          <p className={`text-xs mt-2 ${couponDiscount > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {couponMsg}
           </p>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6">
+        <h2 className="font-semibold mb-2 text-sm">5. ใช้คะแนน (สมาชิก)</h2>
+        <p className="text-xs text-zinc-500 mb-3">10 คะแนน = ลด 1 บาท · ต้องล็อกอินและมีคะแนน</p>
+        <input
+          type="number"
+          min={0}
+          step={10}
+          placeholder="จำนวนคะแนน เช่น 50"
+          value={pointsToUse}
+          onChange={(e) => {
+            const v = e.target.value;
+            setPointsToUse(v);
+            const pts = Math.floor(Number(v) || 0);
+            setPointsDiscount(Math.floor(pts / 10));
+          }}
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-red-500"
+        />
+        {pointsDiscount > 0 && (
+          <p className="text-xs text-emerald-400 mt-2">ลดจากคะแนน ฿{pointsDiscount}</p>
         )}
       </section>
 
