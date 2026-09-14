@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { providerManager } from '@/lib/providers/provider-manager';
 import { awardPointsForOrder } from '@/lib/points/queries';
+import { notifyUser } from '@/lib/notifications/queries';
 
 export type ProcessTopupResult = {
   success: boolean;
@@ -9,9 +10,6 @@ export type ProcessTopupResult = {
   transaction_id?: string;
 };
 
-/**
- * After payment is confirmed (PAID), call top-up provider and update order.
- */
 export async function processTopupForOrder(
   orderNumber: string
 ): Promise<ProcessTopupResult> {
@@ -102,6 +100,17 @@ export async function processTopupForOrder(
     if (order.user_id) {
       try {
         await awardPointsForOrder(order.id);
+      } catch {
+        /* best-effort */
+      }
+      try {
+        await notifyUser(
+          order.user_id,
+          'ออเดอร์สำเร็จ',
+          `ออเดอร์ ${order.order_number} เติมเกมสำเร็จแล้ว`,
+          `/order-tracking?number=${order.order_number}`,
+          'success'
+        );
       } catch {
         /* best-effort */
       }
