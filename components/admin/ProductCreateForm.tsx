@@ -12,6 +12,7 @@ export function ProductCreateForm({ games }: { games: GameOpt[] }) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [cost, setCost] = useState('0');
+  const [resellerPrice, setResellerPrice] = useState('');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -29,6 +30,7 @@ export function ProductCreateForm({ games }: { games: GameOpt[] }) {
           name,
           price: Number(price),
           cost: Number(cost) || 0,
+          reseller_price: resellerPrice === '' ? null : Number(resellerPrice),
           amount: amount === '' ? null : Number(amount),
         }),
       });
@@ -39,6 +41,7 @@ export function ProductCreateForm({ games }: { games: GameOpt[] }) {
         setName('');
         setPrice('');
         setCost('0');
+        setResellerPrice('');
         setAmount('');
         router.refresh();
       }

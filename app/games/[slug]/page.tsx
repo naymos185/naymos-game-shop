@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getGameBySlug } from '@/lib/games/queries';
 import { GameOrderForm } from '@/components/customer/GameOrderForm';
+import { getCurrentUser } from '@/lib/auth/get-user';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GameDetailPage({ params }: Props) {
   const { slug } = await params;
-  const game = await getGameBySlug(slug);
+  const [game, user] = await Promise.all([getGameBySlug(slug), getCurrentUser()]);
   if (!game) notFound();
 
   return (
@@ -48,7 +49,7 @@ export default async function GameDetailPage({ params }: Props) {
           </div>
         </div>
 
-        <GameOrderForm game={game} />
+        <GameOrderForm game={game} userRole={user?.role} />
       </div>
     </CustomerLayout>
   );

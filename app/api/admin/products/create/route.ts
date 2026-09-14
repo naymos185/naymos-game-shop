@@ -15,6 +15,7 @@ export async function POST(request: Request) {
     const name = String(body.name ?? '').trim();
     const price = Number(body.price);
     const cost = Number(body.cost ?? 0);
+    const reseller_price = body.reseller_price != null && body.reseller_price !== '' ? Number(body.reseller_price) : null;
 
     if (!game_id || !name) {
       return NextResponse.json({ success: false, message: 'เลือกเกมและใส่ชื่อแพ็ก' }, { status: 400 });
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
       name,
       price,
       cost,
+      reseller_price,
       amount: body.amount != null && body.amount !== '' ? Number(body.amount) : null,
       currency: 'THB',
       is_active: body.is_active !== false,

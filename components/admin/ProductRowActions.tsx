@@ -10,14 +10,16 @@ type Props = {
   name?: string;
   price: number;
   cost: number;
+  reseller_price?: number | null;
   is_active: boolean;
 };
 
-export function ProductRowActions({ id, name, price, cost, is_active }: Props) {
+export function ProductRowActions({ id, name, price, cost, reseller_price, is_active }: Props) {
   const router = useRouter();
   const confirm = useConfirm();
   const [p, setP] = useState(String(price));
   const [c, setC] = useState(String(cost));
+  const [rp, setRp] = useState(reseller_price != null ? String(reseller_price) : '');
   const [active, setActive] = useState(is_active);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -26,10 +28,11 @@ export function ProductRowActions({ id, name, price, cost, is_active }: Props) {
   useEffect(() => {
     setP(String(price));
     setC(String(cost));
+    setRp(reseller_price != null ? String(reseller_price) : '');
     setActive(is_active);
   }, [price, cost, is_active]);
 
-  async function save(next: { price?: number; cost?: number; is_active?: boolean }) {
+  async function save(next: { price?: number; cost?: number; reseller_price?: number | null; is_active?: boolean }) {
     setLoading(true);
     setMsg(null);
     try {
@@ -40,6 +43,7 @@ export function ProductRowActions({ id, name, price, cost, is_active }: Props) {
           id,
           price: next.price ?? Number(p),
           cost: next.cost ?? Number(c),
+          reseller_price: next.reseller_price !== undefined ? next.reseller_price : (rp === '' ? null : Number(rp)),
           is_active: next.is_active ?? active,
         }),
       });
@@ -88,7 +92,7 @@ export function ProductRowActions({ id, name, price, cost, is_active }: Props) {
     setLoading(false);
   }
 
-  function scheduleSave(next?: { price?: number; cost?: number; is_active?: boolean }) {
+  function scheduleSave(next?: { price?: number; cost?: number; reseller_price?: number | null; is_active?: boolean }) {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       void save(next ?? {});
@@ -131,6 +135,25 @@ export function ProductRowActions({ id, name, price, cost, is_active }: Props) {
         step={1}
         title="ต้นทุน"
       />
+      <input
+        type="number"
+        value={rp}
+        onChange={(e) => {
+          setRp(e.target.value);
+          const v = e.target.value;
+          scheduleSave({ reseller_price: v === '' ? null : Number(v) });
+        }}
+        onBlur={() => {
+          const val = rp === '' ? null : Number(rp);
+          if (val !== reseller_price) void save({ reseller_price: val });
+        }}
+        className="w-20 rounded-lg border border-emerald-500/40 bg-zinc-950 px-2 py-1 text-xs text-emerald-400 placeholder:text-zinc-600"
+        min={0}
+        step={1}
+        placeholder="ตัวแทน"
+        title="ราคาส่งตัวแทน"
+      />
+
       <label className="flex items-center gap-1 text-xs text-zinc-400 cursor-pointer">
         <input
           type="checkbox"

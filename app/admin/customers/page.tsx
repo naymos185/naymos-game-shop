@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listCustomersAdmin } from '@/lib/admin/customers';
+import { CustomerRoleSelect } from '@/components/admin/CustomerRoleSelect';
 
 export const metadata: Metadata = { title: 'ลูกค้า' };
 export const dynamic = 'force-dynamic';
@@ -38,17 +39,7 @@ export default async function AdminCustomersPage() {
                 <tr key={c.id} className="bg-zinc-950/50 hover:bg-zinc-900/50">
                   <td className="px-4 py-3 text-white">{c.full_name || '—'}</td>
                   <td className="px-4 py-3 text-zinc-300 text-xs">{c.email || '—'}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs ${
-                        c.role === 'admin'
-                          ? 'bg-red-500/15 text-red-400'
-                          : 'bg-zinc-700 text-zinc-300'
-                      }`}
-                    >
-                      {c.role}
-                    </span>
-                  </td>
+                  <td className="px-4 py-3"><CustomerRoleSelect userId={c.id} initialRole={c.role} /></td>
                   <td className="px-4 py-3 text-zinc-300">{c.order_count}</td>
                   <td
                     className="px-4 py-3 font-mono text-[10px] text-zinc-500 max-w-[140px] truncate"

@@ -34,6 +34,7 @@ export interface Product {
   currency: string;
   price: number;
   cost: number;
+  reseller_price?: number | null;
   provider_product_id?: string | null;
   is_active: boolean;
   sort_order: number;

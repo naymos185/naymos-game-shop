@@ -27,6 +27,9 @@ export async function POST(request: Request) {
       }
       updates.price = price;
     }
+    if (body.reseller_price !== undefined) {
+      updates.reseller_price = body.reseller_price === null || body.reseller_price === '' ? null : Number(body.reseller_price);
+    }
     if (body.cost !== undefined) {
       const cost = Number(body.cost);
       if (Number.isNaN(cost) || cost < 0) {

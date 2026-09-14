@@ -5,7 +5,7 @@ import type { GameWithDetails } from '@/lib/games/queries';
 import { Check, AlertCircle, Loader2, X, UploadCloud, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export function GameOrderForm({ game }: { game: GameWithDetails }) {
+export function GameOrderForm({ game, userRole }: { game: GameWithDetails; userRole?: string }) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
@@ -35,8 +35,15 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
     { id: 'default-uid', name: 'uid', label: 'UID / Player ID', type: 'text', placeholder: 'กรอก UID ผู้เล่น', required: true }
   ];
 
+  const isReseller = userRole === 'reseller' || userRole === 'admin' || userRole === 'super_admin';
   const selectedProduct = products.find((p: any) => p.id === selectedPkg);
-  const basePrice = selectedProduct?.price ?? 0;
+  const getProductPrice = (p: any) => {
+    if (isReseller && p.reseller_price != null && Number(p.reseller_price) > 0) {
+      return Number(p.reseller_price);
+    }
+    return Number(p.price || 0);
+  };
+  const basePrice = selectedProduct ? getProductPrice(selectedProduct) : 0;
   const totalPayable = Math.max(0, basePrice - couponDiscount);
 
   const handleApplyCoupon = async () => {
@@ -193,7 +200,19 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
                       }`}
                     >
                       <div className="font-semibold text-sm">{p.name}</div>
-                      <div className="text-xs text-red-400 font-bold mt-1">฿{Number(p.price).toLocaleString()}</div>
+                      <div className="mt-1">
+                        {isReseller && p.reseller_price != null && Number(p.reseller_price) > 0 ? (
+                          <div className="flex flex-col">
+                            <span className="inline-block text-[10px] text-emerald-400 font-medium">ราคาส่งตัวแทน</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-emerald-400 font-bold">฿{Number(p.reseller_price).toLocaleString()}</span>
+                              <span className="text-[11px] text-zinc-500 line-through">฿{Number(p.price).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-red-400 font-bold">฿{Number(p.price).toLocaleString()}</div>
+                        )}
+                      </div>
                       {isSelected && (
                         <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white">
                           <Check className="h-2.5 w-2.5 stroke-[3]" />
