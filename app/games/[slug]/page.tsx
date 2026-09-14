@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getGameBySlug } from '@/lib/games/queries';
 import { GameOrderForm } from '@/components/customer/GameOrderForm';
-import { getCurrentUser } from '@/lib/auth/get-user';
+import { getProfile } from '@/lib/auth/get-user';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GameDetailPage({ params }: Props) {
   const { slug } = await params;
-  const [game, user] = await Promise.all([getGameBySlug(slug), getCurrentUser()]);
+  const [game, user] = await Promise.all([getGameBySlug(slug), getProfile()]);
   if (!game) notFound();
 
   return (
