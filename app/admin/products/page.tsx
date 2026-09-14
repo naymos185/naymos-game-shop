@@ -66,6 +66,7 @@ export default async function AdminProductsPage() {
                         <td className="px-4 py-3">
                           <ProductRowActions
                             id={p.id}
+                            name={p.name}
                             price={p.price}
                             cost={p.cost}
                             is_active={p.is_active}
