@@ -129,7 +129,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 export function useConfirm() {
   const ctx = useContext(ConfirmContext);
   if (!ctx) {
-    throw new Error('useConfirm ต้องอยู่ภายใน <ConfirmProvider>');
+    return (options: ConfirmOptions) => {
+      const text = [options.title, typeof options.description === 'string' ? options.description : ''].filter(Boolean).join('\n');
+      return Promise.resolve(typeof window !== 'undefined' ? window.confirm(text) : true);
+    };
   }
   return ctx;
 }
