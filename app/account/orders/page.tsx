@@ -23,7 +23,7 @@ export default async function AccountOrdersPage() {
   // กรองออเดอร์ที่ยังไม่ชำระเงินและเกิน 10 นาทีออกไป (หายไปตามเงื่อนไข)
   const orders = rawOrders.filter((o) => {
     const isPendingPayment = o.status === 'pending' || o.status === 'PENDING_PAYMENT';
-    if (!isPendingPayment) return true; // สถานะอื่นๆ เช่น ชำระแล้ว หรือ เติมเสร็จ ไม่หาย
+    if (!isPendingPayment) return true;
     const createdTime = new Date(o.created_at).getTime();
     return now - createdTime <= TEN_MINUTES_MS;
   });
@@ -37,7 +37,7 @@ export default async function AccountOrdersPage() {
     if (gameIds.length) {
       const { data: games } = await supabase.from('games').select('id, name').in('id', gameIds);
       (games ?? []).forEach((g) => {
-        names[] = g.name;
+        names[`g:${g.id}`] = g.name;
       });
     }
     if (productIds.length) {
@@ -46,7 +46,7 @@ export default async function AccountOrdersPage() {
         .select('id, name')
         .in('id', productIds);
       (products ?? []).forEach((p) => {
-        names[] = p.name;
+        names[`p:${p.id}`] = p.name;
       });
     }
   } catch {
@@ -76,8 +76,8 @@ export default async function AccountOrdersPage() {
         ) : (
           <div className="space-y-3">
             {orders.map((o) => {
-              const gName = names[] ?? 'เกม';
-              const pName = names[] ?? 'แพ็กเกจ';
+              const gName = names[`g:${o.game_id}`] ?? 'เกม';
+              const pName = names[`p:${o.product_id}`] ?? 'แพ็กเกจ';
               const isWaitingPayment = o.status === 'pending' || o.status === 'PENDING_PAYMENT';
               const isProcessing = o.status === 'PAID' || o.status === 'PROCESSING';
               const isCompleted = o.status === 'SUCCESS' || o.status === 'completed';
@@ -85,7 +85,7 @@ export default async function AccountOrdersPage() {
               return (
                 <Link
                   key={o.id}
-                  href={}
+                  href={`/pay/${encodeURIComponent(o.order_number)}`}
                   className="block rounded-2xl border border-zinc-800 bg-zinc-900/80 hover:border-zinc-700 p-4 transition-all"
                 >
                   <div className="flex items-center justify-between gap-4">
@@ -124,7 +124,9 @@ export default async function AccountOrdersPage() {
                     <div className="text-right space-y-1">
                       <p className="font-bold text-sm text-white">฿{Number(o.total).toLocaleString()}</p>
                       <span
-                        className={}
+                        className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium ${orderStatusColor(
+                          o.status
+                        )}`}
                       >
                         {orderStatusLabel(o.status)}
                       </span>
