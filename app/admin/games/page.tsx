@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getAllGamesAdmin } from '@/lib/games/queries';
 import { createClient } from '@/lib/supabase/server';
 import { GameRowActions } from '@/components/admin/GameRowActions';
+import { GameCreateForm } from '@/components/admin/GameCreateForm';
 
 export const metadata: Metadata = { title: 'จัดการเกม' };
 export const dynamic = 'force-dynamic';
@@ -22,22 +23,20 @@ export default async function AdminGamesPage() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold">Games</h1>
-          <p className="text-sm text-zinc-500">
-            จัดการเกมจากฐานข้อมูล · {games.length} รายการ · เปิด/ปิดได้ทันที
-          </p>
-        </div>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-xl font-bold">Games</h1>
+        <p className="text-sm text-zinc-500">
+          จัดการเกม · {games.length} รายการ · เปิด/ปิดได้ทันที
+        </p>
       </div>
+
+      <GameCreateForm />
 
       {games.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 p-10 text-center">
-          <p className="text-zinc-400 mb-2">ยังไม่มีเกมในฐานข้อมูล</p>
-          <p className="text-sm text-zinc-500">
-            รันไฟล์ <code className="text-red-400">003_games_seed.sql</code> ใน Supabase SQL Editor
-          </p>
+          <p className="text-zinc-400 mb-2">ยังไม่มีเกม</p>
+          <p className="text-sm text-zinc-500">เพิ่มด้านบน หรือรัน 003_games_seed.sql</p>
         </div>
       ) : (
         <div className="rounded-xl border border-zinc-800 overflow-x-auto">
