@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, QrCode, CheckCircle2, Clock, UploadCloud, X, ArrowRight } from 'lucide-react';
+import { Loader2, QrCode, CheckCircle2, Clock, UploadCloud, X, ArrowRight, Ban } from 'lucide-react';
 import Link from 'next/link';
 
 export interface ActiveOrder {
@@ -24,7 +24,13 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
   const [slipPreview, setSlipPreview] = useState<string | null>(null);
   const [submittingSlip, setSubmittingSlip] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Handle slip file select
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +59,6 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
       });
       const data = await res.json();
       if (data.success) {
-        // Update local status to PROCESSING
         setOrders((prev) =>
           prev.map((o) => (o.id === payingOrder.id ? { ...o, status: 'PROCESSING' } : o))
         );
@@ -70,6 +75,31 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
     setSubmittingSlip(false);
   };
 
+  // Cancel pending order
+  const handleCancelOrder = async (order: ActiveOrder) => {
+    if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการยกเลิกคำสั่งซื้อ ${order.order_number}?`)) {
+      return;
+    }
+    setCancellingId(order.id);
+    try {
+      const res = await fetch('/api/orders/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_number: order.order_number }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOrders((prev) => prev.filter((o) => o.id !== order.id));
+        router.refresh();
+      } else {
+        alert(data.message || 'ยกเลิกออเดอร์ไม่สำเร็จ');
+      }
+    } catch {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    }
+    setCancellingId(null);
+  };
+
   // Confirm completed order -> archives order out of tracking page to history
   const handleConfirmComplete = async (order: ActiveOrder) => {
     setConfirmingId(order.id);
@@ -81,7 +111,6 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
       });
       const data = await res.json();
       if (data.success) {
-        // Remove from active list
         setOrders((prev) => prev.filter((o) => o.id !== order.id));
         router.refresh();
       } else {
@@ -136,7 +165,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  {/* Status Badges with matching colors */}
+                  {/* Status Badges */}
                   {isWaitingPayment && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 px-3 py-1 text-xs font-semibold text-amber-400">
                       <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
@@ -164,8 +193,8 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
                   {o.game_name || 'เกม'} · <span className="text-zinc-400">{o.product_name || 'แพ็กเกจ'}</span>
                 </p>
 
-                <p className="text-xs text-zinc-500">
-                  เวลาสั่งซื้อ: {new Date(o.created_at).toLocaleString('th-TH')}
+                <p suppressHydrationWarning className="text-xs text-zinc-500">
+                  เวลาสั่งซื้อ: {mounted ? new Date(o.created_at).toLocaleString('th-TH') : 'กำลังโหลดเวลา...'}
                 </p>
               </div>
 
@@ -176,21 +205,39 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
                   <span className="text-lg font-black text-red-400">฿{Number(o.total).toLocaleString()}</span>
                 </div>
 
-                <div>
+                <div className="flex items-center gap-2">
                   {isWaitingPayment && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPayingOrder(o);
-                        setSlipFile(null);
-                        setSlipPreview(null);
-                        setMsg(null);
-                      }}
-                      className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-xs font-bold text-black transition shadow"
-                    >
-                      <QrCode className="w-4 h-4" />
-                      ชำระเงิน
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        disabled={cancellingId === o.id}
+                        onClick={() => handleCancelOrder(o)}
+                        className="inline-flex items-center gap-1 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 px-3 py-2 text-xs font-medium text-red-400 transition"
+                      >
+                        {cancellingId === o.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <>
+                            <Ban className="w-3.5 h-3.5" />
+                            ยกเลิกออเดอร์
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPayingOrder(o);
+                          setSlipFile(null);
+                          setSlipPreview(null);
+                          setMsg(null);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-xs font-bold text-black transition shadow"
+                      >
+                        <QrCode className="w-4 h-4" />
+                        ชำระเงิน
+                      </button>
+                    </>
                   )}
 
                   {isProcessing && (
