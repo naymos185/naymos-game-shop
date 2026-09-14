@@ -11,6 +11,7 @@ const LINKS = [
   { href: '/account/orders', label: 'ประวัติออเดอร์' },
   { href: '/account/wallet', label: 'กระเป๋าเงิน' },
   { href: '/account/points', label: 'คะแนน' },
+  { href: '/account/notifications', label: 'การแจ้งเตือน' },
   { href: '/account/coupons', label: 'คูปอง' },
   { href: '/account/saved-games', label: 'เกมที่บันทึก' },
 ];
