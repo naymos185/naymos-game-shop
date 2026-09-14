@@ -26,8 +26,16 @@ export default async function GamesPage() {
               href={`/games/${game.slug}`}
               className="group rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-red-600/50 transition"
             >
-              <div className={`aspect-[4/3] bg-gradient-to-br ${game.color} flex items-center justify-center`}>
-                <Gamepad2 className="h-12 w-12 text-white/80 group-hover:scale-110 transition" />
+              <div className={`aspect-[4/3] bg-gradient-to-br ${game.color} flex items-center justify-center overflow-hidden relative`}>
+                {game.icon || game.banner ? (
+                  <img
+                    src={game.banner || game.icon || ''}
+                    alt={game.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition"
+                  />
+                ) : (
+                  <Gamepad2 className="h-12 w-12 text-white/80 group-hover:scale-110 transition" />
+                )}
               </div>
               <div className="p-4">
                 <h2 className="font-semibold">{game.name}</h2>

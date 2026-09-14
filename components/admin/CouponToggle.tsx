@@ -21,7 +21,7 @@ export function CouponToggle({ id, is_active }: { id: string; is_active: boolean
       });
       const data = await res.json();
       if (!data.success) setActive(!v);
-      else router.refresh();
+      else window.location.reload();
     } catch {
       setActive(!v);
     }
@@ -38,7 +38,7 @@ export function CouponToggle({ id, is_active }: { id: string; is_active: boolean
         body: JSON.stringify({ id }),
       });
       const data = await res.json();
-      if (data.success) router.refresh();
+      if (data.success) window.location.reload();
       else alert(data.message || 'ลบไม่สำเร็จ');
     } catch {
       alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');

@@ -38,7 +38,7 @@ export function GameRowActions({
       if (!data.success) {
         setActive(!v);
       } else {
-        router.refresh();
+        window.location.reload();
       }
     } catch {
       setActive(!v);
@@ -58,7 +58,7 @@ export function GameRowActions({
       const data = await res.json();
       if (data.success) {
         setEditing(false);
-        router.refresh();
+        window.location.reload();
       } else {
         setMsg(data.message || 'บันทึกไม่สำเร็จ');
       }
@@ -81,7 +81,7 @@ export function GameRowActions({
       });
       const data = await res.json();
       if (data.success) {
-        router.refresh();
+        window.location.reload();
       } else {
         alert(data.message || 'ลบเกมไม่สำเร็จ');
       }

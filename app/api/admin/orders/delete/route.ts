@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/auth/get-user';
 
 export async function POST(request: Request) {
@@ -16,17 +17,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'กรุณาระบุ id ออเดอร์' }, { status: 400 });
     }
 
-    const supabase = await createClient();
-    // Delete payments first if any
-    await supabase.from('payments').delete().eq('order_id', id);
-    const { error } = await supabase.from('orders').delete().eq('id', id);
+    const supabaseAdmin = createAdminClient();
+    // Delete associated payments if any
+    await supabaseAdmin.from('payments').delete().eq('order_id', id);
+    const { error } = await supabaseAdmin.from('orders').delete().eq('id', id);
+
     if (error) {
+      // Fallback
+      const serverClient = await createClient();
+      await serverClient.from('orders').update({ status: 'CANCELLED' }).eq('id', id);
       return NextResponse.json({ success: false, message: error.message }, { status: 400 });
     }
-    return NextResponse.json({ success: true, message: 'ลบออเดอร์เรียบร้อย' });
+
+    return NextResponse.json({ success: true, message: 'ลบออเดอร์สำเร็จ' });
   } catch (e) {
     return NextResponse.json(
-      { success: false, message: e instanceof Error ? e.message : 'ผิดพลาด' },
+      { success: false, message: e instanceof Error ? e.message : 'เกิดข้อผิดพลาด' },
       { status: 500 }
     );
   }

@@ -33,10 +33,19 @@ export default async function GameDetailPage({ params }: Props) {
           <span className="text-zinc-300">{game.name}</span>
         </nav>
 
-        <div className={`rounded-2xl bg-gradient-to-br ${game.color} p-6 mb-8`}>
-          <p className="text-white/70 text-sm mb-1">{game.category}</p>
-          <h1 className="text-3xl font-bold text-white mb-2">เติม {game.name}</h1>
-          <p className="text-white/80 text-sm">{game.description}</p>
+        <div className={`rounded-2xl bg-gradient-to-br ${game.color} p-6 mb-8 relative overflow-hidden flex flex-col sm:flex-row items-center sm:items-start gap-4`}>
+          {game.icon || game.banner ? (
+            <img
+              src={game.banner || game.icon || ''}
+              alt={game.name}
+              className="w-20 h-20 rounded-2xl object-cover border border-white/20 shadow-lg flex-shrink-0"
+            />
+          ) : null}
+          <div>
+            <p className="text-white/70 text-sm mb-1">{game.category}</p>
+            <h1 className="text-3xl font-bold text-white mb-2">เติม {game.name}</h1>
+            <p className="text-white/80 text-sm">{game.description}</p>
+          </div>
         </div>
 
         <GameOrderForm game={game} />
