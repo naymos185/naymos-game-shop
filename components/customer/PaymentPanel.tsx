@@ -22,6 +22,8 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [walletMsg, setWalletMsg] = useState<string | null>(null);
   const [store, setStore] = useState({
     promptpay_id: '',
     account_name: 'NayMos GameShop',
@@ -216,6 +218,44 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
         <p className="text-xs text-amber-200/90 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mt-2">
           โอนยอดให้ตรงเป๊ะ · หลังโอนแล้วรอแอดมินยืนยัน
         </p>
+      </div>
+
+      <div className="rounded-2xl border border-emerald-900/40 bg-emerald-950/20 p-4 space-y-2">
+        <p className="text-sm text-zinc-300 font-medium">ชำระด้วย Wallet (สมาชิก)</p>
+        <p className="text-xs text-zinc-500">ต้องล็อกอินและมียอดเครดิตพอ · Admin เติมได้ที่หลังบ้าน</p>
+        <button
+          type="button"
+          disabled={walletLoading}
+          onClick={async () => {
+            setWalletMsg(null);
+            setWalletLoading(true);
+            try {
+              const res = await fetch('/api/pay/wallet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_number: data.order_number }),
+              });
+              const json = await res.json();
+              if (!json.success) {
+                setWalletMsg(json.message ?? 'ไม่สำเร็จ');
+              } else {
+                setWalletMsg('ชำระด้วย Wallet สำเร็จ');
+                await load();
+              }
+            } catch {
+              setWalletMsg('เชื่อมต่อไม่สำเร็จ');
+            }
+            setWalletLoading(false);
+          }}
+          className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 py-2.5 text-sm font-semibold text-white"
+        >
+          {walletLoading ? 'กำลังตัดเครดิต...' : 'จ่ายด้วย Wallet'}
+        </button>
+        {walletMsg && (
+          <p className={`text-xs ${walletMsg.includes('สำเร็จ') ? 'text-emerald-400' : 'text-red-400'}`}>
+            {walletMsg}
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
