@@ -16,7 +16,17 @@ export default async function AccountOrdersPage() {
     redirect('/login?next=/account/orders');
   }
 
-  const orders = await listOrdersForCurrentUser(50);
+  const rawOrders = await listOrdersForCurrentUser(50);
+  const now = Date.now();
+  const TEN_MINUTES_MS = 10 * 60 * 1000;
+
+  // กรองออเดอร์ที่ยังไม่ชำระเงินและเกิน 10 นาทีออกไป (หายไปตามเงื่อนไข)
+  const orders = rawOrders.filter((o) => {
+    const isPendingPayment = o.status === 'pending' || o.status === 'PENDING_PAYMENT';
+    if (!isPendingPayment) return true; // สถานะอื่นๆ เช่น ชำระแล้ว หรือ เติมเสร็จ ไม่หาย
+    const createdTime = new Date(o.created_at).getTime();
+    return now - createdTime <= TEN_MINUTES_MS;
+  });
 
   const gameIds = [...new Set(orders.map((o) => o.game_id).filter(Boolean))];
   const productIds = [...new Set(orders.map((o) => o.product_id).filter(Boolean))];
@@ -61,14 +71,15 @@ export default async function AccountOrdersPage() {
 
         {orders.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-12 text-center text-zinc-500">
-            ยังไม่มีประวัติออเดอร์
+            ยังไม่มีประวัติออเดอร์ หรือออเดอร์ที่ค้างชำระเกิน 10 นาทีหมดอายุแล้ว
           </div>
         ) : (
           <div className="space-y-3">
             {orders.map((o) => {
               const gName = names[] ?? 'เกม';
               const pName = names[] ?? 'แพ็กเกจ';
-              const isPending = o.status === 'pending' || o.status === 'PENDING_PAYMENT' || o.status === 'PROCESSING';
+              const isWaitingPayment = o.status === 'pending' || o.status === 'PENDING_PAYMENT';
+              const isProcessing = o.status === 'PAID' || o.status === 'PROCESSING';
               const isCompleted = o.status === 'SUCCESS' || o.status === 'completed';
 
               return (
@@ -80,13 +91,25 @@ export default async function AccountOrdersPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        {isPending && (
-                          <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" title="ต้องชำระ / รอดำเนินการ" />
+                        {isWaitingPayment && (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-amber-400 font-medium">
+                            <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                            ต้องชำระเงิน
+                          </span>
+                        )}
+                        {isProcessing && (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-blue-400 font-medium">
+                            <span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse" />
+                            รอดำเนินการเติม
+                          </span>
                         )}
                         {isCompleted && (
-                          <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400" title="เติมเสร็จแล้ว" />
+                          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                            <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                            เติมเสร็จแล้ว
+                          </span>
                         )}
-                        <span className="font-mono text-sm font-semibold text-white">
+                        <span className="font-mono text-sm font-semibold text-white ml-2">
                           {o.order_number}
                         </span>
                       </div>
@@ -99,7 +122,7 @@ export default async function AccountOrdersPage() {
                     </div>
 
                     <div className="text-right space-y-1">
-                      <p className="font-bold text-sm text-white">฿{Number(o.amount).toLocaleString()}</p>
+                      <p className="font-bold text-sm text-white">฿{Number(o.total).toLocaleString()}</p>
                       <span
                         className={}
                       >
