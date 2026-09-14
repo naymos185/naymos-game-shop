@@ -358,7 +358,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                   return (
                     <div key={f.id || key} className="flex justify-between py-1 border-b border-sky-100/80">
                       <span className="text-slate-500">{f.label}:</span>
-                      <span className="font-mono font-bold text-slate-900">
+                      <span className="font-bold text-slate-900">
                         {key.includes('pass') ? '••••••••' : playerData[key]}
                       </span>
                     </div>
@@ -452,10 +452,10 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
               <X className="w-4 h-4" />
             </button>
 
-            <div className="text-center space-y-1">
-              <span className="text-xs font-bold uppercase tracking-widest text-amber-500">สแกนชำระเงิน</span>
-              <h3 className="text-xl font-black text-sky-900">พร้อมเพย์ / QR Payment</h3>
-              <p className="text-xs text-slate-500 font-mono">ออเดอร์: {orderNumber}</p>
+            <div className="text-center space-y-1.5">
+              <span className="inline-block px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-bold tracking-wide">สแกนชำระเงิน</span>
+              <h3 className="text-xl font-black text-slate-900">พร้อมเพย์ / QR Payment</h3>
+              <p className="text-xs font-semibold text-slate-500">ออเดอร์: <span className="text-sky-600 font-bold">{orderNumber}</span></p>
             </div>
 
             <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white mx-auto w-fit shadow-inner">
@@ -476,7 +476,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
               <label className="block text-xs font-semibold text-slate-600">
                 แนบรูปภาพสลิปการโอนเงิน (จำเป็น)
               </label>
-              <div className="relative border-2 border-dashed border-sky-200 hover:border-amber-500/80 rounded-2xl p-4 text-center cursor-pointer transition bg-white/50">
+              <div className="relative border-2 border-dashed border-sky-200 hover:border-sky-400 rounded-2xl p-4 text-center cursor-pointer transition bg-white/50">
                 <input
                   type="file"
                   accept="image/*"
@@ -493,7 +493,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-1.5 text-slate-500">
-                    <UploadCloud className="w-6 h-6 text-amber-400" />
+                    <UploadCloud className="w-6 h-6 text-sky-500" />
                     <span className="text-xs font-medium">กดเพื่อเลือกรูปภาพสลิปจากเครื่อง</span>
                     <span className="text-[10px] text-slate-400">รองรับไฟล์ JPG, PNG</span>
                   </div>
@@ -507,7 +507,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
               type="button"
               disabled={!slipFile || submittingSlip}
               onClick={handleSubmitSlip}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:hover:bg-amber-500 py-3 text-sm font-black text-black transition shadow-lg"
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 disabled:opacity-40 py-3.5 text-sm font-bold text-white transition shadow-lg shadow-sky-500/25"
             >
               {submittingSlip ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
