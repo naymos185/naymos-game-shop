@@ -13,7 +13,6 @@ export type CreateOrderPayload = {
   contact_email?: string;
   contact_phone?: string;
   coupon_code?: string;
-  /** points to redeem: 10 pts = 1 THB */
   points_to_use?: number;
 };
 
@@ -30,26 +29,8 @@ export type CreateOrderResult =
 export async function createOrder(
   payload: CreateOrderPayload
 ): Promise<CreateOrderResult> {
-  const email = payload.contact_email?.trim() || null;
-  const phone = payload.contact_phone?.trim() || null;
-
   if (!payload.game_id || !payload.product_id) {
     return { success: false, message: 'ข้อมูลเกมหรือแพ็กเกจไม่ครบ' };
-  }
-
-  if (
-    payload.game_id.startsWith('mock-') ||
-    payload.product_id.startsWith('ff-') ||
-    payload.product_id.startsWith('rov-') ||
-    payload.product_id.startsWith('ml-') ||
-    payload.product_id.startsWith('val-') ||
-    payload.product_id.startsWith('gi-') ||
-    payload.product_id.startsWith('pubg-')
-  ) {
-    return {
-      success: false,
-      message: 'ยังไม่ได้ seed ข้อมูลเกมในฐานข้อมูล — รัน 003_games_seed.sql ก่อน',
-    };
   }
 
   const supabase = await createClient();
@@ -58,9 +39,25 @@ export async function createOrder(
     data: { user },
   } = await supabase.auth.getUser();
 
+  // STRICT REQUIREMENT: Must be logged in to order (No guest orders allowed)
+  if (!user) {
+    return {
+      success: false,
+      message: 'กรุณาเข้าสู่ระบบหรือสมัครสมาชิกก่อนทำการสั่งซื้อ เพื่อความปลอดภัย',
+    };
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const isReseller = profile?.role === 'reseller' || profile?.role === 'admin' || profile?.role === 'super_admin';
+
   const { data: product, error: productError } = await supabase
     .from('products')
-    .select('id, game_id, price, name, is_active')
+    .select('id, game_id, price, reseller_price, name, is_active')
     .eq('id', payload.product_id)
     .maybeSingle();
 
@@ -74,7 +71,13 @@ export async function createOrder(
     return { success: false, message: 'แพ็กเกจไม่ตรงกับเกม' };
   }
 
-  const subtotal = Number(product.price);
+  // Calculate pricing based on role
+  let rawPrice = Number(product.price);
+  if (isReseller && product.reseller_price != null && Number(product.reseller_price) > 0) {
+    rawPrice = Number(product.reseller_price);
+  }
+
+  const subtotal = rawPrice;
   let discount = 0;
   let couponCode: string | null = null;
 
@@ -90,9 +93,6 @@ export async function createOrder(
   let pointsUsed = 0;
   const ptsReq = Math.floor(Number(payload.points_to_use ?? 0));
   if (ptsReq > 0) {
-    if (!user) {
-      return { success: false, message: 'ต้องล็อกอินเพื่อใช้คะแนน' };
-    }
     const { data: balRow } = await supabase
       .from('point_balances')
       .select('balance')
@@ -109,105 +109,41 @@ export async function createOrder(
     }
   }
 
-  const total = Math.max(0, Math.round((subtotal - discount) * 100) / 100);
-  let orderNumber = generateOrderNumber();
-  let lastError: string | null = null;
+  const total = Math.max(0, subtotal - discount);
+  const orderNumber = generateOrderNumber();
 
-  async function redeemIfNeeded() {
-    if (pointsUsed > 0 && user) {
-      try {
-        const { data: ord } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('order_number', orderNumber)
-          .maybeSingle();
-        await supabase.rpc('redeem_points_for_order', {
-          p_user_id: user.id,
-          p_points: pointsUsed,
-          p_order_id: ord?.id ?? null,
-        });
-      } catch {
-        /* best-effort */
-      }
-    }
-  }
-
-  for (let i = 0; i < 5; i++) {
-    const row: Record<string, unknown> = {
+  const { data: newOrder, error: insertError } = await supabase
+    .from('orders')
+    .insert({
       order_number: orderNumber,
-      user_id: user?.id ?? null,
+      user_id: user.id,
       game_id: payload.game_id,
       product_id: payload.product_id,
       player_data: payload.player_data,
-      contact_email: email,
-      contact_phone: phone,
-      subtotal,
-      discount,
-      fee: 0,
       total,
+      contact_email: payload.contact_email?.trim() || user.email || null,
+      contact_phone: payload.contact_phone?.trim() || null,
+      coupon_code: couponCode,
       status: 'PENDING_PAYMENT',
-    };
-    if (couponCode) row.coupon_code = couponCode;
+    })
+    .select('id, order_number, status, total')
+    .single();
 
-    const { error } = await supabase.from('orders').insert(row);
-
-    if (!error) {
-      if (couponCode) {
-        try {
-          await incrementCouponUsage(couponCode);
-        } catch {
-          /* best-effort */
-        }
-      }
-      await redeemIfNeeded();
-      return {
-        success: true,
-        order: {
-          id: '',
-          order_number: orderNumber,
-          status: 'PENDING_PAYMENT',
-          total,
-          discount,
-          subtotal,
-        },
-      };
-    }
-
-    if (error.message?.includes('coupon_code') && couponCode) {
-      delete row.coupon_code;
-      const { error: e2 } = await supabase.from('orders').insert(row);
-      if (!e2) {
-        try {
-          await incrementCouponUsage(couponCode);
-        } catch {
-          /* ignore */
-        }
-        await redeemIfNeeded();
-        return {
-          success: true,
-          order: {
-            id: '',
-            order_number: orderNumber,
-            status: 'PENDING_PAYMENT',
-            total,
-            discount,
-            subtotal,
-          },
-        };
-      }
-      lastError = e2.message;
-      break;
-    }
-
-    if (error.code === '23505') {
-      orderNumber = generateOrderNumber();
-      lastError = error.message;
-      continue;
-    }
-
-    lastError = error.message;
-    break;
+  if (insertError || !newOrder) {
+    return { success: false, message: insertError?.message || 'สร้างออเดอร์ไม่สำเร็จ' };
   }
 
-  return { success: false, message: lastError ?? 'สร้างออเดอร์ไม่สำเร็จ' };
+  if (couponCode) {
+    await incrementCouponUsage(couponCode);
+  }
+
+  return {
+    success: true,
+    order: {
+      ...newOrder,
+      total: Number(newOrder.total),
+      discount,
+      subtotal,
+    },
+  };
 }
