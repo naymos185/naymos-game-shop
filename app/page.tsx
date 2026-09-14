@@ -8,7 +8,10 @@ import {
   ChevronRight,
   Gamepad2,
 } from 'lucide-react';
-import { MOCK_GAMES } from '@/lib/data/games';
+import { getActiveGames } from '@/lib/games/queries';
+import { getActivePromotions } from '@/lib/promotions/queries';
+
+export const dynamic = 'force-dynamic';
 
 const STEPS = [
   { step: '1', title: 'เลือกเกม', desc: 'เลือกเกมที่ต้องการเติม' },
@@ -25,7 +28,10 @@ const FEATURES = [
   { icon: Headphones, title: 'ซัพพอร์ตดี', desc: 'ทีมงานพร้อมช่วยเหลือตลอด' },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const games = await getActiveGames();
+  const promotions = await getActivePromotions();
+
   return (
     <CustomerLayout>
       <section className="relative overflow-hidden">
@@ -65,6 +71,38 @@ export default function HomePage() {
         </div>
       </section>
 
+      {promotions.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg sm:text-xl font-bold">โปรโมชัน</h2>
+            <Link href="/promotions" className="text-sm text-red-400 hover:text-red-300">
+              ดูทั้งหมด →
+            </Link>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {promotions.slice(0, 4).map((pr) => (
+              <Link
+                key={pr.id}
+                href={pr.link_url || '/games'}
+                className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 hover:border-red-600/40 transition"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  {pr.badge && (
+                    <span className="rounded-full bg-red-600/20 text-red-400 text-[10px] px-2 py-0.5 font-semibold">
+                      {pr.badge}
+                    </span>
+                  )}
+                  <span className="font-medium text-sm text-white">{pr.title}</span>
+                </div>
+                {pr.description && (
+                  <p className="text-xs text-zinc-500 line-clamp-2">{pr.description}</p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="mx-auto max-w-7xl px-4 sm:px-6 py-12">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl sm:text-2xl font-bold">เกมยอดนิยม</h2>
@@ -73,7 +111,7 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          {MOCK_GAMES.map((game) => (
+          {games.map((game) => (
             <Link
               key={game.slug}
               href={`/games/${game.slug}`}
