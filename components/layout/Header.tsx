@@ -2,13 +2,43 @@ import Link from 'next/link';
 import { User, ShoppingCart, Menu } from 'lucide-react';
 import { getProfile } from '@/lib/auth/get-user';
 import { LogoutButton } from '@/components/auth/LogoutButton';
+import { createClient } from '@/lib/supabase/server';
 
 export async function Header() {
   let profile = null;
+  let activeOrderCount = 0;
+
   try {
     profile = await getProfile();
+    if (profile) {
+      const supabase = await createClient();
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('id, status, player_data, created_at')
+        .eq('user_id', profile.id)
+        .in('status', ['pending', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SUCCESS']);
+
+      if (orders && orders.length > 0) {
+        const now = Date.now();
+        const TEN_MINUTES_MS = 10 * 60 * 1000;
+        activeOrderCount = orders.filter((o) => {
+          // If customer already confirmed receipt, it's moved to history
+          const pd = (o.player_data as Record<string, unknown>) || {};
+          if (pd.customer_confirmed === true) return false;
+
+          // If pending payment and over 10 min, expired
+          const isPending = o.status === 'pending' || o.status === 'PENDING_PAYMENT';
+          if (isPending) {
+            const diff = now - new Date(o.created_at).getTime();
+            if (diff > TEN_MINUTES_MS) return false;
+          }
+          return true;
+        }).length;
+      }
+    }
   } catch {
     profile = null;
+    activeOrderCount = 0;
   }
 
   return (
@@ -28,7 +58,14 @@ export async function Header() {
             <Link href="/promotions" className="hover:text-red-400 transition">โปรโมชั่น</Link>
             <Link href="/how-to" className="hover:text-red-400 transition">วิธีเติม</Link>
             <Link href="/faq" className="hover:text-red-400 transition">FAQ</Link>
-            <Link href="/order-tracking" className="hover:text-red-400 transition">ติดตามออเดอร์</Link>
+            <Link href="/order-tracking" className="relative hover:text-red-400 transition flex items-center gap-1.5">
+              ติดตามออเดอร์
+              {activeOrderCount > 0 && (
+                <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-red-600 rounded-full animate-pulse">
+                  {activeOrderCount}
+                </span>
+              )}
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -65,10 +102,15 @@ export async function Header() {
 
             <Link
               href="/order-tracking"
-              className="flex items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 p-2.5 text-white transition"
+              className="relative flex items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 p-2.5 text-white transition"
               aria-label="ออเดอร์"
             >
               <ShoppingCart className="h-4 w-4" />
+              {activeOrderCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[10px] font-black text-black">
+                  {activeOrderCount}
+                </span>
+              )}
             </Link>
 
             <button
