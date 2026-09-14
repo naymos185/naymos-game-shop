@@ -27,7 +27,7 @@ export default async function AccountOrdersPage() {
     if (gameIds.length) {
       const { data: games } = await supabase.from('games').select('id, name').in('id', gameIds);
       (games ?? []).forEach((g) => {
-        names[`g:${g.id}`] = g.name;
+        names[] = g.name;
       });
     }
     if (productIds.length) {
@@ -36,7 +36,7 @@ export default async function AccountOrdersPage() {
         .select('id, name')
         .in('id', productIds);
       (products ?? []).forEach((p) => {
-        names[`p:${p.id}`] = p.name;
+        names[] = p.name;
       });
     }
   } catch {
@@ -60,66 +60,56 @@ export default async function AccountOrdersPage() {
         </p>
 
         {orders.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/50 p-10 text-center">
-            <p className="text-zinc-400 mb-3">ยังไม่มีออเดอร์</p>
-            <p className="text-xs text-zinc-500 mb-6">
-              ออเดอร์ที่สั่งแบบ Guest (ไม่ล็อกอิน) จะไม่โผล่ที่นี่
-              <br />
-              ใช้หน้าติดตามออเดอร์ด้วยหมายเลขแทน
-            </p>
-            <Link
-              href="/games"
-              className="inline-flex rounded-xl bg-red-600 hover:bg-red-700 px-5 py-2.5 text-sm font-semibold text-white transition"
-            >
-              ไปเลือกเกม
-            </Link>
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-12 text-center text-zinc-500">
+            ยังไม่มีประวัติออเดอร์
           </div>
         ) : (
           <div className="space-y-3">
-            {orders.map((o) => (
-              <div
-                key={o.id}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-                  <div>
-                    <p className="font-mono text-sm font-bold text-white">
-                      {o.order_number}
-                    </p>
-                    <p className="text-xs text-zinc-500 mt-0.5">
-                      {new Date(o.created_at).toLocaleString('th-TH')}
-                    </p>
+            {orders.map((o) => {
+              const gName = names[] ?? 'เกม';
+              const pName = names[] ?? 'แพ็กเกจ';
+              const isPending = o.status === 'pending' || o.status === 'PENDING_PAYMENT' || o.status === 'PROCESSING';
+              const isCompleted = o.status === 'SUCCESS' || o.status === 'completed';
+
+              return (
+                <Link
+                  key={o.id}
+                  href={}
+                  className="block rounded-2xl border border-zinc-800 bg-zinc-900/80 hover:border-zinc-700 p-4 transition-all"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        {isPending && (
+                          <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" title="ต้องชำระ / รอดำเนินการ" />
+                        )}
+                        {isCompleted && (
+                          <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400" title="เติมเสร็จแล้ว" />
+                        )}
+                        <span className="font-mono text-sm font-semibold text-white">
+                          {o.order_number}
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-400">
+                        {gName} · {pName}
+                      </p>
+                      <p className="text-[11px] text-zinc-500">
+                        {new Date(o.created_at).toLocaleString('th-TH')}
+                      </p>
+                    </div>
+
+                    <div className="text-right space-y-1">
+                      <p className="font-bold text-sm text-white">฿{Number(o.amount).toLocaleString()}</p>
+                      <span
+                        className={}
+                      >
+                        {orderStatusLabel(o.status)}
+                      </span>
+                    </div>
                   </div>
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${orderStatusColor(o.status)}`}
-                  >
-                    {orderStatusLabel(o.status)}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <p className="text-zinc-500 text-xs">เกม</p>
-                    <p className="text-white">{names[`g:${o.game_id}`] ?? '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-zinc-500 text-xs">แพ็กเกจ</p>
-                    <p className="text-white">{names[`p:${o.product_id}`] ?? '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-zinc-500 text-xs">ยอดชำระ</p>
-                    <p className="font-bold text-red-400">฿{Number(o.total)}</p>
-                  </div>
-                  <div className="flex items-end justify-end">
-                    <Link
-                      href={`/order-tracking?number=${encodeURIComponent(o.order_number)}`}
-                      className="text-xs text-red-400 hover:underline"
-                    >
-                      ดูรายละเอียด →
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
