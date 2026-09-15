@@ -8,6 +8,12 @@ export type GameWithDetails = Game & {
   color: string;
 };
 
+function allowMockFallback(): boolean {
+  if (process.env.NODE_ENV === 'production') return false;
+  if (process.env.ALLOW_MOCK_GAMES === 'false') return false;
+  return process.env.ALLOW_MOCK_GAMES === 'true' || process.env.NODE_ENV === 'development';
+}
+
 const COLOR_MAP: Record<string, string> = {
   'free-fire': 'from-orange-600 to-red-700',
   rov: 'from-blue-600 to-indigo-700',
@@ -61,23 +67,28 @@ export async function getActiveGames(): Promise<GameWithDetails[]> {
       .order('sort_order', { ascending: true });
 
     if (error || !games?.length) {
-      return MOCK_GAMES.map(mockToGameWithDetails);
+      return allowMockFallback() ? MOCK_GAMES.map(mockToGameWithDetails) : [];
     }
 
     const ids = games.map((g) => g.id);
     const [{ data: fields }, { data: products }] = await Promise.all([
       supabase.from('game_fields').select('*').in('game_id', ids).order('sort_order'),
-      supabase.from('products').select('*').in('game_id', ids).eq('is_active', true).order('sort_order'),
+      supabase
+        .from('products')
+        .select('*')
+        .in('game_id', ids)
+        .eq('is_active', true)
+        .order('sort_order'),
     ]);
 
     return games.map((g) => ({
       ...(g as Game),
-      color: COLOR_MAP[g.slug] ?? 'from-zinc-700 to-zinc-900',
+      color: COLOR_MAP[g.slug] ?? 'from-blue-600 to-blue-800',
       game_fields: (fields ?? []).filter((f) => f.game_id === g.id) as GameField[],
       products: (products ?? []).filter((p) => p.game_id === g.id) as Product[],
     }));
   } catch {
-    return MOCK_GAMES.map(mockToGameWithDetails);
+    return allowMockFallback() ? MOCK_GAMES.map(mockToGameWithDetails) : [];
   }
 }
 
@@ -92,22 +103,29 @@ export async function getGameBySlug(slug: string): Promise<GameWithDetails | nul
       .maybeSingle();
 
     if (error || !game) {
+      if (!allowMockFallback()) return null;
       const mock = MOCK_GAMES.find((m) => m.slug === slug);
       return mock ? mockToGameWithDetails(mock, 0) : null;
     }
 
     const [{ data: fields }, { data: products }] = await Promise.all([
       supabase.from('game_fields').select('*').eq('game_id', game.id).order('sort_order'),
-      supabase.from('products').select('*').eq('game_id', game.id).eq('is_active', true).order('sort_order'),
+      supabase
+        .from('products')
+        .select('*')
+        .eq('game_id', game.id)
+        .eq('is_active', true)
+        .order('sort_order'),
     ]);
 
     return {
       ...(game as Game),
-      color: COLOR_MAP[game.slug] ?? 'from-zinc-700 to-zinc-900',
+      color: COLOR_MAP[game.slug] ?? 'from-blue-600 to-blue-800',
       game_fields: (fields ?? []) as GameField[],
       products: (products ?? []) as Product[],
     };
   } catch {
+    if (!allowMockFallback()) return null;
     const mock = MOCK_GAMES.find((m) => m.slug === slug);
     return mock ? mockToGameWithDetails(mock, 0) : null;
   }
