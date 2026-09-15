@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { AlertCircle, CheckCircle2, Lock, Mail, User, Loader2 } from 'lucide-react';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -71,39 +72,53 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 space-y-4">
+    <form
+      onSubmit={onSubmit}
+      className="rounded-3xl border-2 border-sky-100 bg-white p-6 sm:p-8 shadow-xl shadow-sky-100/60 space-y-4"
+    >
       {error && (
-        <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300">
-          {error}
+        <div className="rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-600 flex items-start gap-2.5">
+          <AlertCircle className="w-5 h-5 shrink-0 text-red-500 mt-0.5" />
+          <span>{error}</span>
         </div>
       )}
       {success && (
-        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-3 text-sm text-emerald-300">
-          {success}
+        <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700 flex items-start gap-2.5">
+          <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-500 mt-0.5" />
+          <span>{success}</span>
         </div>
       )}
       <div>
-        <label className="block text-sm font-medium text-zinc-300 mb-1.5">ชื่อ</label>
+        <label className="block text-sm font-bold text-sky-950 mb-1.5 flex items-center gap-1.5">
+          <User className="w-4 h-4 text-sky-500" />
+          ชื่อ
+        </label>
         <input
           name="full_name"
           type="text"
           placeholder="ชื่อของคุณ"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-red-500"
+          className="w-full rounded-2xl border border-sky-200 bg-sky-50/40 px-4 py-3 text-sm font-semibold text-slate-900 placeholder:text-slate-400 outline-none focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-zinc-300 mb-1.5">อีเมล</label>
+        <label className="block text-sm font-bold text-sky-950 mb-1.5 flex items-center gap-1.5">
+          <Mail className="w-4 h-4 text-sky-500" />
+          อีเมล
+        </label>
         <input
           name="email"
           type="email"
           required
           autoComplete="email"
           placeholder="you@example.com"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-red-500"
+          className="w-full rounded-2xl border border-sky-200 bg-sky-50/40 px-4 py-3 text-sm font-semibold text-slate-900 placeholder:text-slate-400 outline-none focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-zinc-300 mb-1.5">รหัสผ่าน</label>
+        <label className="block text-sm font-bold text-sky-950 mb-1.5 flex items-center gap-1.5">
+          <Lock className="w-4 h-4 text-sky-500" />
+          รหัสผ่าน
+        </label>
         <input
           name="password"
           type="password"
@@ -111,15 +126,22 @@ export function RegisterForm() {
           minLength={6}
           autoComplete="new-password"
           placeholder="อย่างน้อย 6 ตัวอักษร"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-red-500"
+          className="w-full rounded-2xl border border-sky-200 bg-sky-50/40 px-4 py-3 text-sm font-semibold text-slate-900 placeholder:text-slate-400 outline-none focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100 transition-all"
         />
       </div>
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-zinc-700 disabled:cursor-not-allowed py-3 font-semibold text-white transition"
+        className="w-full rounded-2xl bg-gradient-to-r from-sky-400 to-sky-600 hover:from-sky-500 hover:to-sky-700 disabled:opacity-60 disabled:cursor-not-allowed py-3.5 font-bold text-white shadow-md shadow-sky-200 active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-base mt-2"
       >
-        {loading ? 'กำลังสมัคร...' : 'สมัครสมาชิก'}
+        {loading ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>กำลังสมัคร...</span>
+          </>
+        ) : (
+          <span>สมัครสมาชิก</span>
+        )}
       </button>
     </form>
   );
