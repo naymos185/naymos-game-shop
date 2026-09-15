@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { paymentManager } from './payment-manager';
+import { getStoreSettings } from '@/lib/admin/settings';
 
 export type EnsurePaymentResult =
   | {
@@ -96,12 +97,14 @@ export async function ensurePaymentForOrder(
     return { success: false, message: 'ยอดออเดอร์ไม่ถูกต้อง' };
   }
 
+  const storeSettings = await getStoreSettings();
   const provider = paymentManager.getDefault();
   const created = await provider.createPayment({
     orderId,
     amount,
     orderNumber: num,
     expiresInMinutes: 30,
+    promptpayId: storeSettings.promptpay_id,
   });
 
   const { error } = await supabase.from('payments').insert({
