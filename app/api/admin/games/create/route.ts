@@ -27,8 +27,6 @@ export async function POST(request: Request) {
     }
     let slug = body.slug ? String(body.slug).trim() : slugify(name);
     slug = slugify(slug);
-    const fieldLabel = String(body.field_label ?? 'UID / Player ID').trim() || 'UID / Player ID';
-    const fieldName = String(body.field_name ?? 'uid').trim() || 'uid';
 
     const supabase = await createClient();
     const { data: game, error } = await supabase
@@ -51,16 +49,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: error.message }, { status: 400 });
     }
 
-    if (game?.id) {
-      await supabase.from('game_fields').insert({
+    if (game?.id && body.game_fields && Array.isArray(body.game_fields)) {
+      const fieldsToInsert = body.game_fields.map((f: any) => ({
         game_id: game.id,
-        name: fieldName,
-        label: fieldLabel,
-        type: 'text',
-        placeholder: fieldLabel,
-        required: true,
-        sort_order: 0,
-      });
+        key: String(f.key ?? '').toLowerCase().trim(),
+        label: String(f.label ?? ''),
+        type: String(f.type ?? 'text'),
+        placeholder: f.placeholder ? String(f.placeholder) : null,
+        required: f.required !== false,
+        options: f.options ? JSON.stringify(f.options) : null,
+        sort_order: Number(f.sort_order ?? 0),
+      }));
+
+      const { error: fieldsError } = await supabase
+        .from('game_fields')
+        .insert(fieldsToInsert);
+
+      if (fieldsError) {
+        console.error('เพิ่ม fields ผิดพลาด:', fieldsError);
+        return NextResponse.json({ success: false, message: 'เพิ่ม fields ผิดพลาด' }, { status: 400 });
+      }
     }
 
     return NextResponse.json({ success: true, id: game?.id, slug });
