@@ -45,21 +45,21 @@ export default async function AccountOrdersPage() {
   return (
     <CustomerLayout>
       <div className="mx-auto max-w-3xl px-4 py-12">
-        <nav className="text-sm text-zinc-500 mb-6">
+        <nav className="text-sm text-slate-400 mb-6">
           <Link href="/account" className="hover:text-red-400">
             บัญชีของฉัน
           </Link>
           <span className="mx-2">/</span>
-          <span className="text-zinc-300">ประวัติออเดอร์</span>
+          <span className="text-slate-600">ประวัติออเดอร์</span>
         </nav>
 
         <h1 className="text-2xl font-bold mb-2">ประวัติออเดอร์</h1>
-        <p className="text-zinc-400 text-sm mb-8">
+        <p className="text-slate-500 text-sm mb-8">
           ออเดอร์ทั้งหมด · {orders.length} รายการ
         </p>
 
         {orders.length === 0 ? (
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-12 text-center text-zinc-500">
+          <div className="rounded-2xl border border-sky-100 bg-white/95 shadow-sm shadow-sky-100/50/50 p-12 text-center text-slate-400">
             ยังไม่มีประวัติออเดอร์
           </div>
         ) : (
@@ -75,7 +75,7 @@ export default async function AccountOrdersPage() {
                 <Link
                   key={o.id}
                   href="/order-tracking"
-                  className="block rounded-2xl border border-zinc-800 bg-zinc-900/80 hover:border-zinc-700 p-4 transition-all"
+                  className="block rounded-2xl border border-sky-100 bg-white/95 shadow-sm shadow-sky-100/50/80 hover:border-zinc-700 p-4 transition-all"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="space-y-1">
@@ -102,10 +102,10 @@ export default async function AccountOrdersPage() {
                           {o.order_number}
                         </span>
                       </div>
-                      <p className="text-xs text-zinc-400">
+                      <p className="text-xs text-slate-500">
                         {gName} · {pName}
                       </p>
-                      <p suppressHydrationWarning className="text-[11px] text-zinc-500">
+                      <p suppressHydrationWarning className="text-[11px] text-slate-400">
                         {new Date(o.created_at).toLocaleString('th-TH')}
                       </p>
                     </div>
