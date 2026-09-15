@@ -1,14 +1,17 @@
 import type { GameProvider } from './provider.interface';
 import { MockProvider } from './mock-provider';
+import { HttpProvider } from './http-provider';
 
-/**
- * ProviderManager holds registered providers and exposes them by id.
- */
 class ProviderManager {
   private providers = new Map<string, GameProvider>();
 
   constructor() {
     this.register(new MockProvider());
+    const url = process.env.PROVIDER_API_URL?.trim();
+    const key = process.env.PROVIDER_API_KEY?.trim();
+    if (url && key) {
+      this.register(new HttpProvider(url, key));
+    }
   }
 
   register(provider: GameProvider) {
@@ -23,14 +26,9 @@ class ProviderManager {
     return Array.from(this.providers.values());
   }
 
+  /** Prefer real HTTP provider when configured */
   getDefault(): GameProvider {
-    const mock = this.providers.get('mock');
-    if (mock) return mock;
-    const first = this.providers.values().next().value;
-    if (!first) {
-      throw new Error('No providers registered');
-    }
-    return first;
+    return this.get('http') ?? this.get('mock')!;
   }
 }
 
