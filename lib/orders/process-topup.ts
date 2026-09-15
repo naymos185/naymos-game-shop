@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { providerManager } from '@/lib/providers/provider-manager';
 import { awardPointsForOrder } from '@/lib/points/queries';
-import { notifyUser } from '@/lib/notifications/queries';
+import { notifyUserAndEmail } from '@/lib/notifications/queries';
 
 export type ProcessTopupResult = {
   success: boolean;
@@ -21,7 +21,7 @@ export async function processTopupForOrder(
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .select(
-      'id, order_number, status, product_id, player_data, total, provider_transaction_id, user_id'
+      'id, order_number, status, product_id, player_data, total, provider_transaction_id, user_id, contact_email'
     )
     .eq('order_number', num)
     .maybeSingle();
@@ -104,12 +104,12 @@ export async function processTopupForOrder(
         /* best-effort */
       }
       try {
-        await notifyUser(
+        await notifyUserAndEmail(
           order.user_id,
+          order.contact_email as string | null,
           'ออเดอร์สำเร็จ',
           `ออเดอร์ ${order.order_number} เติมเกมสำเร็จแล้ว`,
-          `/order-tracking?number=${order.order_number}`,
-          'success'
+          `/order-tracking?number=${order.order_number}`
         );
       } catch {
         /* best-effort */

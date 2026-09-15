@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { sendEmail } from '@/lib/notifications/external';
 
 export type NotificationRow = {
   id: string;
@@ -47,5 +48,22 @@ export async function notifyUser(
     });
   } catch {
     /* best-effort */
+  }
+}
+
+export async function notifyUserAndEmail(
+  userId: string,
+  email: string | null | undefined,
+  title: string,
+  body?: string,
+  link?: string
+): Promise<void> {
+  await notifyUser(userId, title, body, link, 'success');
+  if (email && email.includes('@')) {
+    await sendEmail({
+      to: email,
+      subject: title,
+      html: `<p>${body ?? title}</p>${link ? `<p><a href="${link}">เปิดดูออเดอร์</a></p>` : ''}`,
+    });
   }
 }
