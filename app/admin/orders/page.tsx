@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { listOrdersAdmin } from '@/lib/orders/queries';
 import { orderStatusColor, orderStatusLabel } from '@/lib/orders/status';
@@ -39,18 +40,18 @@ export default async function AdminOrdersPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-xl font-bold">Orders</h1>
-        <p className="text-sm text-zinc-500">ออเดอร์ล่าสุด · {orders.length} รายการ</p>
+        <h1 className="text-xl font-bold text-slate-900">Orders</h1>
+        <p className="text-sm text-slate-500">ออเดอร์ล่าสุด · {orders.length} รายการ · กดหมายเลขเพื่อดูรายละเอียด</p>
       </div>
 
       {orders.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 p-10 text-center text-sm text-zinc-500">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-400">
           ยังไม่มีออเดอร์ — ลองสร้างจากหน้าเว็บลูกค้า
         </div>
       ) : (
-        <div className="rounded-xl border border-zinc-800 overflow-x-auto">
+        <div className="rounded-xl border border-slate-200 overflow-x-auto bg-white">
           <table className="w-full text-sm min-w-[720px]">
-            <thead className="bg-zinc-900 text-zinc-400 text-left">
+            <thead className="bg-slate-50 text-slate-500 text-left">
               <tr>
                 <th className="px-4 py-3 font-medium">หมายเลข</th>
                 <th className="px-4 py-3 font-medium">เกม / แพ็ก</th>
@@ -61,24 +62,33 @@ export default async function AdminOrdersPage() {
                 <th className="px-4 py-3 font-medium">จัดการ</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800">
+            <tbody className="divide-y divide-slate-100">
               {orders.map((o) => (
-                <tr key={o.id} className="bg-zinc-950/50 hover:bg-zinc-900/50">
-                  <td className="px-4 py-3 font-mono text-xs text-white">{o.order_number}</td>
-                  <td className="px-4 py-3">
-                    <p className="text-white text-xs">{names[`g:${o.game_id}`] ?? '—'}</p>
-                    <p className="text-zinc-500 text-xs">{names[`p:${o.product_id}`] ?? '—'}</p>
+                <tr key={o.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-mono text-xs">
+                    <Link
+                      href={`/admin/orders/${encodeURIComponent(o.order_number)}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {o.order_number}
+                    </Link>
                   </td>
-                  <td className="px-4 py-3 font-medium text-red-400">฿{Number(o.total)}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs ${orderStatusColor(o.status)}`}>
+                    <p className="text-slate-900 text-xs">{names[`g:${o.game_id}`] ?? '—'}</p>
+                    <p className="text-slate-400 text-xs">{names[`p:${o.product_id}`] ?? '—'}</p>
+                  </td>
+                  <td className="px-4 py-3 font-medium text-blue-600">฿{Number(o.total)}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-xs ${orderStatusColor(o.status)}`}
+                    >
                       {orderStatusLabel(o.status)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-zinc-400">
+                  <td className="px-4 py-3 text-xs text-slate-500">
                     {o.contact_email || o.contact_phone || '—'}
                   </td>
-                  <td className="px-4 py-3 text-xs text-zinc-500 whitespace-nowrap">
+                  <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">
                     {new Date(o.created_at).toLocaleString('th-TH')}
                   </td>
                   <td className="px-4 py-3 space-y-1">
@@ -89,7 +99,7 @@ export default async function AdminOrdersPage() {
                       <ProcessTopupButton orderNumber={o.order_number} />
                     )}
                     {o.status === 'SUCCESS' && (
-                      <span className="text-xs text-emerald-500">เติมแล้ว</span>
+                      <span className="text-xs text-emerald-600">เติมแล้ว</span>
                     )}
                   </td>
                 </tr>
