@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
+  Landmark,
   ShoppingCart,
   Gamepad2,
   Package,
@@ -28,6 +29,7 @@ const navItems = [
   { href: '/admin/games', label: 'Games', icon: Gamepad2 },
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/providers', label: 'Providers', icon: Server },
+  { href: '/admin/bank', label: 'บัญชีธนาคาร / QR', icon: Landmark },
   { href: '/admin/payments', label: 'Payments', icon: CreditCard },
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/coupons', label: 'Coupons', icon: Ticket },
