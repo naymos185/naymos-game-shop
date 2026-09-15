@@ -123,24 +123,24 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
 
   if (orders.length === 0) {
     return (
-      <div className="rounded-2xl border border-sky-100 bg-white/60 p-10 text-center">
-        <div className="mx-auto w-12 h-12 rounded-full bg-zinc-800/80 flex items-center justify-center text-slate-500 mb-3">
-          <Clock className="w-6 h-6" />
+      <div className="rounded-3xl border border-sky-100 bg-white/90 p-10 text-center shadow-xs">
+        <div className="mx-auto w-14 h-14 rounded-2xl bg-sky-100/70 text-sky-600 flex items-center justify-center mb-4 shadow-inner">
+          <Clock className="w-7 h-7" />
         </div>
-        <h3 className="text-lg font-bold text-white mb-1">ไม่มีออเดอร์ที่รอดำเนินการ</h3>
-        <p className="text-sm text-slate-500 mb-6">
+        <h3 className="text-lg font-black text-slate-900 mb-1.5">ไม่มีออเดอร์ที่รอดำเนินการ</h3>
+        <p className="text-sm text-slate-500 font-medium mb-6 max-w-md mx-auto leading-relaxed">
           คุณไม่มีคำสั่งซื้อที่ค้างอยู่ หรือออเดอร์ได้รับการยืนยันและย้ายไปที่หน้าประวัติแล้ว
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
             href="/games"
-            className="rounded-xl bg-red-600 hover:bg-red-700 px-5 py-2.5 text-sm font-semibold text-white transition"
+            className="rounded-full bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-500 hover:to-blue-700 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-sky-200/50 transition hover:scale-[1.02] active:scale-[0.98]"
           >
             เลือกเติมเกมเลย
           </Link>
           <Link
             href="/account/orders"
-            className="rounded-xl border border-zinc-700 hover:bg-zinc-800 px-5 py-2.5 text-sm font-medium text-slate-600 transition"
+            className="rounded-full border border-sky-200 bg-white hover:bg-sky-50 px-6 py-2.5 text-sm font-semibold text-sky-700 shadow-2xs transition hover:scale-[1.02] active:scale-[0.98]"
           >
             ดูประวัติทั้งหมด
           </Link>
@@ -159,7 +159,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
         return (
           <div
             key={o.id}
-            className="rounded-2xl border border-sky-100 bg-white/90 p-5 shadow-lg transition-all hover:border-zinc-700"
+            className="rounded-2xl border border-sky-100 bg-white/90 p-5 shadow-lg transition-all hover:border-sky-300"
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1.5">
@@ -201,7 +201,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
               <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-3 sm:pt-0 border-t border-sky-100/80 sm:border-0">
                 <div className="text-left sm:text-right">
                   <span className="text-xs text-zinc-500 block">ยอดรวม</span>
-                  <span className="text-lg font-black text-red-400">฿{Number(o.total).toLocaleString()}</span>
+                  <span className="text-lg font-black text-sky-600">฿{Number(o.total).toLocaleString()}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -211,7 +211,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
                         type="button"
                         disabled={cancellingId === o.id}
                         onClick={() => setOrderToCancel(o)}
-                        className="inline-flex items-center gap-1 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 px-3 py-2 text-xs font-medium text-red-400 transition"
+                        className="inline-flex items-center gap-1 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 px-3 py-2 text-xs font-medium text-sky-600 transition"
                       >
                         {cancellingId === o.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -240,7 +240,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
                   )}
 
                   {isProcessing && (
-                    <span className="inline-block text-xs font-medium text-slate-500 bg-zinc-800/80 rounded-lg px-3 py-1.5">
+                    <span className="inline-block text-xs font-medium text-slate-500 bg-sky-50 rounded-lg px-3 py-1.5">
                       กำลังเติม กรุณารอสักครู่...
                     </span>
                   )}

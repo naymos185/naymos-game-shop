@@ -72,13 +72,13 @@ export function OrderTrackingForm() {
             value={number}
             onChange={(e) => setNumber(e.target.value.toUpperCase())}
             placeholder="เช่น NM-20260912-XXXX"
-            className="w-full rounded-xl border border-sky-200 bg-sky-50/50 px-4 py-3 text-sm font-mono outline-none focus:border-red-500"
+            className="w-full rounded-xl border border-sky-200 bg-sky-50/50 px-4 py-3 text-sm font-mono outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-500 hover:to-blue-700 disabled:bg-zinc-700 py-3 font-semibold text-white transition flex items-center justify-center gap-2"
+          className="w-full rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-500 hover:to-blue-700 disabled:opacity-50 py-3 font-bold text-white transition flex items-center justify-center gap-2"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {loading ? 'กำลังค้นหา...' : 'ค้นหา'}
@@ -86,7 +86,7 @@ export function OrderTrackingForm() {
       </form>
 
       {error && (
-        <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300">
+        <div className="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm font-medium text-rose-600">
           {error}
         </div>
       )}
@@ -95,7 +95,7 @@ export function OrderTrackingForm() {
         <div className="rounded-2xl border border-sky-100 bg-white p-6 space-y-3 text-sm">
           <div className="flex items-center justify-between gap-3">
             <span className="text-zinc-500">หมายเลข</span>
-            <span className="font-mono font-bold text-white">{order.order_number}</span>
+            <span className="font-mono font-bold text-slate-900">{order.order_number}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-zinc-500">สถานะ</span>
@@ -105,15 +105,15 @@ export function OrderTrackingForm() {
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-zinc-500">เกม</span>
-            <span className="text-white">{order.game_name ?? '—'}</span>
+            <span className="text-slate-800">{order.game_name ?? '—'}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-zinc-500">แพ็กเกจ</span>
-            <span className="text-white">{order.product_name ?? '—'}</span>
+            <span className="text-slate-800">{order.product_name ?? '—'}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-zinc-500">ยอดชำระ</span>
-            <span className="font-bold text-red-400">฿{Number(order.total)}</span>
+            <span className="font-bold text-sky-600">฿{Number(order.total)}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-zinc-500">สร้างเมื่อ</span>
@@ -125,7 +125,7 @@ export function OrderTrackingForm() {
               {Object.entries(order.player_data).map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-2 py-0.5">
                   <span className="text-zinc-500">{k}</span>
-                  <span className="text-white font-mono text-xs">{String(v)}</span>
+                  <span className="text-slate-800 font-mono text-xs">{String(v)}</span>
                 </div>
               ))}
             </div>

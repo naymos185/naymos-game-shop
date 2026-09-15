@@ -96,10 +96,10 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
 
   if (error || !data) {
     return (
-      <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-center text-sm text-red-300">
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center text-sm font-medium text-rose-700">
         {error ?? 'ไม่พบข้อมูล'}
         <div className="mt-4">
-          <Link href="/order-tracking" className="text-red-400 hover:underline">
+          <Link href="/order-tracking" className="text-sky-600 hover:underline font-semibold">
             กลับไปติดตามออเดอร์
           </Link>
         </div>
@@ -143,7 +143,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-sky-100 bg-white p-6 space-y-3">
-        <div className="flex items-center gap-2 text-red-400 mb-2">
+        <div className="flex items-center gap-2 text-rose-500 mb-2">
           <CreditCard className="h-5 w-5" />
           <h2 className="font-semibold text-slate-800">ชำระเงินออเดอร์</h2>
         </div>
@@ -154,7 +154,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
           </div>
           <div>
             <p className="text-slate-400 text-xs">ยอดชำระ</p>
-            <p className="text-2xl font-bold text-red-400">฿{Number(data.amount).toLocaleString()}</p>
+            <p className="text-2xl font-bold text-sky-600">฿{Number(data.amount).toLocaleString()}</p>
           </div>
           <div>
             <p className="text-slate-400 text-xs">เกม</p>
@@ -202,7 +202,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
             <button
               type="button"
               onClick={() => copyText(promptpayId)}
-              className="flex items-center gap-1.5 text-slate-800 font-mono text-xs hover:text-red-400"
+              className="flex items-center gap-1.5 text-slate-800 font-mono text-xs hover:text-sky-600"
             >
               {promptpayId}
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
@@ -214,7 +214,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
           <button
             type="button"
             onClick={() => copyText(data.order_number)}
-            className="flex items-center gap-1.5 text-slate-800 font-mono text-xs hover:text-red-400"
+            className="flex items-center gap-1.5 text-slate-800 font-mono text-xs hover:text-sky-600"
           >
             {data.order_number}
             <Copy className="h-3.5 w-3.5" />
@@ -273,7 +273,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
           {walletLoading ? 'กำลังตัดเครดิต...' : 'จ่ายด้วย Wallet'}
         </button>
         {walletMsg && (
-          <p className={`text-xs ${walletMsg.includes('สำเร็จ') ? 'text-emerald-400' : 'text-red-400'}`}>
+          <p className={`text-xs ${walletMsg.includes('สำเร็จ') ? 'text-emerald-400' : 'text-rose-500'}`}>
             {walletMsg}
           </p>
         )}
