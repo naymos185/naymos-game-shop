@@ -68,17 +68,27 @@ export function HeaderNav({ activeOrderCount = 0 }: HeaderNavProps) {
           <Link
             key={item.href}
             href={item.href}
-            className={}
+            className={`px-3.5 py-1.5 rounded-full transition-all duration-150 flex items-center gap-1.5 select-none ${
+              item.isActive
+                ? 'bg-sky-500 text-white font-bold shadow-xs shadow-sky-200 ring-2 ring-sky-300/40'
+                : 'text-slate-600 hover:bg-sky-50 hover:text-sky-600'
+            }`}
           >
             {Icon && (
               <Icon
-                className={}
+                className={`w-4 h-4 transition-colors ${
+                  item.isActive ? 'text-white' : 'text-sky-500'
+                }`}
               />
             )}
             <span>{item.label}</span>
             {typeof item.badge === 'number' && item.badge > 0 && (
               <span
-                className={}
+                className={`inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] font-black rounded-full ${
+                  item.isActive
+                    ? 'bg-white text-sky-600 shadow-2xs'
+                    : 'bg-sky-500 text-white animate-bounce'
+                }`}
               >
                 {item.badge}
               </span>
