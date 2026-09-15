@@ -41,7 +41,7 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
     !loading &&
     !!selectedPkg &&
     game.game_fields.every(
-      (f) => !f.required || (playerData[f.name]?.trim() ?? '') !== ''
+      (f) => !f.required || (playerData[f.key]?.trim() ?? '') !== ''
     );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -166,15 +166,52 @@ export function GameOrderForm({ game }: { game: GameWithDetails }) {
                 {f.label}
                 {f.required && <span className="text-blue-600 ml-0.5">*</span>}
               </label>
-              <input
-                type="text"
-                placeholder={f.placeholder ?? ''}
-                value={playerData[f.name] ?? ''}
-                onChange={(e) =>
-                  setPlayerData((prev) => ({ ...prev, [f.name]: e.target.value }))
-                }
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 transition"
-              />
+              {f.type === 'password' ? (
+                <input
+                  type="password"
+                  placeholder={f.placeholder ?? ''}
+                  value={playerData[f.key] ?? ''}
+                  onChange={(e) =>
+                    setPlayerData((prev) => ({ ...prev, [f.key]: e.target.value }))
+                  }
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 transition"
+                />
+              ) : f.type === 'number' ? (
+                <input
+                  type="number"
+                  placeholder={f.placeholder ?? ''}
+                  value={playerData[f.key] ?? ''}
+                  onChange={(e) =>
+                    setPlayerData((prev) => ({ ...prev, [f.key]: e.target.value }))
+                  }
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 transition"
+                />
+              ) : f.type === 'select' && f.options ? (
+                <select
+                  value={playerData[f.key] ?? ''}
+                  onChange={(e) =>
+                    setPlayerData((prev) => ({ ...prev, [f.key]: e.target.value }))
+                  }
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 transition"
+                >
+                  <option value="">-- เลือก {f.label} --</option>
+                  {f.options.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder={f.placeholder ?? ''}
+                  value={playerData[f.key] ?? ''}
+                  onChange={(e) =>
+                    setPlayerData((prev) => ({ ...prev, [f.key]: e.target.value }))
+                  }
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 transition"
+                />
+              )}
             </div>
           ))}
           <div className="flex gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
