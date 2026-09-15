@@ -327,7 +327,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
                     setAcceptedTerms(e.target.checked);
                     if (e.target.checked) setTermsError(false);
                   }}
-                  className="mt-0.5 h-4 w-4 rounded border-sky-200 bg-white text-red-600 focus:ring-red-500"
+                  className="mt-0.5 h-4 w-4 rounded border-sky-300 bg-white text-sky-500 focus:ring-sky-400 accent-sky-500 cursor-pointer"
                 />
                 <span className="text-xs text-slate-600 select-none">
                   ฉันยอมรับเงื่อนไขการให้บริการ <span className="text-sky-600">*</span>
