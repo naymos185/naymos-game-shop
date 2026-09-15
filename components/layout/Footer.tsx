@@ -53,6 +53,7 @@ export function Footer() {
           <div>
             <h3 className="font-bold text-sky-950 mb-3 text-sm">เมนูหลัก</h3>
             <ul className="space-y-2 text-sm text-slate-600">
+              <li><Link href="/" className="hover:text-sky-600 transition">หน้าหลัก</Link></li>
               <li><Link href="/games" className="hover:text-sky-600 transition">เกมทั้งหมด</Link></li>
               <li><Link href="/promotions" className="hover:text-sky-600 transition">โปรโมชั่นสุดพิเศษ</Link></li>
               <li><Link href="/how-to" className="hover:text-sky-600 transition">วิธีเติมเกม</Link></li>
