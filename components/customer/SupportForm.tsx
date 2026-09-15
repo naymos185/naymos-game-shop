@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 
 export function SupportForm({ defaultEmail }: { defaultEmail?: string }) {
   const [subject, setSubject] = useState('');
@@ -36,55 +36,65 @@ export function SupportForm({ defaultEmail }: { defaultEmail?: string }) {
 
   if (done) {
     return (
-      <div className="rounded-xl border border-emerald-800/40 bg-emerald-950/20 p-6 text-center text-sm text-emerald-300">
-        ส่งข้อความแล้ว ทีมงานจะติดต่อกลับ
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-6 text-center text-sm text-emerald-800">
+        <p className="font-bold text-emerald-700">ส่งข้อความเรียบร้อยแล้ว!</p>
+        <p className="text-xs text-emerald-600 mt-1">ทีมงานจะรีบตรวจสอบและติดต่อกลับโดยเร็ว</p>
         <button
           type="button"
           onClick={() => setDone(false)}
-          className="block mx-auto mt-3 text-xs text-zinc-400 hover:text-white"
+          className="inline-block mx-auto mt-4 px-4 py-1.5 rounded-full border border-emerald-200 bg-white text-xs font-semibold text-emerald-700 hover:bg-emerald-50 transition"
         >
-          ส่งอีกครั้ง
+          ส่งข้อความอีกครั้ง
         </button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3">
+    <form onSubmit={onSubmit} className="space-y-4">
       {error && (
-        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+        <p className="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
           {error}
         </p>
       )}
-      <input
-        type="email"
-        placeholder="อีเมลติดต่อ"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-sm outline-none focus:border-red-500"
-      />
-      <input
-        required
-        placeholder="หัวข้อ"
-        value={subject}
-        onChange={(e) => setSubject(e.target.value)}
-        className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-sm outline-none focus:border-red-500"
-      />
-      <textarea
-        required
-        rows={4}
-        placeholder="รายละเอียดปัญหา"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-sm outline-none focus:border-red-500 resize-none"
-      />
+      <div>
+        <label className="block text-xs font-bold text-slate-700 mb-1">อีเมลสำหรับติดต่อกลับ</label>
+        <input
+          type="email"
+          placeholder="your@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full rounded-xl border border-sky-100 bg-sky-50/30 px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-sky-400 focus:bg-white transition"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-slate-700 mb-1">หัวข้อปัญหา</label>
+        <input
+          required
+          placeholder="ระบุหัวข้อ เช่น สลิปไม่เข้า, ปัญหาการเติมเกม"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          className="w-full rounded-xl border border-sky-100 bg-sky-50/30 px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-sky-400 focus:bg-white transition"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-slate-700 mb-1">รายละเอียด</label>
+        <textarea
+          required
+          rows={4}
+          placeholder="ระบุรายละเอียด เช่น เลขออเดอร์, เวลาที่ทำรายการ หรือข้อความแจ้งเตือน..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          className="w-full rounded-xl border border-sky-100 bg-sky-50/30 px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-sky-400 focus:bg-white transition resize-none"
+        />
+      </div>
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2"
+        className="w-full rounded-full bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 disabled:opacity-50 py-3 text-sm font-bold text-white shadow-md shadow-sky-100 flex items-center justify-center gap-2 transition active:scale-[0.99]"
       >
-        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        ส่งข้อความ
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        <span>ส่งข้อความแจ้งปัญหา</span>
       </button>
     </form>
   );

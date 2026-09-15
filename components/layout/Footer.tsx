@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ShieldCheck, Zap, Headphones, Diamond, Heart, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Zap, Headphones, Diamond, Heart, CheckCircle2, MessageCircle, Facebook } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -41,12 +41,25 @@ export function Footer() {
                 NayMos <span className="text-sky-500">GameShop</span>
               </span>
             </div>
-            <p className="text-sm text-slate-500 leading-relaxed mb-3">
+            <p className="text-sm text-slate-500 leading-relaxed mb-4">
               ร้านเติมเกมออนไลน์สุดคุ้ม น่ารัก สะดวก ปลอดภัย 100% ดูแลด้วยใจตลอด 24 ชั่วโมง
             </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700">
-              <span>LINE:</span>
-              <span>@naymosgameshop</span>
+            <div className="flex flex-col gap-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700 w-fit">
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                <span>LINE:</span>
+                <span>@naymosgameshop</span>
+              </div>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 border border-sky-200 text-xs font-bold text-sky-700 hover:bg-sky-100 transition w-fit"
+              >
+                <Facebook className="w-3.5 h-3.5 text-sky-600" />
+                <span>เพจ:</span>
+                <span className="truncate">NayMosGameShop-บริการเติมเกมออนไลน์</span>
+              </a>
             </div>
           </div>
 
@@ -67,6 +80,17 @@ export function Footer() {
               <li><Link href="/order-tracking" className="hover:text-sky-600 transition">ติดตามสถานะออเดอร์</Link></li>
               <li><Link href="/account" className="hover:text-sky-600 transition">บัญชีผู้ใช้งาน</Link></li>
               <li><Link href="/support" className="hover:text-sky-600 transition">แจ้งปัญหา / ติดต่อเรา</Link></li>
+              <li>
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-sky-600 transition inline-flex items-center gap-1.5"
+                >
+                  <Facebook className="w-3.5 h-3.5 text-sky-500" />
+                  <span>เพจ Facebook ร้าน</span>
+                </a>
+              </li>
             </ul>
           </div>
 
