@@ -24,3 +24,101 @@ html {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
+
+.game-card {
+  touch-action: pan-y;
+  transform: translateZ(0);
+  transition:
+    transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+  will-change: transform;
+}
+
+.game-card-icon {
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .game-card:hover {
+    z-index: 1;
+    transform: translateY(-5px) scale(1.035);
+    border-color: rgb(220 38 38 / 0.6);
+    box-shadow: 0 14px 30px rgb(0 0 0 / 0.28), 0 0 20px rgb(220 38 38 / 0.12);
+  }
+
+  .game-card:hover .game-card-icon {
+    transform: scale(1.08);
+  }
+}
+
+.game-card:active {
+  transform: translateY(-1px) scale(0.97);
+  transition-duration: 150ms;
+}
+
+.game-card-touch-active {
+  z-index: 1;
+  transform: translateY(-4px) scale(1.035);
+  border-color: rgb(220 38 38 / 0.6);
+  box-shadow: 0 12px 26px rgb(0 0 0 / 0.25), 0 0 18px rgb(220 38 38 / 0.12);
+}
+
+.game-card-touch-active .game-card-icon {
+  transform: scale(1.08);
+}
+
+.game-category {
+  transform: translateZ(0);
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.game-category:active {
+  transform: scale(0.97);
+}
+
+.game-category-active {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 7px 18px rgb(220 38 38 / 0.18);
+}
+
+.game-grid-enter {
+  animation: game-grid-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes game-grid-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-card,
+  .game-card-icon,
+  .game-category {
+    transition-duration: 1ms;
+  }
+
+  .game-card:hover,
+  .game-card:active,
+  .game-card-touch-active,
+  .game-card-touch-active .game-card-icon,
+  .game-category:active,
+  .game-category-active {
+    transform: none;
+  }
+
+  .game-grid-enter {
+    animation: none;
+  }
+}
