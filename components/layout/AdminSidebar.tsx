@@ -45,12 +45,12 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 shrink-0 border-r border-zinc-800 bg-zinc-900 hidden lg:flex flex-col">
-      <div className="p-4 border-b border-zinc-800">
+    <aside className="w-56 shrink-0 border-r border-slate-200 bg-slate-50 hidden lg:flex flex-col">
+      <div className="p-4 border-b border-slate-200">
         <Link href="/admin" className="flex items-center gap-2">
           <span className="text-lg">⚙️</span>
           <span className="font-bold text-sm">
-            <span className="text-red-500">Admin</span> Panel
+            <span className="text-blue-600">Admin</span> Panel
           </span>
         </Link>
       </div>
@@ -68,8 +68,8 @@ export function AdminSidebar() {
               className={cn(
                 'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition',
                 active
-                  ? 'bg-red-600/15 text-red-400 font-medium'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                  ? 'bg-blue-50 text-blue-600 font-medium'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -78,10 +78,10 @@ export function AdminSidebar() {
           );
         })}
       </nav>
-      <div className="p-3 border-t border-zinc-800">
+      <div className="p-3 border-t border-slate-200">
         <Link
           href="/"
-          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-500 hover:text-zinc-300 transition"
+          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-400 hover:text-slate-600 transition"
         >
           ← กลับหน้าร้าน
         </Link>
