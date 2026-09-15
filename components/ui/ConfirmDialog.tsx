@@ -116,8 +116,7 @@ export function useConfirm() {
   const ctx = useContext(ConfirmContext);
   if (!ctx) {
     return (options: ConfirmOptions) => {
-      const text = [options.title, typeof options.description === 'string' ? options.description : ''].filter(Boolean).join('
-');
+      const text = [options.title, typeof options.description === 'string' ? options.description : ''].filter(Boolean).join('\n');
       return Promise.resolve(typeof window !== 'undefined' ? window.confirm(text) : true);
     };
   }
