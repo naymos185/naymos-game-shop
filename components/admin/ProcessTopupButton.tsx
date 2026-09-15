@@ -34,7 +34,7 @@ export function ProcessTopupButton({
       const res = await fetch('/api/admin/orders/process-topup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId }),
+        body: JSON.stringify({ orderId, orderNumber, order_number: orderNumber }),
       });
 
       const data = await res.json();

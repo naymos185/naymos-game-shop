@@ -1,10 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
-import { processTopupForOrder } from '@/lib/orders/process-topup';
 
+/**
+ * Marks an order as PAID.
+ * Source of truth for payment status update only.
+ * Topup processing is strictly decoupled and handled via processTopupForOrder.
+ */
 export async function adminMarkOrderPaid(orderNumber: string): Promise<{
   success: boolean;
   message?: string;
-  topup?: { success: boolean; message: string; order_status?: string };
 }> {
   const num = orderNumber.trim().toUpperCase();
   if (!num) return { success: false, message: 'ไม่มีหมายเลขออเดอร์' };
@@ -24,13 +27,8 @@ export async function adminMarkOrderPaid(orderNumber: string): Promise<{
     return { success: false, message: error.message };
   }
 
-  const topup = await processTopupForOrder(num);
-
   return {
     success: true,
-    message: topup.success
-      ? `ยืนยันชำระแล้ว · ${topup.message}`
-      : `ยืนยันชำระแล้ว แต่เติมเกมยังไม่สำเร็จ: ${topup.message}`,
-    topup,
+    message: 'ยืนยันการชำระเงินเรียบร้อยแล้ว',
   };
 }
