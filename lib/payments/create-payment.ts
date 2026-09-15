@@ -1,3 +1,4 @@
+import { buildPromptPayPayload } from '@/lib/payments/promptpay-qr';
 import { createClient } from '@/lib/supabase/server';
 import { paymentManager } from './payment-manager';
 
@@ -104,13 +105,29 @@ export async function ensurePaymentForOrder(
     expiresInMinutes: 30,
   });
 
+  let qrData = created.qrData ?? created.payment.qr_data ?? null;
+  try {
+    const { data: settings } = await supabase
+      .from('system_settings')
+      .select('key, value')
+      .in('key', ['promptpay_id']);
+    const pp = (settings ?? []).find((s: { key: string }) => s.key === 'promptpay_id');
+    const ppId = pp?.value ? String(pp.value).trim() : '';
+    if (ppId) {
+      const emv = buildPromptPayPayload(ppId, amount);
+      if (emv) qrData = emv;
+    }
+  } catch {
+    /* keep mock qr */
+  }
+
   const { error } = await supabase.from('payments').insert({
     order_id: orderId,
     provider: created.payment.provider ?? provider.id,
     payment_reference: created.payment.payment_reference,
     amount,
     status: 'PENDING',
-    qr_data: created.qrData ?? created.payment.qr_data,
+    qr_data: qrData,
     expires_at: created.payment.expires_at,
   });
 
@@ -145,7 +162,7 @@ export async function ensurePaymentForOrder(
     amount,
     payment_status: 'PENDING',
     payment_reference: created.payment.payment_reference ?? null,
-    qr_data: created.qrData ?? null,
+    qr_data: qrData,
     expires_at: created.payment.expires_at ?? null,
     ...names,
   };
