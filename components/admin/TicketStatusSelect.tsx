@@ -29,7 +29,7 @@ export function TicketStatusSelect({ id, status }: { id: string; status: string 
       value={value}
       disabled={loading}
       onChange={(e) => void onChange(e.target.value)}
-      className="rounded-lg border border-sky-200 bg-slate-50 px-2 py-1 text-xs text-slate-800"
+      className="rounded-lg border border-sky-200 bg-white px-2 py-1 text-xs text-slate-900 font-medium"
     >
       <option value="open">open</option>
       <option value="in_progress">in_progress</option>

@@ -71,7 +71,7 @@ export function PromotionCreateForm() {
       <button
         type="submit"
         disabled={loading}
-        className="rounded-xl bg-sky-500 hover:bg-red-700 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white flex items-center gap-2"
+        className="rounded-xl bg-sky-500 hover:bg-sky-600 disabled:opacity-50 px-4 py-2 text-sm font-bold text-slate-900 flex items-center gap-2"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         สร้างโปร

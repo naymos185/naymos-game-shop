@@ -37,7 +37,7 @@ export default async function AdminWalletPage() {
             <tbody className="divide-y divide-zinc-800">
               {rows.map((r) => (
                 <tr key={r.user_id} className="bg-slate-50/50">
-                  <td className="px-4 py-3 text-white">{r.full_name || '—'}</td>
+                  <td className="px-4 py-3 text-slate-800">{r.full_name || '—'}</td>
                   <td className="px-4 py-3 text-xs text-slate-500">{r.email || '—'}</td>
                   <td className="px-4 py-3 font-mono text-[10px] text-slate-400">
                     {r.user_id}

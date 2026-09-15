@@ -49,7 +49,7 @@ export default async function AdminOrdersPage() {
       <div key={o.id} className="rounded-xl border border-sky-100 bg-white/80 p-4 space-y-3 shadow-sm hover:border-sky-200 transition">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <span className="font-mono text-xs font-bold text-white block">{o.order_number}</span>
+            <span className="font-mono text-xs font-bold text-slate-900 block">{o.order_number}</span>
             <span className="text-[11px] text-slate-500">{gName} · {pName}</span>
           </div>
           <span className="font-mono font-bold text-sm text-sky-600">฿{Number(o.total || o.amount).toLocaleString()}</span>
@@ -62,7 +62,7 @@ export default async function AdminOrdersPage() {
             .map(([k, v]) => (
               <div key={k} className="flex justify-between gap-2">
                 <span className="text-slate-400">{k}:</span>
-                <span className="text-white truncate">{String(v)}</span>
+                <span className="text-slate-800 font-medium truncate">{String(v)}</span>
               </div>
             ))}
         </div>

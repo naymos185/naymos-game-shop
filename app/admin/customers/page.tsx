@@ -37,7 +37,7 @@ export default async function AdminCustomersPage() {
             <tbody className="divide-y divide-zinc-800">
               {customers.map((c) => (
                 <tr key={c.id} className="bg-slate-50/50 hover:bg-white/80">
-                  <td className="px-4 py-3 text-white">{c.full_name || '—'}</td>
+                  <td className="px-4 py-3 text-slate-800">{c.full_name || '—'}</td>
                   <td className="px-4 py-3 text-slate-700 text-xs">{c.email || '—'}</td>
                   <td className="px-4 py-3"><CustomerRoleSelect userId={c.id} initialRole={c.role} /></td>
                   <td className="px-4 py-3 text-slate-700">{c.order_count}</td>

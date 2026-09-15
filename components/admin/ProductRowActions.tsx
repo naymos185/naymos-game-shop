@@ -113,7 +113,7 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
               const n = Number(p);
               if (!Number.isNaN(n) && n >= 0 && n !== price) void save({ price: n });
             }}
-            className="w-16 sm:w-20 rounded-lg border border-sky-200 bg-slate-50 px-2 py-1 text-xs text-white focus:border-sky-400 focus:outline-none"
+            className="w-16 sm:w-20 rounded-lg border border-sky-200 bg-white px-2 py-1 text-xs text-slate-900 font-medium focus:border-sky-400 focus:outline-none"
             min={0}
             step={1}
             title="ราคาปกติ"
@@ -166,7 +166,7 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
               setActive(v);
               void save({ is_active: v });
             }}
-            className="rounded border-zinc-600 accent-red-600"
+            className="rounded border-sky-200 accent-sky-500"
           />
           <span className="text-[11px]">เปิด</span>
         </label>
@@ -176,7 +176,7 @@ export function ProductRowActions({ id, name, price, cost, reseller_price, is_ac
           disabled={loading}
           onClick={() => void remove()}
           title="ลบแพ็กเกจนี้"
-          className="inline-flex items-center gap-1 rounded-lg border border-red-600/40 bg-sky-500/10 px-2 py-1 text-[11px] text-sky-600 transition hover:bg-sky-500/20 disabled:opacity-50"
+          className="inline-flex items-center gap-1 rounded-lg border border-sky-200 bg-sky-500/10 px-2 py-1 text-[11px] text-sky-600 transition hover:bg-sky-500/20 disabled:opacity-50"
         >
           <Trash2 className="h-3 w-3" />
           ลบ

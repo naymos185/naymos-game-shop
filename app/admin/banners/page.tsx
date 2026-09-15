@@ -32,7 +32,7 @@ export default async function AdminBannersPage() {
               className="rounded-xl border border-sky-100 bg-slate-50/50 px-4 py-3 flex flex-wrap items-center justify-between gap-3"
             >
               <div>
-                <p className="font-medium text-white text-sm">{b.title}</p>
+                <p className="font-semibold text-slate-800 text-sm">{b.title}</p>
                 {b.subtitle && (
                   <p className="text-xs text-slate-400 mt-0.5">{b.subtitle}</p>
                 )}

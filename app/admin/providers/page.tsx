@@ -24,7 +24,7 @@ export default function AdminProvidersPage() {
             className="rounded-xl border border-sky-100 bg-slate-50/50 px-4 py-3 flex items-center justify-between"
           >
             <div>
-              <p className="font-medium text-white text-sm">{p.name}</p>
+              <p className="font-semibold text-slate-800 text-sm">{p.name}</p>
               <p className="text-xs text-slate-400 font-mono">{p.id}</p>
             </div>
             <div className="flex items-center gap-2">

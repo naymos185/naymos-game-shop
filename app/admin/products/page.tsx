@@ -42,8 +42,8 @@ export default async function AdminProductsPage() {
         <div className="space-y-8">
           {[...byGame.entries()].map(([gameName, items]) => (
             <section key={gameName}>
-              <h2 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+              <h2 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="inline-block h-2 w-2 rounded-full bg-sky-500" />
                 {gameName}
                 <span className="text-slate-400 font-normal">({items.length} แพ็ก)</span>
               </h2>

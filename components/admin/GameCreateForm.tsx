@@ -90,7 +90,7 @@ export function GameCreateForm() {
                 value="uid"
                 checked={authType === 'uid'}
                 onChange={() => setAuthType('uid')}
-                className="text-red-600 focus:ring-sky-400"
+                className="text-sky-600 focus:ring-sky-400"
               />
               ใช้ UID / OpenID
             </label>
@@ -101,7 +101,7 @@ export function GameCreateForm() {
                 value="id_pass"
                 checked={authType === 'id_pass'}
                 onChange={() => setAuthType('id_pass')}
-                className="text-red-600 focus:ring-sky-400"
+                className="text-sky-600 focus:ring-sky-400"
               />
               ใช้ ID + Password (เข้าสู่ระบบเพื่อเติม)
             </label>
@@ -126,7 +126,7 @@ export function GameCreateForm() {
       <button
         type="submit"
         disabled={loading}
-        className="rounded-xl bg-sky-500 hover:bg-red-700 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white flex items-center gap-2"
+        className="rounded-xl bg-sky-500 hover:bg-sky-600 disabled:opacity-50 px-4 py-2 text-sm font-bold text-slate-900 flex items-center gap-2"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         บันทึกเกม

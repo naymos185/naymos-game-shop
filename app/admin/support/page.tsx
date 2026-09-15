@@ -27,7 +27,7 @@ export default async function AdminSupportPage() {
               className="rounded-xl border border-sky-100 bg-slate-50/50 p-4 space-y-2"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-medium text-white text-sm">{t.subject}</p>
+                <p className="font-semibold text-slate-800 text-sm">{t.subject}</p>
                 <TicketStatusSelect id={t.id} status={t.status} />
               </div>
               <p className="text-sm text-slate-500 whitespace-pre-wrap">{t.message}</p>

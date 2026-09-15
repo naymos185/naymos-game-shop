@@ -40,7 +40,7 @@ export default async function AdminCouponsPage() {
               {coupons.map((c) => (
                 <tr key={c.id} className="bg-slate-50/50">
                   <td className="px-4 py-3">
-                    <p className="font-mono font-bold text-white">{c.code}</p>
+                    <p className="font-mono font-bold text-slate-900">{c.code}</p>
                     {c.description && (
                       <p className="text-xs text-slate-400">{c.description}</p>
                     )}

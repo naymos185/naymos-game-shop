@@ -106,7 +106,7 @@ export function GameRowActions({
           type="checkbox"
           checked={active}
           onChange={(e) => void toggle(e.target.checked)}
-          className="rounded border-zinc-600"
+          className="rounded border-sky-200"
         />
         {active ? 'เปิดขาย' : 'ปิด'}
         {loading && <Loader2 className="h-3 w-3 animate-spin text-slate-400" />}
@@ -116,7 +116,7 @@ export function GameRowActions({
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="p-1.5 rounded-lg border border-sky-200 bg-sky-50/80 hover:bg-sky-100 text-slate-700 hover:text-white transition"
+        className="p-1.5 rounded-lg border border-sky-200 bg-sky-50/80 hover:bg-sky-100 text-slate-700 hover:text-slate-800 transition"
         title="แก้ไขชื่อและรูปเกม"
       >
         <Edit className="w-3.5 h-3.5" />
@@ -138,11 +138,11 @@ export function GameRowActions({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="relative w-full max-w-sm rounded-2xl border border-sky-100 bg-slate-50 p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white">แก้ไขข้อมูล / รูปเกม</h3>
+              <h3 className="text-sm font-bold text-slate-900">แก้ไขข้อมูล / รูปเกม</h3>
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                className="text-slate-500 hover:text-white"
+                className="text-slate-500 hover:text-slate-800"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -155,7 +155,7 @@ export function GameRowActions({
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-white focus:border-sky-400 focus:outline-none"
+                  className="w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-slate-900 font-medium focus:border-sky-400 focus:outline-none"
                 />
               </div>
 
@@ -166,7 +166,7 @@ export function GameRowActions({
                   value={editIcon}
                   onChange={(e) => setEditIcon(e.target.value)}
                   placeholder="https://... หรือ /games/...jpg"
-                  className="w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-white focus:border-sky-400 focus:outline-none"
+                  className="w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-slate-900 font-medium focus:border-sky-400 focus:outline-none"
                 />
                 {editIcon && (
                   <div className="mt-2 flex items-center gap-2">
@@ -191,7 +191,7 @@ export function GameRowActions({
                 type="button"
                 disabled={savingEdit}
                 onClick={handleSaveEdit}
-                className="flex-1 rounded-xl bg-sky-500 hover:bg-red-700 py-2 text-xs font-bold text-white flex items-center justify-center gap-1.5"
+                className="flex-1 rounded-xl bg-sky-500 hover:bg-sky-600 py-2 text-xs font-bold text-slate-900 flex items-center justify-center gap-1.5"
               >
                 {savingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'บันทึก'}
               </button>

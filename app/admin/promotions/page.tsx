@@ -38,7 +38,7 @@ export default async function AdminPromotionsPage() {
                       {p.badge}
                     </span>
                   )}
-                  <p className="font-medium text-white text-sm">{p.title}</p>
+                  <p className="font-semibold text-slate-800 text-sm">{p.title}</p>
                 </div>
                 {p.description && (
                   <p className="text-xs text-slate-400 mt-0.5">{p.description}</p>

@@ -33,7 +33,7 @@ export default async function AdminPointsPage() {
             <tbody className="divide-y divide-zinc-800">
               {rows.map((r) => (
                 <tr key={r.user_id} className="bg-slate-50/50">
-                  <td className="px-4 py-3 text-white">{r.full_name || '—'}</td>
+                  <td className="px-4 py-3 text-slate-800">{r.full_name || '—'}</td>
                   <td className="px-4 py-3 text-xs text-slate-500">{r.email || '—'}</td>
                   <td className="px-4 py-3 font-bold text-amber-400">
                     {r.balance.toLocaleString()}

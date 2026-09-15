@@ -64,7 +64,7 @@ export function BannerToggle({ id, is_active }: { id: string; is_active: boolean
           type="checkbox"
           checked={active}
           onChange={(e) => void toggle(e.target.checked)}
-          className="rounded border-zinc-600"
+          className="rounded border-sky-200"
         />
         {active ? 'เปิด' : 'ปิด'}
         {loading && <Loader2 className="h-3 w-3 animate-spin text-slate-400" />}
@@ -73,7 +73,7 @@ export function BannerToggle({ id, is_active }: { id: string; is_active: boolean
         type="button"
         disabled={deleting}
         onClick={remove}
-        className="p-1 rounded text-sky-600 hover:text-red-300 transition"
+        className="p-1 rounded text-sky-600 hover:text-sky-600 transition"
         title="ลบแบนเนอร์"
       >
         {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}

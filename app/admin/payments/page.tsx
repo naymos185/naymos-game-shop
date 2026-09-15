@@ -45,7 +45,7 @@ export default async function AdminPaymentsPage() {
             <tbody className="divide-y divide-zinc-800">
               {payments.map((p) => (
                 <tr key={p.id} className="bg-slate-50/50 hover:bg-white/80">
-                  <td className="px-4 py-3 font-mono text-xs text-white">
+                  <td className="px-4 py-3 font-mono text-xs text-slate-800">
                     {p.order_number ?? p.order_id.slice(0, 8)}
                   </td>
                   <td className="px-4 py-3 font-medium text-sky-600">

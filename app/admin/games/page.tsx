@@ -57,7 +57,7 @@ export default async function AdminGamesPage() {
                     </div>
                   )}
                 </td>
-                <td className="px-4 py-3 font-medium text-white">{g.name}</td>
+                <td className="px-4 py-3 font-semibold text-slate-800">{g.name}</td>
                 <td className="px-4 py-3 font-mono text-xs text-slate-500">{g.slug}</td>
                 <td className="px-4 py-3 text-xs text-slate-500">{g.category || '—'}</td>
                 <td className="px-4 py-3">

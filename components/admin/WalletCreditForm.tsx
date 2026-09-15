@@ -60,7 +60,7 @@ export function WalletCreditForm() {
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition ${
               mode === 'credit'
                 ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-500 hover:text-white'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <PlusCircle className="h-3.5 w-3.5" />
@@ -72,7 +72,7 @@ export function WalletCreditForm() {
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition ${
               mode === 'debit'
                 ? 'bg-sky-500 text-white shadow-sm'
-                : 'text-slate-500 hover:text-white'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <MinusCircle className="h-3.5 w-3.5" />
@@ -112,8 +112,8 @@ export function WalletCreditForm() {
         <button
           type="submit"
           disabled={loading}
-          className={`rounded-xl disabled:opacity-50 px-5 py-2 text-sm font-semibold text-white flex items-center gap-2 transition ${
-            mode === 'credit' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-sky-500 hover:bg-red-700'
+          className={`rounded-xl disabled:opacity-50 px-5 py-2 text-sm font-bold text-slate-900 flex items-center gap-2 transition ${
+            mode === 'credit' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-sky-500 hover:bg-sky-600'
           }`}
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}

@@ -44,7 +44,7 @@ export function CustomerRoleSelect({ userId, initialRole }: { userId: string; in
             : 'border-sky-200 bg-white text-slate-700'
         }`}
       >
-        <option value="customer" className="bg-slate-50 text-white">ลูกค้าทั่วไป (Customer)</option>
+        <option value="customer" className="bg-slate-50 text-slate-800">ลูกค้าทั่วไป (Customer)</option>
         <option value="reseller" className="bg-slate-50 text-emerald-400">ตัวแทนจำหน่าย (Reseller)</option>
         <option value="admin" className="bg-slate-50 text-sky-600">ผู้ดูแลระบบ (Admin)</option>
       </select>

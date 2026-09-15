@@ -62,7 +62,7 @@ export function AdminPointAdjustModal({ user }: { user: { user_id: string; full_
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl border border-sky-100 bg-slate-50 p-5 shadow-2xl space-y-4">
             <div>
-              <h3 className="text-sm font-bold text-white">จัดการพ้อยสมาชิก</h3>
+              <h3 className="text-sm font-bold text-slate-900">จัดการพ้อยสมาชิก</h3>
               <p className="text-xs text-slate-500 mt-0.5">{user.full_name || user.email} (ปัจจุบัน: {user.balance} พ้อย)</p>
             </div>
 
@@ -71,7 +71,7 @@ export function AdminPointAdjustModal({ user }: { user: { user_id: string; full_
                 type="button"
                 onClick={() => setMode('deduct')}
                 className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${
-                  mode === 'deduct' ? 'bg-sky-500 text-white' : 'bg-white text-slate-500 hover:text-white'
+                  mode === 'deduct' ? 'bg-sky-500 text-white' : 'bg-white text-slate-500 hover:text-slate-800'
                 }`}
               >
                 หักคะแนน
@@ -80,7 +80,7 @@ export function AdminPointAdjustModal({ user }: { user: { user_id: string; full_
                 type="button"
                 onClick={() => setMode('add')}
                 className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${
-                  mode === 'add' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 hover:text-white'
+                  mode === 'add' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 hover:text-slate-800'
                 }`}
               >
                 เพิ่มคะแนน
@@ -94,7 +94,7 @@ export function AdminPointAdjustModal({ user }: { user: { user_id: string; full_
                 value={points}
                 onChange={(e) => setPoints(e.target.value)}
                 placeholder="เช่น 50"
-                className="w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-white focus:border-sky-400 focus:outline-none"
+                className="w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-slate-900 font-medium focus:border-sky-400 focus:outline-none"
               />
             </div>
 
@@ -105,7 +105,7 @@ export function AdminPointAdjustModal({ user }: { user: { user_id: string; full_
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="เช่น ปรับยอดผิดพลาด, แอดมินหักพ้อย"
-                className="w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-white focus:border-sky-400 focus:outline-none"
+                className="w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-slate-900 font-medium focus:border-sky-400 focus:outline-none"
               />
             </div>
 
@@ -123,8 +123,8 @@ export function AdminPointAdjustModal({ user }: { user: { user_id: string; full_
                 type="button"
                 disabled={loading}
                 onClick={handleAdjust}
-                className={`flex-1 rounded-xl py-2 text-xs font-bold text-white flex items-center justify-center gap-1.5 ${
-                  mode === 'deduct' ? 'bg-sky-500 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                className={`flex-1 rounded-xl py-2 text-xs font-bold text-slate-900 flex items-center justify-center gap-1.5 ${
+                  mode === 'deduct' ? 'bg-sky-500 hover:bg-sky-600' : 'bg-emerald-600 hover:bg-emerald-700'
                 }`}
               >
                 {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'ยืนยัน'}

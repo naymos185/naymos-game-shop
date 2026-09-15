@@ -151,7 +151,7 @@ export default async function AdminDashboard() {
                     className="flex items-center justify-between gap-3 px-4 py-3 text-sm bg-slate-50/40"
                   >
                     <div>
-                      <p className="font-mono text-xs text-white">{o.order_number}</p>
+                      <p className="font-mono text-xs text-slate-800">{o.order_number}</p>
                       <p className="text-[11px] text-slate-400">
                         {new Date(o.created_at).toLocaleString('th-TH')}
                       </p>
@@ -178,9 +178,9 @@ export default async function AdminDashboard() {
               <Link
                 key={l.href}
                 href={l.href}
-                className="rounded-2xl border border-sky-100 bg-white p-4 shadow-xs hover:border-red-600/40 transition"
+                className="rounded-2xl border border-sky-100 bg-white p-4 shadow-xs hover:border-sky-300 transition"
               >
-                <p className="font-medium text-sm text-white">{l.label}</p>
+                <p className="font-medium text-sm text-slate-800">{l.label}</p>
                 <p className="text-xs text-slate-400 mt-0.5">{l.desc}</p>
               </Link>
             ))}

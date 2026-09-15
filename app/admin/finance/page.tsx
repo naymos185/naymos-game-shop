@@ -37,7 +37,7 @@ export default async function AdminFinancePage() {
             className="rounded-xl border border-sky-100 bg-slate-50/50 p-4"
           >
             <p className="text-xs text-slate-400 mb-1">{c.label}</p>
-            <p className="text-xl font-bold text-white">{c.value}</p>
+            <p className="text-xl font-bold text-slate-900">{c.value}</p>
             <p className="text-[11px] text-zinc-600 mt-1">{c.sub}</p>
           </div>
         ))}
@@ -62,7 +62,7 @@ export default async function AdminFinancePage() {
               {s.byStatus.map((r) => (
                 <tr key={r.status} className="bg-slate-50/50">
                   <td className="px-4 py-3 font-mono text-xs text-slate-700">{r.status}</td>
-                  <td className="px-4 py-3 text-white">{r.count}</td>
+                  <td className="px-4 py-3 text-slate-800">{r.count}</td>
                   <td className="px-4 py-3 text-sky-600 font-medium">{baht(r.total)}</td>
                 </tr>
               ))}

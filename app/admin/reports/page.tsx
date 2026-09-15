@@ -36,7 +36,7 @@ export default async function AdminReportsPage() {
               {r.last7Days.map((d) => (
                 <tr key={d.date} className="bg-slate-50/50">
                   <td className="px-4 py-3 font-mono text-xs text-slate-700">{d.date}</td>
-                  <td className="px-4 py-3 text-white">{d.orders}</td>
+                  <td className="px-4 py-3 text-slate-800">{d.orders}</td>
                   <td className="px-4 py-3 text-emerald-400">{d.success}</td>
                   <td className="px-4 py-3 text-sky-600">{baht(d.revenue)}</td>
                 </tr>
@@ -65,7 +65,7 @@ export default async function AdminReportsPage() {
               <tbody className="divide-y divide-zinc-800">
                 {r.topProducts.map((p) => (
                   <tr key={p.product_id} className="bg-slate-50/50">
-                    <td className="px-4 py-3 text-white">{p.name}</td>
+                    <td className="px-4 py-3 text-slate-800">{p.name}</td>
                     <td className="px-4 py-3 text-slate-700">{p.orders}</td>
                     <td className="px-4 py-3 text-sky-600 font-medium">{baht(p.revenue)}</td>
                   </tr>

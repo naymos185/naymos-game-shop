@@ -48,7 +48,7 @@ export function AdminSidebar() {
     <aside className="w-60 shrink-0 border-r border-sky-100 bg-white hidden lg:flex flex-col shadow-xs">
       <div className="p-4 border-b border-sky-100">
         <Link href="/admin" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-sky-500/20">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-slate-800 font-bold text-sm shadow-sm shadow-sky-500/20">
             N
           </div>
           <span className="font-bold text-base text-slate-800 tracking-tight">
