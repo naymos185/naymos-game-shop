@@ -12,6 +12,7 @@ export interface PaymentProvider {
     amount: number;
     orderNumber: string;
     expiresInMinutes?: number;
+    promptpayId?: string;
   }): Promise<{
     payment: Partial<Payment>;
     qrData?: string;

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function getMyPointBalance(): Promise<number> {
   try {
@@ -93,7 +94,7 @@ export async function listPointBalancesAdmin(limit = 50): Promise<AdminPointRow[
 
 export async function awardPointsForOrder(orderId: string): Promise<number> {
   try {
-    const supabase = await createClient();
+    const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : await createClient();
     const { data, error } = await supabase.rpc('award_points_for_order', {
       p_order_id: orderId,
     });

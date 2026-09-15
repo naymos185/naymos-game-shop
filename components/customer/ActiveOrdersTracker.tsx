@@ -16,6 +16,12 @@ export interface ActiveOrder {
   player_data?: Record<string, unknown>;
 }
 
+const storeInfo = {
+  promptpay_id: process.env.NEXT_PUBLIC_PROMPTPAY_ID || "",
+  account_name: "NayMos GameShop",
+  bank_name: "พร้อมเพย์",
+};
+
 export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOrder[] }) {
   const router = useRouter();
   const [orders, setOrders] = useState<ActiveOrder[]>(initialOrders);

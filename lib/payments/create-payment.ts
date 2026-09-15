@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { paymentManager } from './payment-manager';
 import { getStoreSettings } from '@/lib/admin/settings';
 
@@ -23,7 +24,7 @@ export async function ensurePaymentForOrder(
   const num = orderNumber.trim().toUpperCase();
   if (!num) return { success: false, message: 'ไม่มีหมายเลขออเดอร์' };
 
-  const supabase = await createClient();
+  const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : await createClient();
 
   const { data: rpcRows } = await supabase.rpc('get_payment_for_order', {
     p_order_number: num,
@@ -60,36 +61,30 @@ export async function ensurePaymentForOrder(
     return { success: false, message: 'ไม่พบออเดอร์' };
   }
 
-  if (rpc?.payment_id) {
-    const displayAmount =
-      rpc.amount != null && Number(rpc.amount) > 0 ? Number(rpc.amount) : amount;
-    const names = await loadNames(supabase, gameId, productId);
-    return {
-      success: true,
-      order_number: num,
-      order_status: orderStatus,
-      amount: displayAmount,
-      payment_status: rpc.payment_status ?? 'PENDING',
-      payment_reference: rpc.payment_reference ?? null,
-      qr_data: rpc.qr_data ?? null,
-      expires_at: rpc.expires_at ?? null,
-      ...names,
-    };
-  }
+  if (rpc?.payment_id && rpc.payment_status === 'PENDING') {
+    const [{ data: game }, { data: product }] = await Promise.all([
+      gameId ? supabase.from('games').select('name').eq('id', gameId).maybeSingle() : Promise.resolve({ data: null }),
+      productId ? supabase.from('products').select('name').eq('id', productId).maybeSingle() : Promise.resolve({ data: null }),
+    ]);
 
-  if (orderStatus !== 'PENDING_PAYMENT') {
-    const names = await loadNames(supabase, gameId, productId);
     return {
       success: true,
       order_number: num,
       order_status: orderStatus,
       amount,
-      payment_status:
-        orderStatus === 'PAID' || orderStatus === 'SUCCESS' ? 'PAID' : 'PENDING',
-      payment_reference: null,
-      qr_data: null,
-      expires_at: null,
-      ...names,
+      payment_status: rpc.payment_status,
+      payment_reference: rpc.payment_reference,
+      qr_data: rpc.qr_data,
+      expires_at: rpc.expires_at,
+      game_name: game?.name,
+      product_name: product?.name,
+    };
+  }
+
+  if (orderStatus !== 'PENDING_PAYMENT') {
+    return {
+      success: false,
+      message: `ออเดอร์ไม่อยู่ในสถานะรอชำระ (สถานะ: ${orderStatus})`,
     };
   }
 
@@ -113,34 +108,19 @@ export async function ensurePaymentForOrder(
     payment_reference: created.payment.payment_reference,
     amount,
     status: 'PENDING',
-    qr_data: created.qrData ?? created.payment.qr_data,
-    expires_at: created.payment.expires_at,
+    qr_data: created.qrData,
+    expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
   });
 
   if (error) {
-    const { data: again } = await supabase.rpc('get_payment_for_order', {
-      p_order_number: num,
-    });
-    const row = Array.isArray(again) ? again[0] : again;
-    if (row?.payment_id) {
-      const names = await loadNames(supabase, gameId, productId);
-      const rowAmount = Number(row.amount);
-      return {
-        success: true,
-        order_number: num,
-        order_status: orderStatus,
-        amount: rowAmount > 0 ? rowAmount : amount,
-        payment_status: row.payment_status,
-        payment_reference: row.payment_reference,
-        qr_data: row.qr_data,
-        expires_at: row.expires_at,
-        ...names,
-      };
-    }
-    return { success: false, message: error.message };
+    return { success: false, message: 'บันทึกการชำระเงินไม่สำเร็จ' };
   }
 
-  const names = await loadNames(supabase, gameId, productId);
+  const [{ data: game }, { data: product }] = await Promise.all([
+    gameId ? supabase.from('games').select('name').eq('id', gameId).maybeSingle() : Promise.resolve({ data: null }),
+    productId ? supabase.from('products').select('name').eq('id', productId).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+
   return {
     success: true,
     order_number: num,
@@ -149,29 +129,8 @@ export async function ensurePaymentForOrder(
     payment_status: 'PENDING',
     payment_reference: created.payment.payment_reference ?? null,
     qr_data: created.qrData ?? null,
-    expires_at: created.payment.expires_at ?? null,
-    ...names,
+    expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    game_name: game?.name,
+    product_name: product?.name,
   };
-}
-
-async function loadNames(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  gameId: string | null,
-  productId: string | null
-) {
-  let game_name: string | undefined;
-  let product_name: string | undefined;
-  if (gameId) {
-    const { data } = await supabase.from('games').select('name').eq('id', gameId).maybeSingle();
-    game_name = data?.name;
-  }
-  if (productId) {
-    const { data } = await supabase
-      .from('products')
-      .select('name')
-      .eq('id', productId)
-      .maybeSingle();
-    product_name = data?.name;
-  }
-  return { game_name, product_name };
 }

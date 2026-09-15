@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { processTopupForOrder } from '@/lib/orders/process-topup';
 
 export async function POST(request: Request) {
@@ -33,8 +34,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'ไม่ใช่ออเดอร์ของคุณ' }, { status: 403 });
     }
 
-    const { data, error } = await supabase.rpc('pay_order_with_wallet', {
+    const adminClient = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
+    const { data, error } = await adminClient.rpc('pay_order_with_wallet', {
       p_order_id: order.id,
+      p_user_id: user.id,
     });
 
     if (error) {

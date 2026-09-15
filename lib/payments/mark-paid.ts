@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
  * Marks an order as PAID.
@@ -12,7 +13,7 @@ export async function adminMarkOrderPaid(orderNumber: string): Promise<{
   const num = orderNumber.trim().toUpperCase();
   if (!num) return { success: false, message: 'ไม่มีหมายเลขออเดอร์' };
 
-  const supabase = await createClient();
+  const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : await createClient();
   const { error } = await supabase.rpc('admin_mark_order_paid', {
     p_order_number: num,
   });

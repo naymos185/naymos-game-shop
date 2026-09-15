@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export type TrackedOrder = {
   id: string;
@@ -6,8 +7,8 @@ export type TrackedOrder = {
   status: string;
   total: number;
   subtotal: number;
-  contact_email: string | null;
-  contact_phone: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
   player_data: Record<string, unknown>;
   game_id: string;
   product_id: string;
@@ -20,7 +21,7 @@ export type TrackedOrder = {
 export async function getOrderByNumber(
   orderNumber: string
 ): Promise<TrackedOrder | null> {
-  const supabase = await createClient();
+  const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : await createClient();
   const num = orderNumber.trim().toUpperCase();
   if (!num) return null;
 
@@ -31,7 +32,7 @@ export async function getOrderByNumber(
   if (error || !data || (Array.isArray(data) && data.length === 0)) {
     const { data: row } = await supabase
       .from('orders')
-      .select('*')
+      .select('id, order_number, status, total, subtotal, player_data, game_id, product_id, created_at, updated_at')
       .eq('order_number', num)
       .maybeSingle();
     if (!row) return null;
@@ -44,7 +45,7 @@ export async function getOrderByNumber(
 }
 
 async function enrichOrder(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createAdminClient> | Awaited<ReturnType<typeof createClient>>,
   row: Record<string, unknown>
 ): Promise<TrackedOrder> {
   const gameId = row.game_id as string;
@@ -61,8 +62,8 @@ async function enrichOrder(
     total: Number(row.total),
     subtotal: Number(row.subtotal ?? row.total),
     status: row.status as string,
-    contact_email: (row.contact_email as string) ?? null,
-    contact_phone: (row.contact_phone as string) ?? null,
+    contact_email: null,
+    contact_phone: null,
     player_data: (row.player_data as Record<string, unknown>) ?? {},
     game_id: gameId,
     product_id: productId,

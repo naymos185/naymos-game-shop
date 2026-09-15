@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/auth/get-user';
 
 export async function POST(request: Request) {
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : await createClient();
     const { data, error } = await supabase.rpc('admin_credit_wallet', {
       p_user_id: userId,
       p_amount: amount,
