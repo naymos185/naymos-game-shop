@@ -33,15 +33,12 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const close = useCallback(
-    (ok: boolean) => {
-      setPending((current) => {
-        current?.resolve(ok);
-        return null;
-      });
-    },
-    []
-  );
+  const close = useCallback((ok: boolean) => {
+    setPending((current) => {
+      current?.resolve(ok);
+      return null;
+    });
+  }, []);
 
   useEffect(() => {
     if (!pending) return;
@@ -74,27 +71,23 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             type="button"
             aria-label="ปิด"
             onClick={() => close(false)}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
           />
-          <div className="relative w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-2xl">
+          <div className="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
             <div className="flex gap-3">
               <span
                 className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                  danger
-                    ? 'bg-red-500/15 text-red-400'
-                    : 'bg-emerald-500/15 text-emerald-400'
+                  danger ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
                 }`}
               >
                 <AlertTriangle className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <h2 id="confirm-title" className="text-base font-semibold text-white">
+                <h2 id="confirm-title" className="text-base font-semibold text-slate-900">
                   {pending.title}
                 </h2>
                 {pending.description && (
-                  <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                    {pending.description}
-                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">{pending.description}</p>
                 )}
               </div>
             </div>
@@ -102,7 +95,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 onClick={() => close(false)}
-                className="flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800"
+                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100"
               >
                 {pending.cancelText ?? 'ยกเลิก'}
               </button>
@@ -111,9 +104,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={() => close(true)}
                 className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold text-white transition ${
-                  danger
-                    ? 'bg-red-600 hover:bg-red-500'
-                    : 'bg-emerald-600 hover:bg-emerald-500'
+                  danger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
                 {pending.confirmText ?? 'ยืนยัน'}
@@ -130,7 +121,12 @@ export function useConfirm() {
   const ctx = useContext(ConfirmContext);
   if (!ctx) {
     return (options: ConfirmOptions) => {
-      const text = [options.title, typeof options.description === 'string' ? options.description : ''].filter(Boolean).join('\n');
+      const text = [
+        options.title,
+        typeof options.description === 'string' ? options.description : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
       return Promise.resolve(typeof window !== 'undefined' ? window.confirm(text) : true);
     };
   }
