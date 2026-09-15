@@ -1,3 +1,4 @@
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { providerManager } from '@/lib/providers/provider-manager';
 import { awardPointsForOrder } from '@/lib/points/queries';
@@ -16,7 +17,7 @@ export async function processTopupForOrder(
   const num = orderNumber.trim().toUpperCase();
   if (!num) return { success: false, message: 'ไม่มีหมายเลขออเดอร์' };
 
-  const supabase = await createClient();
+  const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : await createClient();
 
   const { data: order, error: orderError } = await supabase
     .from('orders')
@@ -54,10 +55,22 @@ export async function processTopupForOrder(
     };
   }
 
-  await supabase
+  // Atomic status transition from PAID to PROCESSING to prevent double-topup race conditions
+  const { data: updatedOrder, error: updateErr } = await supabase
     .from('orders')
     .update({ status: 'PROCESSING', updated_at: new Date().toISOString() })
-    .eq('id', order.id);
+    .eq('id', order.id)
+    .in('status', ['PAID', 'PROCESSING', 'FAILED'])
+    .select('id, status')
+    .maybeSingle();
+
+  if (updateErr || !updatedOrder) {
+    return {
+      success: false,
+      message: 'ออเดอร์นี้กำลังดำเนินการหรือไม่อยู่ในสถานะที่เติมได้',
+      order_status: order.status,
+    };
+  }
 
   const provider = providerManager.getDefault();
   const playerData = (order.player_data ?? {}) as Record<string, string | number>;

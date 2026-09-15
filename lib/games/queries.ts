@@ -61,6 +61,7 @@ export async function getActiveGames(): Promise<GameWithDetails[]> {
       .order('sort_order', { ascending: true });
 
     if (error || !games?.length) {
+      if (process.env.NODE_ENV === 'production') return [];
       return MOCK_GAMES.map(mockToGameWithDetails);
     }
 
@@ -77,6 +78,7 @@ export async function getActiveGames(): Promise<GameWithDetails[]> {
       products: (products ?? []).filter((p) => p.game_id === g.id) as Product[],
     }));
   } catch {
+    if (process.env.NODE_ENV === 'production') return [];
     return MOCK_GAMES.map(mockToGameWithDetails);
   }
 }
@@ -92,6 +94,7 @@ export async function getGameBySlug(slug: string): Promise<GameWithDetails | nul
       .maybeSingle();
 
     if (error || !game) {
+      if (process.env.NODE_ENV === 'production') return null;
       const mock = MOCK_GAMES.find((m) => m.slug === slug);
       return mock ? mockToGameWithDetails(mock, 0) : null;
     }
@@ -108,6 +111,7 @@ export async function getGameBySlug(slug: string): Promise<GameWithDetails | nul
       products: (products ?? []) as Product[],
     };
   } catch {
+    if (process.env.NODE_ENV === 'production') return null;
     const mock = MOCK_GAMES.find((m) => m.slug === slug);
     return mock ? mockToGameWithDetails(mock, 0) : null;
   }
