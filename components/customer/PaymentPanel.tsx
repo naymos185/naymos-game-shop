@@ -82,7 +82,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // ignore
+      /* ignore */
     }
   }
 
@@ -140,6 +140,8 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
   const promptpayId = store.promptpay_id || process.env.NEXT_PUBLIC_PROMPTPAY_ID || '';
   const accountName = store.account_name || 'NayMos GameShop';
   const bankName = store.bank_name || 'พร้อมเพย์';
+  const hasRealQr =
+    !!data.qr_data && data.qr_data.length > 20 && !data.qr_data.startsWith('MOCK');
 
   return (
     <div className="space-y-6">
@@ -170,15 +172,23 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center space-y-4 shadow-sm">
         <p className="text-sm text-slate-500">สแกน QR หรือโอนตามรายละเอียดด้านล่าง</p>
-        <div className="mx-auto w-48 h-48 rounded-xl bg-slate-50 border border-slate-200 p-3 flex items-center justify-center">
-          <div className="text-slate-800 text-center text-xs leading-tight">
-            <p className="font-bold text-sm mb-1">PromptPay QR</p>
-            <p className="font-mono text-[10px] break-all opacity-70">
-              {data.qr_data?.slice(0, 48) ?? 'MOCK-QR'}
-            </p>
-            <p className="mt-2 font-bold text-lg text-blue-600">฿{Number(data.amount)}</p>
-            <p className="text-[10px] mt-1 text-slate-400">Mock QR</p>
-          </div>
+        <div className="mx-auto w-52 h-52 rounded-xl bg-white border border-slate-200 p-2 flex items-center justify-center">
+          {hasRealQr ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.qr_data!)}`}
+              alt="PromptPay QR"
+              width={200}
+              height={200}
+              className="rounded-lg"
+            />
+          ) : (
+            <div className="text-slate-800 text-center text-xs p-2">
+              <p className="font-bold text-sm mb-1">PromptPay QR</p>
+              <p className="text-[10px] text-slate-400">ตั้งค่าพร้อมเพย์ใน Admin Settings</p>
+              <p className="mt-2 font-bold text-lg text-blue-600">฿{Number(data.amount)}</p>
+            </div>
+          )}
         </div>
         {data.expires_at && (
           <p className="text-xs text-slate-400">
@@ -283,6 +293,31 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
           className="flex-1 rounded-xl bg-slate-100 hover:bg-slate-200 py-3 text-sm font-medium text-slate-700 transition"
         >
           รีเฟรชสถานะ
+        </button>
+        <button
+          type="button"
+          onClick={async () => {
+            if (!confirm('ยกเลิกออเดอร์นี้?')) return;
+            try {
+              const res = await fetch('/api/orders/cancel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_number: data.order_number }),
+              });
+              const j = await res.json();
+              if (j.success) {
+                window.location.href =
+                  '/order-tracking?number=' + encodeURIComponent(data.order_number);
+              } else {
+                alert(j.message ?? 'ยกเลิกไม่สำเร็จ');
+              }
+            } catch {
+              alert('เชื่อมต่อไม่สำเร็จ');
+            }
+          }}
+          className="flex-1 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 py-3 text-sm font-medium transition"
+        >
+          ยกเลิกออเดอร์
         </button>
         <Link
           href={`/order-tracking?number=${encodeURIComponent(data.order_number)}`}
