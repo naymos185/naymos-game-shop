@@ -70,12 +70,16 @@ export default async function HomePage() {
       <section className="relative pt-4 pb-8 sm:py-8 px-4 sm:px-6 max-w-7xl mx-auto">
         {/* Main Banner Visual Container */}
         <div className="relative overflow-hidden rounded-3xl border border-sky-100 shadow-md bg-white">
-          <div className="relative aspect-[16/7] sm:aspect-[21/9] w-full overflow-hidden bg-sky-100">
-            <img
-              src="/images/banner.png"
-              alt="NayMos GameShop บริการเติมเกมออนไลน์ เติมง่าย สะดวก ปลอดภัย 100%"
-              className="w-full h-full object-cover sm:object-contain bg-gradient-to-r from-sky-200 via-sky-100 to-sky-200"
-            />
+                    <div className="relative aspect-[1810/869] w-full overflow-hidden bg-sky-100">
+            <picture>
+              <source srcSet="/images/banner.webp" type="image/webp" />
+              <img
+                src="/images/banner.png"
+                alt="NayMos GameShop บริการเติมเกมออนไลน์ เติมง่าย สะดวก ปลอดภัย 100%"
+                className="w-full h-full object-cover block"
+                loading="eager"
+              />
+            </picture>
           </div>
 
           {/* Quick Action Overlay for Mobile / Tablet / Desktop */}

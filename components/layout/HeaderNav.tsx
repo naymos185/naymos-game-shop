@@ -29,11 +29,13 @@ export function HeaderNav({ activeOrderCount = 0, profile }: HeaderNavProps) {
 
   const isHomeActive = pathname === '/';
   const isGamesActive = pathname === '/games' || pathname.startsWith('/games/');
+  const isTrackingActive = pathname === '/order-tracking' || pathname.startsWith('/order-tracking/');
   const isPromotionsActive = pathname === '/promotions' || pathname.startsWith('/promotions/');
   const isHowToActive = pathname === '/how-to' || pathname.startsWith('/how-to/');
   const isFaqActive = pathname === '/faq' || pathname.startsWith('/faq/');
-  const isTrackingActive = pathname === '/order-tracking' || pathname.startsWith('/order-tracking/');
 
+  // Ordered strictly according to user requirements:
+  // 1. หน้าหลัก 2. เกมทั้งหมด 3. ติดตามออเดอร์ 4. โปรโมชั่น 5. วิธีการเติม 6. คำถาม
   const navItems = [
     {
       href: '/',
@@ -48,6 +50,13 @@ export function HeaderNav({ activeOrderCount = 0, profile }: HeaderNavProps) {
       isActive: isGamesActive,
     },
     {
+      href: '/order-tracking',
+      label: 'ติดตามออเดอร์',
+      icon: Clock,
+      isActive: isTrackingActive,
+      badge: activeOrderCount,
+    },
+    {
       href: '/promotions',
       label: 'โปรโมชั่น',
       icon: Gift,
@@ -55,22 +64,15 @@ export function HeaderNav({ activeOrderCount = 0, profile }: HeaderNavProps) {
     },
     {
       href: '/how-to',
-      label: 'วิธีเติมเกม',
+      label: 'วิธีการเติม',
       icon: HelpCircle,
       isActive: isHowToActive,
     },
     {
       href: '/faq',
-      label: 'คำถามพบบ่อย',
+      label: 'คำถาม',
       icon: FileQuestion,
       isActive: isFaqActive,
-    },
-    {
-      href: '/order-tracking',
-      label: 'ติดตามออเดอร์',
-      icon: Clock,
-      isActive: isTrackingActive,
-      badge: activeOrderCount,
     },
   ];
 

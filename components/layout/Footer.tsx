@@ -68,9 +68,10 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-slate-600">
               <li><Link href="/" className="hover:text-sky-600 transition">หน้าหลัก</Link></li>
               <li><Link href="/games" className="hover:text-sky-600 transition">เกมทั้งหมด</Link></li>
-              <li><Link href="/promotions" className="hover:text-sky-600 transition">โปรโมชั่นสุดพิเศษ</Link></li>
-              <li><Link href="/how-to" className="hover:text-sky-600 transition">วิธีเติมเกม</Link></li>
-              <li><Link href="/faq" className="hover:text-sky-600 transition">คำถามที่พบบ่อย</Link></li>
+              <li><Link href="/order-tracking" className="hover:text-sky-600 transition">ติดตามออเดอร์</Link></li>
+              <li><Link href="/promotions" className="hover:text-sky-600 transition">โปรโมชั่น</Link></li>
+              <li><Link href="/how-to" className="hover:text-sky-600 transition">วิธีการเติม</Link></li>
+              <li><Link href="/faq" className="hover:text-sky-600 transition">คำถาม</Link></li>
             </ul>
           </div>
 
