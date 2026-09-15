@@ -1,6 +1,6 @@
 # NayMos GameShop
 
-ร้านเติมเกมออนไลน์ — Next.js App Router + TypeScript + Tailwind + Supabase
+ร้านเติมเกมออนไลน์ — Next.js + TypeScript + Tailwind + Supabase
 
 ## Quick start
 
@@ -13,40 +13,23 @@ npm run dev
 - Customer: http://localhost:3000
 - Admin: http://localhost:3000/admin
 
-## สถานะระบบ (ปัจจุบัน)
+## สถานะ
 
-ระบบหลักในโค้ด **ครบแล้ว** (mock ชำระ/เติม):
+ระบบในแอป **ครบแล้ว** (ชำระ/เติมแบบ mock + ยืนยันด้วยมือ)
 
-- ลูกค้า: เกม, สั่งซื้อ, ชำระ, สลิป, Wallet, คูปอง, คะแนน, ติดตาม, ยกเลิก
-- Admin: ออเดอร์, เกม/แพ็ก, ชำระ, สลิป, ลูกค้า, โปร/แบนเนอร์, รายงาน, Support
-- SQL: `001`–`020` ใน `supabase/migrations/`
+ประวัติออเดอร์: `/account/orders`  
+ติดตามออเดอร์: `/order-tracking`  
+(ไม่แยก timeline ซ้ำ — ยกเลิก 021 แล้ว)
 
-### ตอนเทสรอบใหญ่ รัน SQL ใหม่แค่
+### SQL ตอนเทส (ถ้ายังไม่รัน)
 
-`018_payment_slip.sql` → `019_saved_players.sql` → `020_cancel_order.sql`
+`018` → `019` → `020` เท่านั้น
 
-(ถ้าเคยรัน 001–017 แล้ว ไม่ต้องรันซ้ำ)
+## งานที่เหลือ (บริการภายนอก)
 
----
-
-## เฟสที่เหลือ (Production)
-
-| เฟส | งาน | ต้องมี |
-|-----|-----|--------|
-| **P1** | ชำระเงินจริง / ตรวจสลิปอัตโนมัติ | Gateway หรือ SlipOK + webhook |
-| **P2** | Provider เติมเกมจริง | API ร้านเติม + key |
-| **P3** | แจ้งเตือนภายนอก | Line OA / อีเมล (Resend ฯลฯ) |
-| **P4** | Deploy production | Vercel (หรืออื่น) + domain + env |
-
-**รวมเหลือประมาณ 4 เฟส** — ไม่ใช่ทำระบบในแอปซ้ำ แต่เชื่อมบริการภายนอก
-
-โครง webhook พร้อมที่:
-
-- `POST /api/webhooks/payment`
-- `POST /api/webhooks/provider`
-
----
-
-## Stack
-
-Next.js · TypeScript · Tailwind · Supabase Auth/DB/RLS · React Hook Form · Zod
+| เฟส | งาน | โครงในโค้ด |
+|-----|-----|------------|
+| P1 | ชำระ/สลิปอัตโนมัติ | `POST /api/webhooks/payment` |
+| P2 | Provider เติมจริง | `POST /api/webhooks/provider` |
+| P3 | Line / อีเมล | รอ API key |
+| P4 | Deploy | Vercel + env |
