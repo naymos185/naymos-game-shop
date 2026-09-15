@@ -42,20 +42,6 @@ export default async function AdminOrderDetailPage({ params }: Props) {
 
   const player = (order.player_data ?? {}) as Record<string, string>;
 
-  const { data: eventsRaw } = await supabase
-    .from('order_events')
-    .select('id, from_status, to_status, note, actor, created_at')
-    .eq('order_id', order.id)
-    .order('created_at', { ascending: true });
-  const events = (eventsRaw ?? []) as Array<{
-    id: string;
-    from_status: string | null;
-    to_status: string;
-    note: string | null;
-    actor: string;
-    created_at: string;
-  }>;
-
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -149,27 +135,6 @@ export default async function AdminOrderDetailPage({ params }: Props) {
           </>
         )}
       </div>
-
-      {events.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm">
-          <h2 className="font-semibold text-slate-900 mb-3">ประวัติสถานะ</h2>
-          <ul className="space-y-2 border-l-2 border-blue-100 pl-4">
-            {events.map((ev) => (
-              <li key={ev.id} className="relative">
-                <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-blue-500" />
-                <p className="font-medium text-slate-800">
-                  {ev.from_status ? `${ev.from_status} → ` : ''}
-                  {ev.to_status}
-                </p>
-                {ev.note && <p className="text-xs text-slate-500">{ev.note}</p>}
-                <p className="text-[10px] text-slate-400">
-                  {new Date(ev.created_at).toLocaleString('th-TH')} · {ev.actor}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
