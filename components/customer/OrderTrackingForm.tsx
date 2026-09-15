@@ -16,22 +16,12 @@ type OrderResult = {
   created_at: string;
 };
 
-type OrderEvent = {
-  id: string;
-  from_status: string | null;
-  to_status: string;
-  note: string | null;
-  actor: string;
-  created_at: string;
-};
-
 export function OrderTrackingForm() {
   const searchParams = useSearchParams();
   const [number, setNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderResult | null>(null);
-  const [events, setEvents] = useState<OrderEvent[]>([]);
 
   useEffect(() => {
     const q = searchParams.get('number');
@@ -51,7 +41,6 @@ export function OrderTrackingForm() {
     setLoading(true);
     setError(null);
     setOrder(null);
-    setEvents([]);
     try {
       const res = await fetch(`/api/orders?number=${encodeURIComponent(n)}`);
       const data = await res.json();
@@ -59,7 +48,6 @@ export function OrderTrackingForm() {
         setError(data.message ?? 'ไม่พบออเดอร์');
       } else {
         setOrder(data.order);
-        setEvents(Array.isArray(data.events) ? data.events : []);
       }
     } catch {
       setError('เชื่อมต่อไม่สำเร็จ');
@@ -74,7 +62,10 @@ export function OrderTrackingForm() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={onSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+      <form
+        onSubmit={onSubmit}
+        className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm"
+      >
         <div>
           <label className="block text-sm font-medium text-slate-600 mb-1.5">หมายเลขออเดอร์</label>
           <input
@@ -107,7 +98,9 @@ export function OrderTrackingForm() {
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-slate-500">สถานะ</span>
-            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${orderStatusColor(order.status)}`}>
+            <span
+              className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${orderStatusColor(order.status)}`}
+            >
               {orderStatusLabel(order.status)}
             </span>
           </div>
@@ -136,24 +129,6 @@ export function OrderTrackingForm() {
                   <span className="text-slate-900 font-mono text-xs">{String(v)}</span>
                 </div>
               ))}
-            </div>
-          )}
-          {events.length > 0 && (
-            <div className="pt-3 border-t border-slate-200">
-              <p className="text-slate-500 mb-2 font-medium">ประวัติสถานะ</p>
-              <ul className="space-y-2 border-l-2 border-blue-100 pl-3">
-                {events.map((ev) => (
-                  <li key={ev.id}>
-                    <p className="text-slate-800 text-xs font-medium">
-                      {ev.from_status ? `${ev.from_status} → ` : ''}
-                      {ev.to_status}
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      {new Date(ev.created_at).toLocaleString('th-TH')}
-                    </p>
-                  </li>
-                ))}
-              </ul>
             </div>
           )}
         </div>
