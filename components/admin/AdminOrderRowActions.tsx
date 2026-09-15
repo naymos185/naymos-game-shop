@@ -56,7 +56,7 @@ export function AdminOrderRowActions({ order }: { order: any }) {
         type="button"
         disabled={deleting}
         onClick={handleDelete}
-        className="p-1.5 rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="p-1.5 rounded-lg border border-sky-200 bg-sky-50 hover:bg-sky-600/20 text-sky-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
         title="ลบออเดอร์"
       >
         {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}

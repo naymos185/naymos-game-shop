@@ -48,7 +48,7 @@ export function CouponCreateForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-3">
+    <form onSubmit={onSubmit} className="rounded-2xl border border-sky-100 bg-white p-5 space-y-3">
       <h2 className="font-semibold text-sm">สร้างคูปองใหม่</h2>
       <div className="grid sm:grid-cols-2 gap-3">
         <input
@@ -56,18 +56,18 @@ export function CouponCreateForm() {
           placeholder="โค้ด เช่น NAYMOS10"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-mono outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm font-mono outline-none focus:border-sky-400"
         />
         <input
           placeholder="คำอธิบาย (ไม่บังคับ)"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
         />
         <select
           value={discountType}
           onChange={(e) => setDiscountType(e.target.value as 'fixed' | 'percent')}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
         >
           <option value="fixed">ลดเป็นจำนวนเงิน (บาท)</option>
           <option value="percent">ลดเป็นเปอร์เซ็นต์ (%)</option>
@@ -80,7 +80,7 @@ export function CouponCreateForm() {
           placeholder="มูลค่าส่วนลด"
           value={discountValue}
           onChange={(e) => setDiscountValue(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
         />
         <input
           type="number"
@@ -88,7 +88,7 @@ export function CouponCreateForm() {
           placeholder="ยอดขั้นต่ำ"
           value={minOrder}
           onChange={(e) => setMinOrder(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
         />
         <input
           type="number"
@@ -96,18 +96,18 @@ export function CouponCreateForm() {
           placeholder="ใช้ได้สูงสุด (ว่าง = ไม่จำกัด)"
           value={maxUses}
           onChange={(e) => setMaxUses(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
         />
       </div>
       <button
         type="submit"
         disabled={loading}
-        className="rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white flex items-center gap-2"
+        className="rounded-xl bg-sky-500 hover:bg-red-700 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white flex items-center gap-2"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         สร้างคูปอง
       </button>
-      {msg && <p className="text-xs text-zinc-400">{msg}</p>}
+      {msg && <p className="text-xs text-slate-500">{msg}</p>}
     </form>
   );
 }

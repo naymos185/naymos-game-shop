@@ -79,7 +79,7 @@ export default async function AdminDashboard() {
       label: 'ผู้ดูแลระบบ',
       value: `${stats.adminCount} คน`,
       sub: 'Admin / Super Admin',
-      color: 'text-red-400',
+      color: 'text-sky-600',
       icon: ShieldCheck,
     },
     {
@@ -95,18 +95,18 @@ export default async function AdminDashboard() {
     <div className="space-y-8">
       <div>
         <h1 className="text-xl font-bold">Dashboard</h1>
-        <p className="text-sm text-zinc-500 mt-1">
+        <p className="text-sm text-slate-400 mt-1">
           NayMos GameShop Backoffice — สถิติและข้อมูลเรียลไทม์
         </p>
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">ภาพรวมวันนี้</h2>
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">ภาพรวมวันนี้</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {primaryCards.map((s) => (
-            <div key={s.label} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+            <div key={s.label} className="rounded-2xl border border-sky-100 bg-white p-4 shadow-xs">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-zinc-500">{s.label}</p>
+                <p className="text-xs text-slate-400">{s.label}</p>
                 <s.icon className={`h-4 w-4 ${s.color} opacity-70`} />
               </div>
               <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
@@ -117,12 +117,12 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">โครงสร้างสมาชิก & บริการ</h2>
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">โครงสร้างสมาชิก & บริการ</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {roleCards.map((s) => (
-            <div key={s.label} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+            <div key={s.label} className="rounded-2xl border border-sky-100 bg-white p-4 shadow-xs">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-zinc-500">{s.label}</p>
+                <p className="text-xs text-slate-400">{s.label}</p>
                 <s.icon className={`h-4 w-4 ${s.color} opacity-70`} />
               </div>
               <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
@@ -136,28 +136,28 @@ export default async function AdminDashboard() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold">ออเดอร์ล่าสุด</h2>
-            <Link href="/admin/orders" className="text-xs text-red-400 hover:underline">
+            <Link href="/admin/orders" className="text-xs text-sky-600 hover:underline">
               ดูทั้งหมด →
             </Link>
           </div>
-          <div className="rounded-xl border border-zinc-800 overflow-hidden">
+          <div className="rounded-xl border border-sky-100 overflow-hidden">
             {stats.recentOrders.length === 0 ? (
-              <p className="p-6 text-sm text-zinc-500 text-center">ยังไม่มีออเดอร์</p>
+              <p className="p-6 text-sm text-slate-400 text-center">ยังไม่มีออเดอร์</p>
             ) : (
               <ul className="divide-y divide-zinc-800">
                 {stats.recentOrders.map((o) => (
                   <li
                     key={o.order_number}
-                    className="flex items-center justify-between gap-3 px-4 py-3 text-sm bg-zinc-950/40"
+                    className="flex items-center justify-between gap-3 px-4 py-3 text-sm bg-slate-50/40"
                   >
                     <div>
                       <p className="font-mono text-xs text-white">{o.order_number}</p>
-                      <p className="text-[11px] text-zinc-500">
+                      <p className="text-[11px] text-slate-400">
                         {new Date(o.created_at).toLocaleString('th-TH')}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium text-red-400">฿{o.total.toLocaleString()}</p>
+                      <p className="font-medium text-sky-600">฿{o.total.toLocaleString()}</p>
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[10px] ${orderStatusColor(o.status)}`}
                       >
@@ -178,10 +178,10 @@ export default async function AdminDashboard() {
               <Link
                 key={l.href}
                 href={l.href}
-                className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 hover:border-red-600/40 transition"
+                className="rounded-2xl border border-sky-100 bg-white p-4 shadow-xs hover:border-red-600/40 transition"
               >
                 <p className="font-medium text-sm text-white">{l.label}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">{l.desc}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{l.desc}</p>
               </Link>
             ))}
           </div>

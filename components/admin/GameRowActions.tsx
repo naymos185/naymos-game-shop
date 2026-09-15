@@ -101,7 +101,7 @@ export function GameRowActions({
 
   return (
     <div className="flex items-center gap-2">
-      <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer mr-1">
+      <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer mr-1">
         <input
           type="checkbox"
           checked={active}
@@ -109,14 +109,14 @@ export function GameRowActions({
           className="rounded border-zinc-600"
         />
         {active ? 'เปิดขาย' : 'ปิด'}
-        {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
+        {loading && <Loader2 className="h-3 w-3 animate-spin text-slate-400" />}
       </label>
 
       {/* Edit button */}
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="p-1.5 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition"
+        className="p-1.5 rounded-lg border border-sky-200 bg-sky-50/80 hover:bg-sky-100 text-slate-700 hover:text-white transition"
         title="แก้ไขชื่อและรูปเกม"
       >
         <Edit className="w-3.5 h-3.5" />
@@ -127,7 +127,7 @@ export function GameRowActions({
         type="button"
         disabled={deleting}
         onClick={handleDelete}
-        className="p-1.5 rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition"
+        className="p-1.5 rounded-lg border border-sky-200 bg-sky-50 hover:bg-sky-600/20 text-sky-600 transition"
         title="ลบเกม"
       >
         {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
@@ -136,13 +136,13 @@ export function GameRowActions({
       {/* Edit Modal */}
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="relative w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-2xl space-y-4">
+          <div className="relative w-full max-w-sm rounded-2xl border border-sky-100 bg-slate-50 p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white">แก้ไขข้อมูล / รูปเกม</h3>
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                className="text-zinc-400 hover:text-white"
+                className="text-slate-500 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -150,40 +150,40 @@ export function GameRowActions({
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-zinc-400 mb-1">ชื่อเกม</label>
+                <label className="block text-xs text-slate-500 mb-1">ชื่อเกม</label>
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white focus:border-red-500 focus:outline-none"
+                  className="w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-white focus:border-sky-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs text-zinc-400 mb-1">URL รูปภาพ / ไอคอนเกม</label>
+                <label className="block text-xs text-slate-500 mb-1">URL รูปภาพ / ไอคอนเกม</label>
                 <input
                   type="text"
                   value={editIcon}
                   onChange={(e) => setEditIcon(e.target.value)}
                   placeholder="https://... หรือ /games/...jpg"
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white focus:border-red-500 focus:outline-none"
+                  className="w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-white focus:border-sky-400 focus:outline-none"
                 />
                 {editIcon && (
                   <div className="mt-2 flex items-center gap-2">
-                    <img src={editIcon} alt="Preview" className="w-10 h-10 rounded-lg object-cover border border-zinc-800" />
-                    <span className="text-[11px] text-zinc-400">รูปตัวอย่าง</span>
+                    <img src={editIcon} alt="Preview" className="w-10 h-10 rounded-lg object-cover border border-sky-100" />
+                    <span className="text-[11px] text-slate-500">รูปตัวอย่าง</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {msg && <p className="text-xs text-red-400">{msg}</p>}
+            {msg && <p className="text-xs text-sky-600">{msg}</p>}
 
             <div className="flex gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                className="flex-1 rounded-xl border border-zinc-700 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+                className="flex-1 rounded-xl border border-sky-200 py-2 text-xs font-medium text-slate-700 hover:bg-sky-50/80"
               >
                 ยกเลิก
               </button>
@@ -191,7 +191,7 @@ export function GameRowActions({
                 type="button"
                 disabled={savingEdit}
                 onClick={handleSaveEdit}
-                className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 py-2 text-xs font-bold text-white flex items-center justify-center gap-1.5"
+                className="flex-1 rounded-xl bg-sky-500 hover:bg-red-700 py-2 text-xs font-bold text-white flex items-center justify-center gap-1.5"
               >
                 {savingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'บันทึก'}
               </button>

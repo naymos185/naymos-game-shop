@@ -26,16 +26,16 @@ export default async function AdminGamesPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-xl font-bold">Games</h1>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-slate-400">
           รายการเกมที่เปิดให้บริการ · {games.length} เกม · เพิ่ม ลบ แก้ไขรูป หรือปรับเปิด/ปิดการขาย
         </p>
       </div>
 
       <GameCreateForm />
 
-      <div className="rounded-xl border border-zinc-800 overflow-x-auto">
+      <div className="rounded-xl border border-sky-100 overflow-x-auto">
         <table className="w-full text-sm min-w-[640px]">
-          <thead className="bg-zinc-900 text-zinc-400 text-left">
+          <thead className="bg-white text-slate-500 text-left">
             <tr>
               <th className="px-4 py-3 font-medium">รูปภาพ</th>
               <th className="px-4 py-3 font-medium">ชื่อเกม</th>
@@ -47,23 +47,23 @@ export default async function AdminGamesPage() {
           </thead>
           <tbody className="divide-y divide-zinc-800">
             {games.map((g) => (
-              <tr key={g.id} className="bg-zinc-950/50 hover:bg-zinc-900/30">
+              <tr key={g.id} className="bg-slate-50/50 hover:bg-white/30">
                 <td className="px-4 py-3">
                   {g.icon ? (
-                    <img src={g.icon} alt={g.name} className="w-10 h-10 rounded-lg object-cover border border-zinc-800" />
+                    <img src={g.icon} alt={g.name} className="w-10 h-10 rounded-lg object-cover border border-sky-100" />
                   ) : (
-                    <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-xs text-zinc-500">
+                    <div className="w-10 h-10 rounded-lg bg-sky-50/80 flex items-center justify-center text-xs text-slate-400">
                       ไม่มีรูป
                     </div>
                   )}
                 </td>
                 <td className="px-4 py-3 font-medium text-white">{g.name}</td>
-                <td className="px-4 py-3 font-mono text-xs text-zinc-400">{g.slug}</td>
-                <td className="px-4 py-3 text-xs text-zinc-400">{g.category || '—'}</td>
+                <td className="px-4 py-3 font-mono text-xs text-slate-500">{g.slug}</td>
+                <td className="px-4 py-3 text-xs text-slate-500">{g.category || '—'}</td>
                 <td className="px-4 py-3">
                   <Link
                     href={`/admin/products?game_id=${g.id}`}
-                    className="text-xs text-red-400 hover:underline"
+                    className="text-xs text-sky-600 hover:underline"
                   >
                     {counts[g.id] ?? 0} แพ็กเกจ
                   </Link>

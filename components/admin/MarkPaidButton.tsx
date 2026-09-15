@@ -64,7 +64,7 @@ export function MarkPaidButton({
         )}
         ยืนยันชำระ
       </button>
-      {error && <span className="text-[10px] text-red-400">{error}</span>}
+      {error && <span className="text-[10px] text-sky-600">{error}</span>}
     </div>
   );
 }

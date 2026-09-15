@@ -13,7 +13,7 @@ export default async function AdminPromotionsPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-xl font-bold">Promotions</h1>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-slate-400">
           โปรโมชันหน้าเว็บ · {promotions.length} รายการ
         </p>
       </div>
@@ -21,7 +21,7 @@ export default async function AdminPromotionsPage() {
       <PromotionCreateForm />
 
       {promotions.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-zinc-700 p-8 text-center text-sm text-zinc-500">
+        <div className="rounded-xl border border-dashed border-sky-200 p-8 text-center text-sm text-slate-400">
           ยังไม่มีโปร — รัน 010_promotions.sql หรือสร้างด้านบน
         </div>
       ) : (
@@ -29,19 +29,19 @@ export default async function AdminPromotionsPage() {
           {promotions.map((p) => (
             <div
               key={p.id}
-              className="rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 flex flex-wrap items-center justify-between gap-3"
+              className="rounded-xl border border-sky-100 bg-slate-50/50 px-4 py-3 flex flex-wrap items-center justify-between gap-3"
             >
               <div>
                 <div className="flex items-center gap-2">
                   {p.badge && (
-                    <span className="rounded-full bg-red-600/20 text-red-400 text-[10px] px-2 py-0.5">
+                    <span className="rounded-full bg-sky-500/20 text-sky-600 text-[10px] px-2 py-0.5">
                       {p.badge}
                     </span>
                   )}
                   <p className="font-medium text-white text-sm">{p.title}</p>
                 </div>
                 {p.description && (
-                  <p className="text-xs text-zinc-500 mt-0.5">{p.description}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{p.description}</p>
                 )}
                 {p.link_url && (
                   <p className="text-[10px] text-zinc-600 mt-1 font-mono">{p.link_url}</p>

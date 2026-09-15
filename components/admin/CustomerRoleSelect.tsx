@@ -40,15 +40,15 @@ export function CustomerRoleSelect({ userId, initialRole }: { userId: string; in
           role === 'reseller'
             ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
             : role === 'admin'
-            ? 'border-red-500/50 bg-red-500/10 text-red-400'
-            : 'border-zinc-700 bg-zinc-900 text-zinc-300'
+            ? 'border-sky-400/50 bg-sky-50 text-sky-600'
+            : 'border-sky-200 bg-white text-slate-700'
         }`}
       >
-        <option value="customer" className="bg-zinc-950 text-white">ลูกค้าทั่วไป (Customer)</option>
-        <option value="reseller" className="bg-zinc-950 text-emerald-400">ตัวแทนจำหน่าย (Reseller)</option>
-        <option value="admin" className="bg-zinc-950 text-red-400">ผู้ดูแลระบบ (Admin)</option>
+        <option value="customer" className="bg-slate-50 text-white">ลูกค้าทั่วไป (Customer)</option>
+        <option value="reseller" className="bg-slate-50 text-emerald-400">ตัวแทนจำหน่าย (Reseller)</option>
+        <option value="admin" className="bg-slate-50 text-sky-600">ผู้ดูแลระบบ (Admin)</option>
       </select>
-      {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
+      {loading && <Loader2 className="h-3 w-3 animate-spin text-slate-400" />}
     </div>
   );
 }

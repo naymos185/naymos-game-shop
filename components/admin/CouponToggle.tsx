@@ -59,7 +59,7 @@ export function CouponToggle({ id, is_active }: { id: string; is_active: boolean
 
   return (
     <div className="flex items-center gap-2">
-      <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer">
+      <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
         <input
           type="checkbox"
           checked={active}
@@ -67,13 +67,13 @@ export function CouponToggle({ id, is_active }: { id: string; is_active: boolean
           className="rounded border-zinc-600"
         />
         {active ? 'เปิด' : 'ปิด'}
-        {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
+        {loading && <Loader2 className="h-3 w-3 animate-spin text-slate-400" />}
       </label>
       <button
         type="button"
         disabled={deleting}
         onClick={remove}
-        className="p-1 rounded text-red-400 hover:text-red-300 transition"
+        className="p-1 rounded text-sky-600 hover:text-red-300 transition"
         title="ลบคูปอง"
       >
         {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}

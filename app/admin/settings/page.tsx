@@ -12,9 +12,9 @@ export default async function AdminSettingsPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-xl font-bold">Settings</h1>
-        <p className="text-sm text-zinc-500">ข้อมูลร้านที่แสดงหน้าชำระเงิน</p>
+        <p className="text-sm text-slate-400">ข้อมูลร้านที่แสดงหน้าชำระเงิน</p>
       </div>
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+      <div className="rounded-2xl border border-sky-100 bg-white p-6">
         <StoreSettingsForm initial={settings} />
       </div>
     </div>

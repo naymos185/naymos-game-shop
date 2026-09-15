@@ -12,7 +12,7 @@ export default function AdminProvidersPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-xl font-bold">Providers</h1>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-slate-400">
           ผู้ให้บริการเติมเกม · ปัจจุบันใช้ Mock สำหรับทดสอบ
         </p>
       </div>
@@ -21,11 +21,11 @@ export default function AdminProvidersPage() {
         {providers.map((p) => (
           <div
             key={p.id}
-            className="rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 flex items-center justify-between"
+            className="rounded-xl border border-sky-100 bg-slate-50/50 px-4 py-3 flex items-center justify-between"
           >
             <div>
               <p className="font-medium text-white text-sm">{p.name}</p>
-              <p className="text-xs text-zinc-500 font-mono">{p.id}</p>
+              <p className="text-xs text-slate-400 font-mono">{p.id}</p>
             </div>
             <div className="flex items-center gap-2">
               {p.id === defaultId && (
@@ -33,7 +33,7 @@ export default function AdminProvidersPage() {
                   default
                 </span>
               )}
-              <span className="rounded-full bg-zinc-800 text-zinc-400 text-[10px] px-2 py-0.5">
+              <span className="rounded-full bg-sky-50/80 text-slate-500 text-[10px] px-2 py-0.5">
                 mock
               </span>
             </div>

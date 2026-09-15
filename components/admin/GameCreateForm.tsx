@@ -51,7 +51,7 @@ export function GameCreateForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-4">
+    <form onSubmit={onSubmit} className="rounded-2xl border border-sky-100 bg-white p-5 space-y-4">
       <h2 className="font-semibold text-sm">เพิ่มเกมใหม่</h2>
       <div className="grid sm:grid-cols-2 gap-3">
         <input
@@ -59,49 +59,49 @@ export function GameCreateForm() {
           placeholder="ชื่อเกม (เช่น RoV Mobile)"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
         />
         <input
           placeholder="slug (ว่างไว้ = สร้างให้อัตโนมัติ)"
           value={slug}
           onChange={(e) => setSlug(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-mono outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm font-mono outline-none focus:border-sky-400"
         />
         <input
           placeholder="หมวดหมู่ เช่น MOBA, FPS"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
         />
         <input
           placeholder="URL รูปภาพเกม (Image / Icon URL)"
           value={icon}
           onChange={(e) => setIcon(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
         />
         
-        <div className="sm:col-span-2 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 space-y-2">
-          <label className="text-xs text-zinc-400 block font-medium">รูปแบบข้อมูลสำหรับเติมเกม:</label>
+        <div className="sm:col-span-2 rounded-xl border border-sky-100 bg-slate-50/60 p-3 space-y-2">
+          <label className="text-xs text-slate-500 block font-medium">รูปแบบข้อมูลสำหรับเติมเกม:</label>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm cursor-pointer text-zinc-300">
+            <label className="flex items-center gap-2 text-sm cursor-pointer text-slate-700">
               <input
                 type="radio"
                 name="auth_type"
                 value="uid"
                 checked={authType === 'uid'}
                 onChange={() => setAuthType('uid')}
-                className="text-red-600 focus:ring-red-500"
+                className="text-red-600 focus:ring-sky-400"
               />
               ใช้ UID / OpenID
             </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer text-zinc-300">
+            <label className="flex items-center gap-2 text-sm cursor-pointer text-slate-700">
               <input
                 type="radio"
                 name="auth_type"
                 value="id_pass"
                 checked={authType === 'id_pass'}
                 onChange={() => setAuthType('id_pass')}
-                className="text-red-600 focus:ring-red-500"
+                className="text-red-600 focus:ring-sky-400"
               />
               ใช้ ID + Password (เข้าสู่ระบบเพื่อเติม)
             </label>
@@ -111,7 +111,7 @@ export function GameCreateForm() {
               placeholder="ชื่อเรียก UID เช่น UID / OpenID / เลขประจำตัวผู้เล่น"
               value={fieldLabel}
               onChange={(e) => setFieldLabel(e.target.value)}
-              className="w-full mt-2 rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+              className="w-full mt-2 rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
             />
           )}
         </div>
@@ -120,18 +120,18 @@ export function GameCreateForm() {
           placeholder="คำอธิบายสั้นๆ"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500 sm:col-span-2"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400 sm:col-span-2"
         />
       </div>
       <button
         type="submit"
         disabled={loading}
-        className="rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white flex items-center gap-2"
+        className="rounded-xl bg-sky-500 hover:bg-red-700 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white flex items-center gap-2"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         บันทึกเกม
       </button>
-      {msg && <p className="text-xs text-zinc-400">{msg}</p>}
+      {msg && <p className="text-xs text-slate-500">{msg}</p>}
     </form>
   );
 }

@@ -38,12 +38,12 @@ export function StoreSettingsForm({ initial }: { initial: StoreSettings }) {
         ] as const
       ).map(([key, label]) => (
         <div key={key}>
-          <label className="block text-sm text-zinc-400 mb-1.5">{label}</label>
+          <label className="block text-sm text-slate-500 mb-1.5">{label}</label>
           <input
             type="text"
             value={form[key]}
             onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-sm outline-none focus:border-red-500"
+            className="w-full rounded-xl border border-sky-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-sky-400"
             placeholder={label}
           />
         </div>
@@ -51,12 +51,12 @@ export function StoreSettingsForm({ initial }: { initial: StoreSettings }) {
       <button
         type="submit"
         disabled={loading}
-        className="rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 px-5 py-2.5 text-sm font-semibold text-white flex items-center gap-2"
+        className="rounded-xl bg-sky-500 hover:bg-red-700 disabled:opacity-50 px-5 py-2.5 text-sm font-semibold text-white flex items-center gap-2"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         บันทึกการตั้งค่า
       </button>
-      {msg && <p className="text-sm text-zinc-400">{msg}</p>}
+      {msg && <p className="text-sm text-slate-500">{msg}</p>}
       <p className="text-xs text-zinc-600">
         ข้อมูลนี้แสดงบนหน้าชำระเงินลูกค้า · ยังไม่เชื่อมโอนเงินอัตโนมัติ
       </p>

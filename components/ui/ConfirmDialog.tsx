@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 export type ConfirmOptions = {
   title: string;
@@ -58,8 +58,6 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     };
   }, [pending, close]);
 
-  const danger = pending?.tone !== 'default';
-
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
@@ -68,41 +66,33 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="confirm-title"
-          className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
         >
           <button
             type="button"
             aria-label="ปิด"
             onClick={() => close(false)}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in"
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs animate-in fade-in"
           />
-          <div className="relative w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-2xl">
-            <div className="flex gap-3">
-              <span
-                className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                  danger
-                    ? 'bg-red-500/15 text-red-400'
-                    : 'bg-emerald-500/15 text-emerald-400'
-                }`}
-              >
-                <AlertTriangle className="h-5 w-5" />
-              </span>
-              <div className="min-w-0">
-                <h2 id="confirm-title" className="text-base font-semibold text-white">
-                  {pending.title}
-                </h2>
-                {pending.description && (
-                  <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                    {pending.description}
-                  </p>
-                )}
-              </div>
+          <div className="relative w-full max-w-sm rounded-3xl border border-sky-100 bg-white p-6 shadow-2xl space-y-4 text-center">
+            <div className="mx-auto w-12 h-12 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center shadow-inner">
+              <AlertCircle className="h-6 w-6" />
             </div>
-            <div className="mt-5 flex gap-2">
+            <div>
+              <h2 id="confirm-title" className="text-base font-bold text-slate-900">
+                {pending.title}
+              </h2>
+              {pending.description && (
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                  {pending.description}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => close(false)}
-                className="flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800"
+                className="flex-1 rounded-full border border-sky-200 bg-sky-50/60 hover:bg-sky-100 py-2.5 text-xs font-bold text-slate-700 transition"
               >
                 {pending.cancelText ?? 'ยกเลิก'}
               </button>
@@ -110,11 +100,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 ref={confirmBtn}
                 type="button"
                 onClick={() => close(true)}
-                className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold text-white transition ${
-                  danger
-                    ? 'bg-red-600 hover:bg-red-500'
-                    : 'bg-emerald-600 hover:bg-emerald-500'
-                }`}
+                className="flex-1 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 py-2.5 text-xs font-bold text-white transition shadow-sm shadow-sky-500/20"
               >
                 {pending.confirmText ?? 'ยืนยัน'}
               </button>
@@ -130,7 +116,8 @@ export function useConfirm() {
   const ctx = useContext(ConfirmContext);
   if (!ctx) {
     return (options: ConfirmOptions) => {
-      const text = [options.title, typeof options.description === 'string' ? options.description : ''].filter(Boolean).join('\n');
+      const text = [options.title, typeof options.description === 'string' ? options.description : ''].filter(Boolean).join('
+');
       return Promise.resolve(typeof window !== 'undefined' ? window.confirm(text) : true);
     };
   }

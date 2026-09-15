@@ -53,18 +53,18 @@ export function ProductCreateForm({ games }: { games: GameOpt[] }) {
 
   if (games.length === 0) {
     return (
-      <p className="text-sm text-zinc-500">ยังไม่มีเกม — เพิ่มเกมหรือรัน seed ก่อน</p>
+      <p className="text-sm text-slate-400">ยังไม่มีเกม — เพิ่มเกมหรือรัน seed ก่อน</p>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-3">
+    <form onSubmit={onSubmit} className="rounded-2xl border border-sky-100 bg-white p-5 space-y-3">
       <h2 className="font-semibold text-sm">เพิ่มแพ็กเกจใหม่</h2>
       <div className="grid sm:grid-cols-2 gap-3">
         <select
           value={gameId}
           onChange={(e) => setGameId(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500 sm:col-span-2"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400 sm:col-span-2"
         >
           {games.map((g) => (
             <option key={g.id} value={g.id}>
@@ -77,7 +77,7 @@ export function ProductCreateForm({ games }: { games: GameOpt[] }) {
           placeholder="ชื่อแพ็ก เช่น 110 เพชร"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500 sm:col-span-2"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400 sm:col-span-2"
         />
         <input
           required
@@ -87,7 +87,7 @@ export function ProductCreateForm({ games }: { games: GameOpt[] }) {
           placeholder="ราคาขาย (บาท)"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
         />
         <input
           type="number"
@@ -96,7 +96,7 @@ export function ProductCreateForm({ games }: { games: GameOpt[] }) {
           placeholder="ต้นทุน"
           value={cost}
           onChange={(e) => setCost(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400"
         />
         <input
           type="number"
@@ -105,18 +105,18 @@ export function ProductCreateForm({ games }: { games: GameOpt[] }) {
           placeholder="จำนวนในเกม (ไม่บังคับ)"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500 sm:col-span-2"
+          className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400 sm:col-span-2"
         />
       </div>
       <button
         type="submit"
         disabled={loading}
-        className="rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white flex items-center gap-2"
+        className="rounded-xl bg-sky-500 hover:bg-red-700 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white flex items-center gap-2"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         เพิ่มแพ็ก
       </button>
-      {msg && <p className="text-xs text-zinc-400">{msg}</p>}
+      {msg && <p className="text-xs text-slate-500">{msg}</p>}
     </form>
   );
 }

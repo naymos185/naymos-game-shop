@@ -15,16 +15,16 @@ export default async function AdminReportsPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-xl font-bold">Reports</h1>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-slate-400">
           7 วันล่าสุด · {r.totalOrders} ออเดอร์ · รายได้ {baht(r.totalRevenue)}
         </p>
       </div>
 
       <section>
         <h2 className="font-semibold mb-3 text-sm">รายวัน (7 วัน)</h2>
-        <div className="rounded-xl border border-zinc-800 overflow-x-auto">
+        <div className="rounded-xl border border-sky-100 overflow-x-auto">
           <table className="w-full text-sm min-w-[420px]">
-            <thead className="bg-zinc-900 text-zinc-400 text-left">
+            <thead className="bg-white text-slate-500 text-left">
               <tr>
                 <th className="px-4 py-3 font-medium">วันที่</th>
                 <th className="px-4 py-3 font-medium">ออเดอร์</th>
@@ -34,11 +34,11 @@ export default async function AdminReportsPage() {
             </thead>
             <tbody className="divide-y divide-zinc-800">
               {r.last7Days.map((d) => (
-                <tr key={d.date} className="bg-zinc-950/50">
-                  <td className="px-4 py-3 font-mono text-xs text-zinc-300">{d.date}</td>
+                <tr key={d.date} className="bg-slate-50/50">
+                  <td className="px-4 py-3 font-mono text-xs text-slate-700">{d.date}</td>
                   <td className="px-4 py-3 text-white">{d.orders}</td>
                   <td className="px-4 py-3 text-emerald-400">{d.success}</td>
-                  <td className="px-4 py-3 text-red-400">{baht(d.revenue)}</td>
+                  <td className="px-4 py-3 text-sky-600">{baht(d.revenue)}</td>
                 </tr>
               ))}
             </tbody>
@@ -49,13 +49,13 @@ export default async function AdminReportsPage() {
       <section>
         <h2 className="font-semibold mb-3 text-sm">แพ็กขายดี (7 วัน)</h2>
         {r.topProducts.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-700 p-8 text-center text-sm text-zinc-500">
+          <div className="rounded-xl border border-dashed border-sky-200 p-8 text-center text-sm text-slate-400">
             ยังไม่มีข้อมูล
           </div>
         ) : (
-          <div className="rounded-xl border border-zinc-800 overflow-x-auto">
+          <div className="rounded-xl border border-sky-100 overflow-x-auto">
             <table className="w-full text-sm min-w-[420px]">
-              <thead className="bg-zinc-900 text-zinc-400 text-left">
+              <thead className="bg-white text-slate-500 text-left">
                 <tr>
                   <th className="px-4 py-3 font-medium">แพ็กเกจ</th>
                   <th className="px-4 py-3 font-medium">ออเดอร์</th>
@@ -64,10 +64,10 @@ export default async function AdminReportsPage() {
               </thead>
               <tbody className="divide-y divide-zinc-800">
                 {r.topProducts.map((p) => (
-                  <tr key={p.product_id} className="bg-zinc-950/50">
+                  <tr key={p.product_id} className="bg-slate-50/50">
                     <td className="px-4 py-3 text-white">{p.name}</td>
-                    <td className="px-4 py-3 text-zinc-300">{p.orders}</td>
-                    <td className="px-4 py-3 text-red-400 font-medium">{baht(p.revenue)}</td>
+                    <td className="px-4 py-3 text-slate-700">{p.orders}</td>
+                    <td className="px-4 py-3 text-sky-600 font-medium">{baht(p.revenue)}</td>
                   </tr>
                 ))}
               </tbody>

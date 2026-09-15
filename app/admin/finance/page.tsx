@@ -27,16 +27,16 @@ export default async function AdminFinancePage() {
     <div>
       <div className="mb-6">
         <h1 className="text-xl font-bold">Finance</h1>
-        <p className="text-sm text-zinc-500">สรุปยอดจากออเดอร์จริง · ไม่ใช่บัญชีธนาคาร</p>
+        <p className="text-sm text-slate-400">สรุปยอดจากออเดอร์จริง · ไม่ใช่บัญชีธนาคาร</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         {cards.map((c) => (
           <div
             key={c.label}
-            className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4"
+            className="rounded-xl border border-sky-100 bg-slate-50/50 p-4"
           >
-            <p className="text-xs text-zinc-500 mb-1">{c.label}</p>
+            <p className="text-xs text-slate-400 mb-1">{c.label}</p>
             <p className="text-xl font-bold text-white">{c.value}</p>
             <p className="text-[11px] text-zinc-600 mt-1">{c.sub}</p>
           </div>
@@ -45,13 +45,13 @@ export default async function AdminFinancePage() {
 
       <h2 className="font-semibold mb-3 text-sm">แยกตามสถานะ</h2>
       {s.byStatus.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-zinc-700 p-8 text-center text-sm text-zinc-500">
+        <div className="rounded-xl border border-dashed border-sky-200 p-8 text-center text-sm text-slate-400">
           ยังไม่มีออเดอร์
         </div>
       ) : (
-        <div className="rounded-xl border border-zinc-800 overflow-x-auto">
+        <div className="rounded-xl border border-sky-100 overflow-x-auto">
           <table className="w-full text-sm min-w-[400px]">
-            <thead className="bg-zinc-900 text-zinc-400 text-left">
+            <thead className="bg-white text-slate-500 text-left">
               <tr>
                 <th className="px-4 py-3 font-medium">สถานะ</th>
                 <th className="px-4 py-3 font-medium">จำนวน</th>
@@ -60,10 +60,10 @@ export default async function AdminFinancePage() {
             </thead>
             <tbody className="divide-y divide-zinc-800">
               {s.byStatus.map((r) => (
-                <tr key={r.status} className="bg-zinc-950/50">
-                  <td className="px-4 py-3 font-mono text-xs text-zinc-300">{r.status}</td>
+                <tr key={r.status} className="bg-slate-50/50">
+                  <td className="px-4 py-3 font-mono text-xs text-slate-700">{r.status}</td>
                   <td className="px-4 py-3 text-white">{r.count}</td>
-                  <td className="px-4 py-3 text-red-400 font-medium">{baht(r.total)}</td>
+                  <td className="px-4 py-3 text-sky-600 font-medium">{baht(r.total)}</td>
                 </tr>
               ))}
             </tbody>

@@ -46,22 +46,22 @@ export default async function AdminOrdersPage() {
     const slip = pd.slip_image || pd.payment_slip || null;
 
     return (
-      <div key={o.id} className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 space-y-3 shadow-sm hover:border-zinc-700 transition">
+      <div key={o.id} className="rounded-xl border border-sky-100 bg-white/80 p-4 space-y-3 shadow-sm hover:border-sky-200 transition">
         <div className="flex items-start justify-between gap-2">
           <div>
             <span className="font-mono text-xs font-bold text-white block">{o.order_number}</span>
-            <span className="text-[11px] text-zinc-400">{gName} · {pName}</span>
+            <span className="text-[11px] text-slate-500">{gName} · {pName}</span>
           </div>
-          <span className="font-mono font-bold text-sm text-red-400">฿{Number(o.total || o.amount).toLocaleString()}</span>
+          <span className="font-mono font-bold text-sm text-sky-600">฿{Number(o.total || o.amount).toLocaleString()}</span>
         </div>
 
         {/* Player Data */}
-        <div className="rounded-lg bg-zinc-950/70 p-2.5 text-xs text-zinc-300 font-mono space-y-1">
+        <div className="rounded-lg bg-slate-50/70 p-2.5 text-xs text-slate-700 font-mono space-y-1">
           {Object.entries(pd)
             .filter(([k]) => !['slip_image', 'payment_slip', 'customer_confirmed', 'confirmed_at', 'cancelled_at', 'cancelled_by'].includes(k))
             .map(([k, v]) => (
               <div key={k} className="flex justify-between gap-2">
-                <span className="text-zinc-500">{k}:</span>
+                <span className="text-slate-400">{k}:</span>
                 <span className="text-white truncate">{String(v)}</span>
               </div>
             ))}
@@ -70,15 +70,15 @@ export default async function AdminOrdersPage() {
         {/* Slip preview if uploaded */}
         {slip && (
           <div className="space-y-1">
-            <span className="text-[10px] text-zinc-400 font-medium">สลิปการโอน:</span>
+            <span className="text-[10px] text-slate-500 font-medium">สลิปการโอน:</span>
             <a href={slip} target="_blank" rel="noopener noreferrer" className="block w-fit">
-              <img src={slip} alt="Slip" className="w-16 h-16 object-cover rounded border border-zinc-700 hover:scale-105 transition" />
+              <img src={slip} alt="Slip" className="w-16 h-16 object-cover rounded border border-sky-200 hover:scale-105 transition" />
             </a>
           </div>
         )}
 
-        <div className="pt-2 border-t border-zinc-800 flex items-center justify-between gap-2">
-          <span suppressHydrationWarning className="text-[10px] text-zinc-500">
+        <div className="pt-2 border-t border-sky-100 flex items-center justify-between gap-2">
+          <span suppressHydrationWarning className="text-[10px] text-slate-400">
             {new Date(o.created_at).toLocaleString('th-TH')}
           </span>
           <AdminOrderRowActions order={o} />
@@ -91,7 +91,7 @@ export default async function AdminOrdersPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold">จัดการออเดอร์</h1>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-slate-400">
           แบ่งเป็น 3 หมวดหมู่ชัดเจน: รอชำระเงิน · รอดำเนินการเติม · สำเร็จ
         </p>
       </div>
@@ -108,7 +108,7 @@ export default async function AdminOrdersPage() {
           </div>
           <div className="space-y-3">
             {pendingOrders.length === 0 ? (
-              <div className="p-8 text-center text-xs text-zinc-600 rounded-xl border border-dashed border-zinc-800">
+              <div className="p-8 text-center text-xs text-zinc-600 rounded-xl border border-dashed border-sky-100">
                 ไม่มีออเดอร์รอชำระ
               </div>
             ) : (
@@ -127,7 +127,7 @@ export default async function AdminOrdersPage() {
           </div>
           <div className="space-y-3">
             {processingOrders.length === 0 ? (
-              <div className="p-8 text-center text-xs text-zinc-600 rounded-xl border border-dashed border-zinc-800">
+              <div className="p-8 text-center text-xs text-zinc-600 rounded-xl border border-dashed border-sky-100">
                 ไม่มีออเดอร์รอดำเนินการ
               </div>
             ) : (
@@ -146,7 +146,7 @@ export default async function AdminOrdersPage() {
           </div>
           <div className="space-y-3">
             {completedOrders.length === 0 ? (
-              <div className="p-8 text-center text-xs text-zinc-600 rounded-xl border border-dashed border-zinc-800">
+              <div className="p-8 text-center text-xs text-zinc-600 rounded-xl border border-dashed border-sky-100">
                 ยังไม่มีออเดอร์สำเร็จ
               </div>
             ) : (
@@ -158,8 +158,8 @@ export default async function AdminOrdersPage() {
 
       {/* Others (e.g. CANCELLED / FAILED) */}
       {otherOrders.length > 0 && (
-        <div className="pt-6 border-t border-zinc-800">
-          <h2 className="text-sm font-semibold text-zinc-400 mb-3">ออเดอร์ที่ถูกยกเลิก / อื่นๆ ({otherOrders.length})</h2>
+        <div className="pt-6 border-t border-sky-100">
+          <h2 className="text-sm font-semibold text-slate-500 mb-3">ออเดอร์ที่ถูกยกเลิก / อื่นๆ ({otherOrders.length})</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {otherOrders.map(renderOrderCard)}
           </div>
