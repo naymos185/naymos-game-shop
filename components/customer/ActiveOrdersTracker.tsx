@@ -25,6 +25,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
   const [submittingSlip, setSubmittingSlip] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<ActiveOrder | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -77,9 +78,6 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
 
   // Cancel pending order
   const handleCancelOrder = async (order: ActiveOrder) => {
-    if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการยกเลิกคำสั่งซื้อ ${order.order_number}?`)) {
-      return;
-    }
     setCancellingId(order.id);
     try {
       const res = await fetch('/api/orders/cancel', {
@@ -90,6 +88,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
       const data = await res.json();
       if (data.success) {
         setOrders((prev) => prev.filter((o) => o.id !== order.id));
+        setOrderToCancel(null);
         router.refresh();
       } else {
         alert(data.message || 'ยกเลิกออเดอร์ไม่สำเร็จ');
@@ -211,7 +210,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
                       <button
                         type="button"
                         disabled={cancellingId === o.id}
-                        onClick={() => handleCancelOrder(o)}
+                        onClick={() => setOrderToCancel(o)}
                         className="inline-flex items-center gap-1 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 px-3 py-2 text-xs font-medium text-red-400 transition"
                       >
                         {cancellingId === o.id ? (
@@ -270,45 +269,49 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
         );
       })}
 
-      {/* QR & Slip Upload Modal */}
+      {/* QR & Slip Upload Modal (Sky-Blue & White Theme) */}
       {payingOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md rounded-3xl border border-sky-100 bg-sky-50/50 p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
+          <div className="relative w-full max-w-md rounded-3xl border border-sky-100 bg-white p-6 sm:p-7 shadow-2xl space-y-4 text-center">
             <button
               type="button"
               onClick={() => setPayingOrder(null)}
-              className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white rounded-full bg-white border border-sky-100"
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 hover:bg-sky-50 rounded-full transition"
             >
               <X className="w-4 h-4" />
             </button>
 
             <div className="text-center space-y-1">
-              <span className="text-xs font-bold uppercase tracking-widest text-amber-500">สแกนชำระเงิน</span>
-              <h3 className="text-xl font-black text-white">พร้อมเพย์ / QR Payment</h3>
-              <p className="text-xs text-slate-500 font-mono">ออเดอร์: {payingOrder.order_number}</p>
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-600 border border-sky-200/60">
+                สแกนชำระเงิน
+              </span>
+              <h3 className="text-xl font-black text-slate-900 mt-1">พร้อมเพย์ / QR Payment</h3>
+              <p className="text-xs text-slate-500 font-mono">
+                ออเดอร์: <span className="font-bold text-slate-800">{payingOrder.order_number}</span>
+              </p>
             </div>
 
             {/* QR Code */}
-            <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white mx-auto w-fit shadow-inner">
+            <div className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-sky-50/40 border border-sky-100 mx-auto w-fit shadow-xs">
               <img
                 src={`https://promptpay.io/0812345678/${payingOrder.total}.png`}
                 alt="QR Code"
-                className="w-48 h-48 object-contain"
+                className="w-48 h-48 object-contain rounded-xl"
               />
-              <span className="text-[11px] font-bold text-zinc-800 mt-1">PromptPay QR</span>
+              <span className="text-[11px] font-bold text-slate-700 mt-1.5">PromptPay QR</span>
             </div>
 
-            <div className="text-center">
-              <p className="text-xs text-slate-500">ยอดชำระสุทธิ</p>
-              <p className="text-2xl font-black text-red-400">฿{Number(payingOrder.total).toLocaleString()} บาท</p>
+            <div className="text-center py-1">
+              <p className="text-xs font-semibold text-slate-500">ยอดชำระสุทธิ</p>
+              <p className="text-3xl font-black text-sky-600">฿{Number(payingOrder.total).toLocaleString()} <span className="text-base font-bold text-slate-600">บาท</span></p>
             </div>
 
             {/* Slip Upload Box */}
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-600">
+            <div className="space-y-1.5 text-left">
+              <label className="block text-xs font-bold text-slate-700">
                 แนบรูปภาพสลิปการโอนเงิน (จำเป็น)
               </label>
-              <div className="relative border-2 border-dashed border-zinc-700 hover:border-amber-500/80 rounded-2xl p-4 text-center cursor-pointer transition bg-white/50">
+              <div className="relative border-2 border-dashed border-sky-200 hover:border-sky-400 rounded-2xl p-4 text-center cursor-pointer transition bg-sky-50/30 hover:bg-sky-50/70">
                 <input
                   type="file"
                   accept="image/*"
@@ -317,40 +320,88 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
                 />
                 {slipPreview ? (
                   <div className="flex items-center justify-center gap-3">
-                    <img src={slipPreview} alt="Slip Preview" className="w-12 h-12 object-cover rounded-lg border border-zinc-700" />
+                    <img src={slipPreview} alt="Slip Preview" className="w-12 h-12 object-cover rounded-xl border border-sky-200 shadow-xs" />
                     <div className="text-left">
-                      <p className="text-xs font-medium text-emerald-400">เลือกรูปสลิปแล้ว</p>
-                      <p className="text-[10px] text-zinc-500">คลิกเพื่อเปลี่ยนรูป</p>
+                      <p className="text-xs font-bold text-emerald-600">เลือกรูปสลิปแล้ว</p>
+                      <p className="text-[10px] text-slate-400">คลิกเพื่อเปลี่ยนรูป</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-1.5 text-slate-500">
-                    <UploadCloud className="w-6 h-6 text-amber-400" />
-                    <span className="text-xs font-medium">กดเพื่อเลือกรูปภาพสลิปจากเครื่อง</span>
-                    <span className="text-[10px] text-zinc-500">รองรับไฟล์ JPG, PNG</span>
+                  <div className="flex flex-col items-center gap-1.5 text-slate-600">
+                    <UploadCloud className="w-6 h-6 text-sky-500" />
+                    <span className="text-xs font-bold text-slate-700">กดเพื่อเลือกรูปภาพสลิปจากเครื่อง</span>
+                    <span className="text-[10px] text-slate-400">รองรับไฟล์ JPG, PNG</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {msg && <p className="text-center text-xs text-red-400">{msg}</p>}
+            {msg && <p className="text-center text-xs font-bold text-rose-500">{msg}</p>}
 
             {/* Submit button */}
             <button
               type="button"
               disabled={!slipFile || submittingSlip}
               onClick={handleSubmitSlip}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:hover:bg-amber-500 py-3 text-sm font-black text-black transition shadow-lg"
+              className="w-full flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 disabled:opacity-40 py-3 text-sm font-bold text-white transition shadow-md shadow-sky-500/20"
             >
               {submittingSlip ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>กำลังอัปโหลดสลิป...</span>
+                </>
               ) : (
                 <>
-                  ยืนยันการชำระเงิน
+                  <span>ยืนยันการชำระเงิน</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Order Confirmation Modal (Custom Cute Blue/White Modal) */}
+      {orderToCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
+          <div className="relative w-full max-w-sm rounded-3xl border border-sky-100 bg-white p-6 shadow-2xl space-y-4 text-center">
+            <div className="mx-auto w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shadow-inner">
+              <Ban className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">ยืนยันการยกเลิกคำสั่งซื้อ</h3>
+              <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+                คุณแน่ใจหรือไม่ว่าต้องการยกเลิกคำสั่งซื้อ{' '}
+                <span className="font-mono font-bold text-slate-800">{orderToCancel.order_number}</span>?
+                <br />
+                เมื่อยกเลิกแล้วจะไม่สามารถกู้คืนได้
+              </p>
+            </div>
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={cancellingId === orderToCancel.id}
+                onClick={() => setOrderToCancel(null)}
+                className="flex-1 rounded-full border border-sky-200 bg-sky-50/60 hover:bg-sky-100 py-2.5 text-xs font-bold text-slate-700 transition"
+              >
+                ไม่ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={cancellingId === orderToCancel.id}
+                onClick={() => handleCancelOrder(orderToCancel)}
+                className="flex-1 rounded-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 disabled:opacity-50 py-2.5 text-xs font-bold text-white transition shadow-sm shadow-rose-500/20 flex items-center justify-center gap-1.5"
+              >
+                {cancellingId === orderToCancel.id ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>กำลังยกเลิก...</span>
+                  </>
+                ) : (
+                  'ยืนยันยกเลิก'
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
