@@ -16,12 +16,22 @@ type OrderResult = {
   created_at: string;
 };
 
+type OrderEvent = {
+  id: string;
+  from_status: string | null;
+  to_status: string;
+  note: string | null;
+  actor: string;
+  created_at: string;
+};
+
 export function OrderTrackingForm() {
   const searchParams = useSearchParams();
   const [number, setNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderResult | null>(null);
+  const [events, setEvents] = useState<OrderEvent[]>([]);
 
   useEffect(() => {
     const q = searchParams.get('number');
@@ -41,6 +51,7 @@ export function OrderTrackingForm() {
     setLoading(true);
     setError(null);
     setOrder(null);
+    setEvents([]);
     try {
       const res = await fetch(`/api/orders?number=${encodeURIComponent(n)}`);
       const data = await res.json();
@@ -48,6 +59,7 @@ export function OrderTrackingForm() {
         setError(data.message ?? 'ไม่พบออเดอร์');
       } else {
         setOrder(data.order);
+        setEvents(Array.isArray(data.events) ? data.events : []);
       }
     } catch {
       setError('เชื่อมต่อไม่สำเร็จ');
@@ -62,23 +74,21 @@ export function OrderTrackingForm() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={onSubmit} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 space-y-4">
+      <form onSubmit={onSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-            หมายเลขออเดอร์
-          </label>
+          <label className="block text-sm font-medium text-slate-600 mb-1.5">หมายเลขออเดอร์</label>
           <input
             type="text"
             value={number}
             onChange={(e) => setNumber(e.target.value.toUpperCase())}
             placeholder="เช่น NM-20260912-XXXX"
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-mono outline-none focus:border-red-500"
+            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-mono outline-none focus:border-blue-500"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-zinc-700 py-3 font-semibold text-white transition flex items-center justify-center gap-2"
+          className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 py-3 font-semibold text-white transition flex items-center justify-center gap-2"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {loading ? 'กำลังค้นหา...' : 'ค้นหา'}
@@ -86,48 +96,64 @@ export function OrderTrackingForm() {
       </form>
 
       {error && (
-        <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300">
-          {error}
-        </div>
+        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">{error}</div>
       )}
 
       {order && (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 space-y-3 text-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 text-sm shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-zinc-500">หมายเลข</span>
-            <span className="font-mono font-bold text-white">{order.order_number}</span>
+            <span className="text-slate-500">หมายเลข</span>
+            <span className="font-mono font-bold text-slate-900">{order.order_number}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span className="text-zinc-500">สถานะ</span>
+            <span className="text-slate-500">สถานะ</span>
             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${orderStatusColor(order.status)}`}>
               {orderStatusLabel(order.status)}
             </span>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span className="text-zinc-500">เกม</span>
-            <span className="text-white">{order.game_name ?? '—'}</span>
+            <span className="text-slate-500">เกม</span>
+            <span className="text-slate-800">{order.game_name ?? '—'}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span className="text-zinc-500">แพ็กเกจ</span>
-            <span className="text-white">{order.product_name ?? '—'}</span>
+            <span className="text-slate-500">แพ็กเกจ</span>
+            <span className="text-slate-800">{order.product_name ?? '—'}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span className="text-zinc-500">ยอดชำระ</span>
-            <span className="font-bold text-red-400">฿{Number(order.total)}</span>
+            <span className="text-slate-500">ยอดชำระ</span>
+            <span className="font-bold text-blue-600">฿{Number(order.total)}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span className="text-zinc-500">สร้างเมื่อ</span>
-            <span className="text-zinc-300">{new Date(order.created_at).toLocaleString('th-TH')}</span>
+            <span className="text-slate-500">สร้างเมื่อ</span>
+            <span className="text-slate-600">{new Date(order.created_at).toLocaleString('th-TH')}</span>
           </div>
           {order.player_data && Object.keys(order.player_data).length > 0 && (
-            <div className="pt-2 border-t border-zinc-800">
-              <p className="text-zinc-500 mb-2">ข้อมูลผู้เล่น</p>
+            <div className="pt-2 border-t border-slate-200">
+              <p className="text-slate-500 mb-2">ข้อมูลผู้เล่น</p>
               {Object.entries(order.player_data).map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-2 py-0.5">
-                  <span className="text-zinc-500">{k}</span>
-                  <span className="text-white font-mono text-xs">{String(v)}</span>
+                  <span className="text-slate-500">{k}</span>
+                  <span className="text-slate-900 font-mono text-xs">{String(v)}</span>
                 </div>
               ))}
+            </div>
+          )}
+          {events.length > 0 && (
+            <div className="pt-3 border-t border-slate-200">
+              <p className="text-slate-500 mb-2 font-medium">ประวัติสถานะ</p>
+              <ul className="space-y-2 border-l-2 border-blue-100 pl-3">
+                {events.map((ev) => (
+                  <li key={ev.id}>
+                    <p className="text-slate-800 text-xs font-medium">
+                      {ev.from_status ? `${ev.from_status} → ` : ''}
+                      {ev.to_status}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {new Date(ev.created_at).toLocaleString('th-TH')}
+                    </p>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
