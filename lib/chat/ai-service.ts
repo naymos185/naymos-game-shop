@@ -1,21 +1,33 @@
-import type { ChatAiKnowledge } from './types';
+import type { ChatAiKnowledge, ChatHistoryItem } from './types';
 import { SHARK_FALLBACK_ANSWER, FORBIDDEN_PATTERNS } from './knowledge';
 
 export interface SharkAiOptions {
   query: string;
   knowledgeList: ChatAiKnowledge[];
+  conversationHistory?: ChatHistoryItem[];
+  liveStoreData?: {
+    games?: string[];
+    paymentMethods?: string[];
+    storeNotice?: string;
+  };
 }
 
 export async function askSmartSharkAi({
   query,
   knowledgeList,
-}: SharkAiOptions): Promise<{ answer: string; source: 'knowledge' | 'gemini' | 'openai' | 'fallback'; matchedTitle?: string }> {
+  conversationHistory = [],
+  liveStoreData,
+}: SharkAiOptions): Promise<{
+  answer: string;
+  source: 'knowledge' | 'gemini' | 'openai' | 'fallback';
+  matchedTitle?: string;
+}> {
   const trimmed = query.trim();
 
   // Guard: Empty query
   if (!trimmed) {
     return {
-      answer: 'สวัสดีค้าบ! น้องหลาม NayMos ยินดีช่วยเหลือ มีอะไรให้หลามช่วยสอบถามได้เลยนะค้าบ 🦈✨',
+      answer: 'สวัสดีครับพี่ ยินดีช่วยเหลือครับ มีอะไรให้ผมช่วยดูแล สอบถามได้เลยนะครับ ✨',
       source: 'knowledge',
       matchedTitle: 'ทักทาย',
     };
@@ -65,69 +77,110 @@ export async function askSmartSharkAi({
   if (geminiApiKey || openaiApiKey) {
     try {
       const knowledgeContext = activeEntries
-        .slice(0, 10)
+        .slice(0, 15)
         .map((k) => `- [${k.title}]: ${k.answer}`)
         .join('\n');
 
-      const systemPrompt = `คุณคือ "น้องหลาม" (Shark Assistant) มาสคอตฉลามสีฟ้าตัวเล็กสุดน่ารักประจำร้าน "NayMos GameShop" (บริการเติมเกมออนไลน์ ซื้อขายไอดีเกม บัตรเติมเงิน และบริการเกมต่างๆ)
+      const gamesList = liveStoreData?.games?.length
+        ? liveStoreData.games.join(', ')
+        : 'Valorant, ROV, PUBG Mobile, Free Fire, Genshin Impact, Honkai Star Rail, Roblox, League of Legends, และเกมชั้นนำอื่นๆ';
 
-สไตล์การพูดและบุคลิก (สำคัญมาก ต้องปฏิบัติตามอย่างเคร่งครัด):
-1. สรรพนาม: แทนตัวเองว่า "น้องหลาม" หรือ "หลาม" เสมอ (ห้ามแทนตัวเองว่า ฉัน, ผม, หนู, ข้าพเจ้า, AI, หรือ บอท)
-2. เรียกผู้ใช้งาน: เรียกว่า "พี่ลูกค้า", "พี่เตง", "คุณลูกค้า", หรือ "พี่"
-3. คำลงท้าย: ต้องลงท้ายประโยคด้วย "ค้าบ", "นะค้าบ", "งับ", "เยย" เสมอ เพื่อความน่ารัก สดใส เป็นกันเอง
-4. อิโมจิ: ใช้อิโมจิน่ารักประกอบ เช่น 🦈✨🎮💙🥹
-5. น้ำเสียง: ร่าเริง สดใส สุภาพ พร้อมบริการและช่วยเหลือเรื่องเกมเสมอ
-6. ความรอบรู้: สามารถตอบคำถามทั่วไปเกี่ยวกับเกม เทคนิคการเล่น แนะนำตัว หรือพูดคุยทักทายเล่นได้อย่างเป็นธรรมชาติและสนุกสนาน
-7. ความรู้เกี่ยวกับร้าน NayMos GameShop:
-${knowledgeContext || '- ทางร้านให้บริการเติมเกมออนไลน์สะดวกรวดเร็ว ปลอดภัย และราคาคุ้มค่า'}
+      const systemPrompt = `คุณคือผู้ช่วยแชทอัจฉริยะประจำร้าน "NayMos GameShop" (บริการเติมเกมออนไลน์ ซื้อขายไอดีเกม และบริการเกม)
 
-ข้อห้ามเด็ดขาด (Security Guardrails):
-- ห้ามตอบหรือเปิดเผยข้อมูลระบบความปลอดภัย, ฐานข้อมูล (database/PostgreSQL/Supabase), รหัสผ่าน (password), API Key, Token, เซิร์ฟเวอร์ หรือซอร์สโค้ดของเว็บไซต์โดยเด็ดขาด หากถูกถามเรื่องพวกนี้ ให้ตอบว่า:
-"เรื่องความลับหลังบ้านแบบนี้ หลามไม่สามารถเปิดเผยได้นะค้าบ🥹 ถ้ามีข้อสงสัยหรือมีปัญหาอะไร ติดต่อพี่แอดมินได้เลยงับ!"
-- พยายามตอบสั้น กระชับ เข้าใจง่าย 2-4 ประโยค ไม่ยาวจนน่าเบื่อ`;
+บุคลิกและมารยาทในการตอบ (ต้องปฏิบัติตามอย่างเคร่งครัด):
+1. สุภาพ อ่อนโยน น่ารัก เป็นมิตร ใจเย็น และช่วยเหลือดี ไม่แข็งกระด้าง
+2. สรรพนาม: เรียกลูกค้าว่า "พี่" เสมอ
+3. คำลงท้าย: ลงท้ายด้วย "ครับ" เสมอ
+4. ข้อห้ามเด็ดขาดด้านคำพูด:
+   - ห้ามใช้: "งับ", "ค้าบ", "ค้าบบ", "คุณลูกค้า", "ผู้ใช้", "user"
+   - ไม่ต้องแทนตัวเองว่า "น้องหลาม" และไม่ต้องแนะนำตัวเองซ้ำทุกครั้ง
+   - ห้ามพูดแบบหุ่นยนต์หรือระบบอัตโนมัติ เช่น "คำขอของคุณได้รับการประมวลผล", "จากข้อมูลที่มีอยู่ในระบบ", "ในฐานะ AI", "ฉันไม่สามารถ...", "ระบบของเรา..."
+   - ให้พูดเหมือนพนักงานร้านที่คุยกับลูกค้าอย่างเป็นกันเองและจริงใจ
+5. ความกระชับ: ตอบตรงประเด็น ไม่เยิ่นเย้อ ไม่ยาวเกินความจำเป็น
+6. ข้อมูลสำคัญห้ามแต่งเองเด็ดขาด:
+   - ห้ามเดาราคา ห้ามแต่งโปรโมชั่นเอง
+   - ห้ามบอกว่าเติมเงินสำเร็จถ้าระบบยังไม่ยืนยัน
+   - หากลูกค้าถามเรื่องเงินยังไม่เข้าหรือสถานะออเดอร์ ให้ตอบด้วยความสุภาพ เช่น "ขอโทษที่ให้พี่รอนะครับ เดี๋ยวผมช่วยเช็กให้ครับ พี่ส่งเลขออเดอร์มาให้หน่อยได้ไหมครับ"
+   - ถ้าเป็นเรื่องที่ไม่มีข้อมูลชัดเจน ให้ตอบตรงๆ เช่น "เรื่องนี้ผมยังไม่มีข้อมูลที่ยืนยันได้ครับพี่ เดี๋ยวให้แอดมินช่วยเช็กให้ดีกว่าครับ" หรือแนะนำให้สลับแท็บ "ติดต่อแอดมิน"
 
+ข้อมูลร้านและระบบของ NayMos GameShop:
+- รายการเกมที่มีให้บริการ: ${gamesList}
+- ช่องทางชำระเงิน: PromptPay QR Code (สแกนจ่ายผ่านแอปธนาคาร ฟรีค่าธรรมเนียม) และ NayMos Wallet
+- การเติมเงิน: ดำเนินการรวดเร็ว 3-10 นาที
+- หน้าติดตามออเดอร์: ตรวจสอบสถานะได้จากเมนู "ติดตามออเดอร์" บนแถบเมนู
+- ข้อมูลที่ใช้เติมแต่ละเกม:
+  * Valorant: ใช้ Riot ID กับ Tagline
+  * PUBG Mobile: ใช้ UID
+  * ROV / Free Fire / OpenID: ใช้ UID / OpenID ตามที่ระบบระบุ
+- คำตอบและข้อมูลเฉพาะของร้าน:
+${knowledgeContext}
+
+ให้ตอบคำถามของลูกค้าโดยอ้างอิงข้อมูลข้างต้นและบทสนทนาก่อนหน้าอย่างแม่นยำและเป็นธรรมชาติ`;
+
+      // Build history messages
+      const formattedHistory = conversationHistory.slice(-6).map((m) => ({
+        role: m.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }],
+      }));
+
+      // Try Google Gemini
       if (geminiApiKey) {
-        // Try multiple Gemini models in case of version/quota
-        const models = ['gemini-3.6-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-        for (const model of models) {
+        const geminiModels = [
+          'gemini-2.5-flash',
+          'gemini-1.5-flash',
+          'gemini-2.0-flash',
+          'gemini-2.5-flash-lite',
+        ];
+
+        for (const model of geminiModels) {
           try {
-            const geminiRes = await fetch(
+            const contents = [
+              ...formattedHistory,
+              { role: 'user', parts: [{ text: trimmed }] },
+            ];
+
+            const response = await fetch(
               `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
               {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  contents: [
-                    {
-                      role: 'user',
-                      parts: [{ text: `${systemPrompt}\n\nข้อความจากผู้ใช้: ${trimmed}` }],
-                    },
-                  ],
+                  systemInstruction: {
+                    parts: [{ text: systemPrompt }],
+                  },
+                  contents,
                   generationConfig: {
-                    temperature: 0.8,
-                    maxOutputTokens: 350,
+                    temperature: 0.65,
+                    maxOutputTokens: 500,
                   },
                 }),
               }
             );
 
-            if (geminiRes.ok) {
-              const geminiData = await geminiRes.json();
-              const candidateText =
-                geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-              if (candidateText) {
-                return { answer: candidateText, source: 'gemini' };
+            if (response.ok) {
+              const resData = await response.json();
+              const candidate = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (candidate && candidate.trim()) {
+                return {
+                  answer: candidate.trim(),
+                  source: 'gemini',
+                };
               }
-            } else {
-              const errBody = await geminiRes.text();
-              console.warn(`[Gemini ${model}] failed status ${geminiRes.status}:`, errBody);
             }
           } catch (modelErr) {
-            console.warn(`[Gemini ${model}] request error:`, modelErr);
+            console.warn(`Gemini model ${model} failed, trying next:`, modelErr);
           }
         }
-      } else if (openaiApiKey) {
-        const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      }
+
+      // Try OpenAI fallback
+      if (openaiApiKey) {
+        const openaiHistory = conversationHistory.slice(-6).map((m) => ({
+          role: m.sender === 'user' ? ('user' as const) : ('assistant' as const),
+          content: m.text,
+        }));
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -137,39 +190,33 @@ ${knowledgeContext || '- ทางร้านให้บริการเต�
             model: 'gpt-4o-mini',
             messages: [
               { role: 'system', content: systemPrompt },
+              ...openaiHistory,
               { role: 'user', content: trimmed },
             ],
-            temperature: 0.8,
-            max_tokens: 350,
+            temperature: 0.65,
+            max_tokens: 500,
           }),
         });
 
-        if (openaiRes.ok) {
-          const openaiData = await openaiRes.json();
-          const reply = openaiData?.choices?.[0]?.message?.content?.trim();
-          if (reply) {
-            return { answer: reply, source: 'openai' };
+        if (response.ok) {
+          const resData = await response.json();
+          const choice = resData?.choices?.[0]?.message?.content;
+          if (choice && choice.trim()) {
+            return {
+              answer: choice.trim(),
+              source: 'openai',
+            };
           }
-        } else {
-          const errBody = await openaiRes.text();
-          console.warn('[OpenAI] failed status:', openaiRes.status, errBody);
         }
       }
-    } catch (e) {
-      console.error('External AI error:', e);
+    } catch (aiErr) {
+      console.error('External AI call error:', aiErr);
     }
   }
 
-  // Layer 3: Common Friendly Fallbacks
-  if (/^(สวัสดี|หวัดดี|ดีคับ|ดีครับ|hello|hi|ดีจ้า|ทัก)/i.test(lower)) {
-    return {
-      answer:
-        'สวัสดีค้าบ! น้องหลาม NayMos ยินดีให้บริการค้าบ 🦈💖 สนใจสอบถามเรื่อง "วิธีเติมเงิน", "ช่องทางชำระเงิน", หรือ "ติดตามออเดอร์" บอกหลามได้เลยนะค้าบ หรือกดแท็บ "ติดต่อแอดมิน" ได้เลยงับ!',
-      source: 'knowledge',
-      matchedTitle: 'ทักทาย',
-    };
-  }
-
-  // Layer 4: Exact Fallback if unmatched and external AI unavailable
-  return { answer: SHARK_FALLBACK_ANSWER, source: 'fallback' };
+  // Graceful Fallback
+  return {
+    answer: SHARK_FALLBACK_ANSWER,
+    source: 'fallback',
+  };
 }

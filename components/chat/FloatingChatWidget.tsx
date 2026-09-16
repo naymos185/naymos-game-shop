@@ -17,6 +17,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import type { ChatMessage, ChatConversation } from '@/lib/chat/types';
+import { createClient } from '@/lib/supabase/client';
 
 interface FloatingChatWidgetProps {
   currentUser?: {
@@ -30,6 +31,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'ai' | 'admin'>('ai');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   // AI chat state
   const [aiInput, setAiInput] = useState('');
@@ -39,7 +41,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
   >([
     {
       sender: 'ai',
-      text: 'สวัสดีค้าบ! น้องหลาม NayMos ยินดีช่วยเหลือ มีอะไรให้หลามช่วยสอบถามได้เลยนะค้าบ 🦈✨',
+      text: 'สวัสดีครับพี่ ยินดีช่วยเหลือครับ มีอะไรให้ผมช่วยดูแล สอบถามได้เลยนะครับ ✨',
       time: 'ตอนนี้',
     },
   ]);
@@ -52,37 +54,70 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
 
-  // Poll for unread admin messages when logged in
+  // Fetch initial chat state
+  const fetchChatState = async () => {
+    if (!currentUser) return;
+    try {
+      const res = await fetch('/api/chat/messages');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.conversation) {
+        setConversationId(data.conversation.id);
+        if (isOpen && activeTab === 'admin') {
+          setUnreadCount(0);
+        } else {
+          setUnreadCount(data.conversation.unread_user_count || 0);
+        }
+        if (data.messages) {
+          setAdminMessages(data.messages);
+        }
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     if (!currentUser) return;
-
-    let isMounted = true;
-    const fetchChatState = async () => {
-      try {
-        const res = await fetch('/api/chat/messages');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (isMounted && data.conversation) {
-          if (isOpen && activeTab === 'admin') {
-            setUnreadCount(0);
-          } else {
-            setUnreadCount(data.conversation.unread_user_count || 0);
-          }
-          if (data.messages) {
-            setAdminMessages(data.messages);
-          }
-        }
-      } catch {}
-    };
-
     fetchChatState();
     const interval = setInterval(fetchChatState, 5000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [currentUser, isOpen, activeTab]);
+
+  // Real-time Supabase Subscription
+  useEffect(() => {
+    if (!currentUser || !conversationId) return;
+
+    const channel = supabase
+      .channel(`chat_messages:${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as ChatMessage;
+          setAdminMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+
+          if (newMsg.sender_role === 'admin') {
+            if (!isOpen || activeTab !== 'admin') {
+              setUnreadCount((prev) => prev + 1);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, conversationId, isOpen, activeTab]);
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -98,16 +133,14 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
     }
   }, [isOpen, activeTab]);
 
-  // Handle AI ask
-  const handleAskAi = async (questionText?: string) => {
-    const q = (questionText || aiInput).trim();
-    if (!q || aiLoading) return;
+  // Handle Send AI message
+  const handleSendAi = async () => {
+    const text = aiInput.trim();
+    if (!text || aiLoading) return;
 
-    const userMsg = {
-      sender: 'user' as const,
-      text: q,
-      time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-    };
+    const userMsg = { sender: 'user' as const, text, time: 'ตอนนี้' };
+    const history = aiMessages.map((m) => ({ sender: m.sender, text: m.text }));
+
     setAiMessages((prev) => [...prev, userMsg]);
     setAiInput('');
     setAiLoading(true);
@@ -116,16 +149,20 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
       const res = await fetch('/api/chat/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q }),
+        body: JSON.stringify({ query: text, history }),
       });
+
+      if (!res.ok) {
+        throw new Error('Network error');
+      }
+
       const data = await res.json();
-      const aiReply = data.answer || 'หลามก็ไม่ทราบเหมือนกันค้าบ🥹 แต่สามารถติดต่อ admin ได้เลยนะค้าบบบบ';
       setAiMessages((prev) => [
         ...prev,
         {
           sender: 'ai',
-          text: aiReply,
-          time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+          text: data.answer || 'เรื่องนี้ผมยังไม่มีข้อมูลที่ยืนยันได้ครับพี่ เดี๋ยวให้แอดมินช่วยเช็กให้ดีกว่าครับ',
+          time: 'ตอนนี้',
         },
       ]);
     } catch {
@@ -133,8 +170,8 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
         ...prev,
         {
           sender: 'ai',
-          text: 'หลามก็ไม่ทราบเหมือนกันค้าบ🥹 แต่สามารถติดต่อ admin ได้เลยนะค้าบบบบ',
-          time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+          text: 'ขอโทษนะครับพี่ ตอนนี้ระบบผู้ช่วยอัตโนมัติมีปัญหานิดหน่อยครับ พี่สามารถส่งข้อความไว้ได้เลยครับ เดี๋ยวแอดมินเข้ามาช่วยดูให้ครับ',
+          time: 'ตอนนี้',
         },
       ]);
     } finally {
@@ -142,7 +179,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
     }
   };
 
-  // Handle send to admin
+  // Handle Send Admin message
   const handleSendAdmin = async (imageUrl?: string) => {
     const text = adminInput.trim();
     if ((!text && !imageUrl) || sendingAdmin) return;
@@ -152,232 +189,270 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
       const res = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text || null, image_url: imageUrl || null }),
+        body: JSON.stringify({
+          message: text || null,
+          image_url: imageUrl || null,
+        }),
       });
+
       if (res.ok) {
         const data = await res.json();
         if (data.message) {
-          setAdminMessages((prev) => [...prev, data.message]);
+          setAdminMessages((prev) => {
+            if (prev.some((m) => m.id === data.message.id)) return prev;
+            return [...prev, data.message];
+          });
         }
         setAdminInput('');
       }
-    } catch {} finally {
+    } catch (err) {
+      console.error('Failed to send admin message:', err);
+    } finally {
       setSendingAdmin(false);
     }
   };
 
-  // Handle image upload
+  // Handle Upload Image
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้นครับ');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ไฟล์รูปภาพต้องมีขนาดไม่เกิน 5MB ครับ');
+      return;
+    }
 
     setUploadingImage(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
+
       const res = await fetch('/api/chat/upload', {
         method: 'POST',
         body: formData,
       });
+
+      if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
       if (data.url) {
         await handleSendAdmin(data.url);
       }
-    } catch {} finally {
+    } catch {
+      alert('อัปโหลดรูปภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้งครับ');
+    } finally {
       setUploadingImage(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end pointer-events-none">
-      {/* Chat Window */}
-      {isOpen && (
-        <div className="pointer-events-auto w-[92vw] sm:w-[380px] h-[520px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-sky-100 flex flex-col overflow-hidden mb-3 animate-in fade-in slide-in-from-bottom-5 duration-200">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-sky-400 via-sky-500 to-blue-500 text-white p-3.5 flex items-center justify-between shadow-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="relative w-10 h-10 rounded-2xl bg-white p-0.5 shadow-sm overflow-hidden shrink-0 border border-sky-200">
-                <Image
-                  src="/images/shark-chat.webp"
-                  alt="น้องหลาม"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5 font-bold text-sm leading-tight text-white">
-                  <span>น้องหลาม Support</span>
-                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
-                </div>
-                <p className="text-[11px] text-sky-100 leading-tight">
-                  {activeTab === 'ai' ? '🤖 AI ตอบทันที 24 ชม.' : '💬 พี่แอดมินคนจริง'}
-                </p>
-              </div>
+    <>
+      {/* Floating Trigger Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => {
+            setIsOpen(!isOpen);
+            if (!isOpen && activeTab === 'admin') {
+              setUnreadCount(0);
+            }
+          }}
+          className="relative group flex items-center justify-center w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-tr from-sky-500 via-blue-500 to-indigo-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-sky-200"
+          aria-label="ติดต่อและสอบถาม"
+        >
+          {isOpen ? (
+            <X className="w-8 h-8 text-white transition-transform duration-300 rotate-90 group-hover:rotate-180" />
+          ) : (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <Image
+                src="/images/shark-chat.png"
+                alt="NayMos Chat"
+                width={52}
+                height={52}
+                className="object-contain drop-shadow-md group-hover:scale-110 transition-transform"
+                priority
+              />
+              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
+              </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"
-              title="ปิดหน้าต่างแชท"
-            >
-              <X className="w-4 h-4" />
-            </button>
+          )}
+
+          {/* Unread Message Badge */}
+          {unreadCount > 0 && !isOpen && (
+            <span className="absolute -top-2 -left-2 bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-white animate-bounce">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Chat Popover Window */}
+      {isOpen && (
+        <div className="fixed bottom-24 right-4 sm:right-6 z-50 w-[92vw] sm:w-[420px] h-[580px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-sky-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-300">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 text-white p-4 flex flex-col gap-2 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm p-1.5 flex items-center justify-center border border-white/30">
+                  <Image
+                    src="/images/shark-chat.png"
+                    alt="NayMos Assistant"
+                    width={32}
+                    height={32}
+                    className="object-contain"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base leading-tight flex items-center gap-1.5">
+                    NayMos GameShop
+                    <span className="text-[10px] bg-sky-300/30 text-white px-1.5 py-0.5 rounded-full border border-white/20">
+                      Live
+                    </span>
+                  </h3>
+                  <p className="text-xs text-sky-100 font-light">
+                    {activeTab === 'ai' ? 'ผู้ช่วยบริการตอบคำถามอัตโนมัติ' : 'สนทนากับเจ้าหน้าที่ร้าน'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="grid grid-cols-2 gap-1 bg-black/15 p-1 rounded-2xl mt-1">
+              <button
+                onClick={() => setActiveTab('ai')}
+                className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-xl transition ${
+                  activeTab === 'ai'
+                    ? 'bg-white text-sky-600 shadow-sm'
+                    : 'text-sky-100 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                แชทกับผู้ช่วย AI
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('admin');
+                  setUnreadCount(0);
+                }}
+                className={`relative flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-xl transition ${
+                  activeTab === 'admin'
+                    ? 'bg-white text-sky-600 shadow-sm'
+                    : 'text-sky-100 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Headphones className="w-3.5 h-3.5" />
+                ติดต่อแอดมิน
+                {unreadCount > 0 && activeTab !== 'admin' && (
+                  <span className="w-2 h-2 rounded-full bg-rose-400"></span>
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Not logged in prompt */}
+          {/* Auth Guard Notice for Non-logged-in users */}
           {!currentUser ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-sky-50/50 to-white">
-              <div className="w-20 h-20 relative mb-3">
-                <Image
-                  src="/images/shark-chat.webp"
-                  alt="น้องหลาม"
-                  fill
-                  className="object-contain"
-                />
+            <div className="flex-1 p-6 flex flex-col items-center justify-center text-center bg-sky-50/50">
+              <div className="w-16 h-16 rounded-3xl bg-sky-100 text-sky-600 flex items-center justify-center mb-4 shadow-inner">
+                <LogIn className="w-8 h-8" />
               </div>
-              <h3 className="text-base font-bold text-slate-800 mb-1">
-                กรุณาเข้าสู่ระบบก่อนแชทนะค้าบ 🦈
-              </h3>
-              <p className="text-xs text-slate-500 mb-5 max-w-[240px]">
-                เพื่อความปลอดภัยและการดูแลออเดอร์อย่างใกล้ชิด กรุณาล็อกอินเข้าสู่ระบบก่อนเริ่มสนทนาค้าบ
+              <h4 className="font-bold text-gray-800 text-base mb-1">
+                เข้าสู่ระบบเพื่อใช้งานแชท
+              </h4>
+              <p className="text-xs text-gray-500 max-w-xs mb-6">
+                กรุณาเข้าสู่ระบบเพื่อพูดคุยกับผู้ช่วย AI สอบถามข้อมูล หรือติดต่อทีมงานแอดมินหลังบ้านครับ
               </p>
-              <div className="flex flex-col gap-2 w-full max-w-[220px]">
-                <Link
-                  href="/login"
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-medium text-xs shadow-md shadow-sky-500/20 transition"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <LogIn className="w-3.5 h-3.5" />
-                  เข้าสู่ระบบ
-                </Link>
-                <Link
-                  href="/register"
-                  className="flex items-center justify-center py-2 px-4 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-600 font-medium text-xs border border-sky-200 transition"
-                  onClick={() => setIsOpen(false)}
-                >
-                  สมัครสมาชิกใหม่
-                </Link>
-              </div>
+              <Link
+                href="/auth/login"
+                className="w-full max-w-xs py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold text-sm shadow-md hover:shadow-lg transition text-center"
+              >
+                เข้าสู่ระบบทันที
+              </Link>
             </div>
           ) : (
             <>
-              {/* Tabs */}
-              <div className="flex border-b border-sky-100 bg-sky-50/60 p-1.5 gap-1.5 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('ai')}
-                  className={`flex-1 py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition ${
-                    activeTab === 'ai'
-                      ? 'bg-white text-sky-600 shadow-xs border border-sky-200/60'
-                      : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <Bot className="w-3.5 h-3.5 text-sky-500" />
-                  <span>น้องหลาม AI</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('admin')}
-                  className={`flex-1 py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition relative ${
-                    activeTab === 'admin'
-                      ? 'bg-white text-sky-600 shadow-xs border border-sky-200/60'
-                      : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <Headphones className="w-3.5 h-3.5 text-blue-500" />
-                  <span>ติดต่อแอดมิน</span>
-                  {unreadCount > 0 && (
-                    <span className="w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
-                  )}
-                </button>
-              </div>
-
-              {/* Chat Content Body */}
+              {/* Chat Messages Body */}
               <div
                 ref={chatScrollRef}
-                className="flex-1 overflow-y-auto p-3.5 space-y-3 bg-[#f8fbfe]"
+                className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-gradient-to-b from-sky-50/40 via-white to-sky-50/20"
               >
                 {activeTab === 'ai' ? (
+                  // AI Tab Messages
                   <>
-                    {/* Suggested Chips */}
-                    <div className="bg-white rounded-2xl p-2.5 border border-sky-100 shadow-xs">
-                      <div className="flex items-center gap-1 text-[11px] font-semibold text-sky-700 mb-1.5">
-                        <Sparkles className="w-3 h-3 text-sky-500" />
-                        <span>คำถามยอดฮิตที่ถามบ่อย:</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {['วิธีเติมเงิน', 'ช่องทางชำระเงิน', 'ติดตามออเดอร์', 'เวลาทำการ'].map(
-                          (chip) => (
-                            <button
-                              key={chip}
-                              type="button"
-                              onClick={() => handleAskAi(chip)}
-                              className="text-[11px] px-2.5 py-1 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200/60 transition active:scale-95"
-                            >
-                              {chip}
-                            </button>
-                          )
-                        )}
-                      </div>
+                    <div className="text-center my-2">
+                      <span className="text-[11px] bg-sky-100/70 text-sky-700 px-3 py-1 rounded-full border border-sky-200">
+                        ⚡ ผู้ช่วยอัตโนมัติตอบคำถามทั่วไปและบริการร้าน
+                      </span>
                     </div>
 
-                    {/* AI Messages */}
                     {aiMessages.map((msg, idx) => (
                       <div
-                        key={idx}
-                        className={`flex gap-2 ${
+                        key={`ai-msg-${idx}`}
+                        className={`flex gap-2.5 ${
                           msg.sender === 'user' ? 'justify-end' : 'justify-start'
                         }`}
                       >
                         {msg.sender === 'ai' && (
-                          <div className="w-7 h-7 rounded-full bg-sky-100 border border-sky-200 overflow-hidden relative shrink-0 mt-0.5">
+                          <div className="w-7 h-7 rounded-full bg-sky-100 border border-sky-200 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-xs mt-1">
                             <Image
-                              src="/images/shark-chat.webp"
+                              src="/images/shark-chat.png"
                               alt="AI"
-                              fill
+                              width={24}
+                              height={24}
                               className="object-contain"
                             />
                           </div>
                         )}
                         <div
-                          className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs whitespace-pre-line shadow-xs ${
+                          className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-xs whitespace-pre-wrap ${
                             msg.sender === 'user'
-                              ? 'bg-sky-500 text-white rounded-tr-xs'
-                              : 'bg-white text-slate-800 border border-sky-100 rounded-tl-xs'
+                              ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-br-none'
+                              : 'bg-white text-gray-800 border border-sky-100 rounded-bl-none'
                           }`}
                         >
-                          <p>{msg.text}</p>
-                          <span
-                            className={`block text-[9px] mt-1 text-right ${
-                              msg.sender === 'user' ? 'text-sky-100' : 'text-slate-400'
+                          {msg.text}
+                          <div
+                            className={`text-[9px] mt-1 text-right ${
+                              msg.sender === 'user' ? 'text-sky-200' : 'text-gray-400'
                             }`}
                           >
                             {msg.time}
-                          </span>
+                          </div>
                         </div>
                       </div>
                     ))}
+
                     {aiLoading && (
-                      <div className="flex gap-2 items-center text-xs text-sky-500">
+                      <div className="flex gap-2.5 items-center text-gray-400 text-xs pl-2">
                         <Loader2 className="w-4 h-4 animate-spin text-sky-500" />
-                        <span>น้องหลามกำลังคิดคำตอบให้ค้าบ...</span>
+                        <span>กำลังหาคำตอบให้พี่อยู่นะครับ...</span>
                       </div>
                     )}
                   </>
                 ) : (
+                  // Admin Tab Messages
                   <>
-                    {/* Admin Chat Notice */}
-                    <div className="bg-sky-50/70 rounded-xl p-2.5 border border-sky-100 text-center">
-                      <p className="text-[11px] text-sky-700">
-                        แอดมินพร้อมตอบกลับและดูแลคุณ สามารถพิมพ์ข้อความหรือส่งรูปสลิป/หน้าจอได้เลยครับ
-                      </p>
+                    <div className="text-center my-2">
+                      <span className="text-[11px] bg-amber-50 text-amber-700 px-3 py-1 rounded-full border border-amber-200">
+                        🛡️ สนทนาสดกับแอดมิน NayMos GameShop
+                      </span>
                     </div>
 
-                    {/* Admin Messages */}
                     {adminMessages.length === 0 ? (
-                      <div className="text-center py-8 text-xs text-slate-400">
-                        ยังไม่มีข้อความ เริ่มต้นทักหาพี่แอดมินได้เลยค้าบ ✨
+                      <div className="py-12 text-center text-gray-400 text-xs flex flex-col items-center">
+                        <Headphones className="w-8 h-8 text-sky-400 mb-2 opacity-50" />
+                        พิมพ์ข้อความหรือส่งรูปภาพเพื่อเริ่มคุยกับแอดมินได้เลยครับ
                       </div>
                     ) : (
                       adminMessages.map((msg) => {
@@ -385,45 +460,45 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                         return (
                           <div
                             key={msg.id}
-                            className={`flex gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}
+                            className={`flex gap-2.5 ${isMe ? 'justify-end' : 'justify-start'}`}
                           >
                             {!isMe && (
-                              <div className="w-7 h-7 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 shadow-xs">
+                              <div className="w-7 h-7 rounded-full bg-indigo-100 border border-indigo-200 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-indigo-700 mt-1">
                                 AD
                               </div>
                             )}
                             <div
-                              className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs ${
+                              className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-xs ${
                                 isMe
-                                  ? 'bg-sky-500 text-white rounded-tr-xs'
-                                  : 'bg-white text-slate-800 border border-sky-100 rounded-tl-xs'
+                                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-br-none'
+                                  : 'bg-white text-gray-800 border border-sky-100 rounded-bl-none'
                               }`}
                             >
-                              {msg.message && <p className="whitespace-pre-line">{msg.message}</p>}
+                              {msg.message && <p className="whitespace-pre-wrap">{msg.message}</p>}
                               {msg.image_url && (
                                 <a
                                   href={msg.image_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="block mt-1.5 rounded-lg overflow-hidden border border-sky-200/60 max-w-[200px]"
+                                  className="block mt-1.5 rounded-lg overflow-hidden border border-black/10 hover:opacity-90 transition"
                                 >
                                   <img
                                     src={msg.image_url}
-                                    alt="แนบรูปภาพ"
-                                    className="w-full h-auto object-cover max-h-40"
+                                    alt="ภาพแนบ"
+                                    className="max-h-48 w-auto rounded object-cover"
                                   />
                                 </a>
                               )}
-                              <span
-                                className={`block text-[9px] mt-1 text-right ${
-                                  isMe ? 'text-sky-100' : 'text-slate-400'
+                              <div
+                                className={`text-[9px] mt-1 text-right ${
+                                  isMe ? 'text-sky-200' : 'text-gray-400'
                                 }`}
                               >
-                                {new Date(msg.created_at).toLocaleTimeString('th-TH', {
+                                {new Date(msg.created_at).toLocaleTimeString([], {
                                   hour: '2-digit',
                                   minute: '2-digit',
                                 })}
-                              </span>
+                              </div>
                             </div>
                           </div>
                         );
@@ -433,30 +508,34 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                 )}
               </div>
 
-              {/* Chat Input Footer */}
-              <div className="p-2.5 bg-white border-t border-sky-100">
+              {/* Chat Input Bar */}
+              <div className="p-3 bg-white border-t border-sky-100">
                 {activeTab === 'ai' ? (
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
-                      handleAskAi();
+                      handleSendAi();
                     }}
-                    className="flex items-center gap-1.5"
+                    className="flex items-center gap-2"
                   >
                     <input
-                      key="ai-chat-input"
                       type="text"
-                      value={aiInput ?? ''}
+                      value={aiInput}
                       onChange={(e) => setAiInput(e.target.value)}
-                      placeholder="ถามน้องหลามได้เลยค้าบ..."
-                      className="flex-1 bg-sky-50/50 border border-sky-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-hidden focus:border-sky-400 placeholder:text-slate-400"
+                      placeholder="พิมพ์คำถาม เช่น เติมเกมยังไง, ช่องทางชำระเงิน..."
+                      className="flex-1 bg-sky-50/60 border border-sky-200 focus:border-sky-400 focus:bg-white rounded-2xl px-3.5 py-2 text-xs outline-none transition"
+                      disabled={aiLoading}
                     />
                     <button
                       type="submit"
                       disabled={!aiInput.trim() || aiLoading}
-                      className="w-9 h-9 rounded-xl bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white flex items-center justify-center transition shadow-xs shrink-0"
+                      className="w-9 h-9 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white flex items-center justify-center disabled:opacity-40 hover:shadow-md transition"
                     >
-                      <Send className="w-4 h-4" />
+                      {aiLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
                     </button>
                   </form>
                 ) : (
@@ -465,7 +544,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                       e.preventDefault();
                       handleSendAdmin();
                     }}
-                    className="flex items-center gap-1.5"
+                    className="flex items-center gap-2"
                   >
                     <input
                       type="file"
@@ -478,8 +557,8 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadingImage || sendingAdmin}
-                      className="w-9 h-9 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 flex items-center justify-center transition shrink-0"
-                      title="ส่งรูปภาพ"
+                      className="w-9 h-9 rounded-2xl bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 flex items-center justify-center transition"
+                      title="แนบรูปภาพ"
                     >
                       {uploadingImage ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -488,17 +567,17 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                       )}
                     </button>
                     <input
-                      key="admin-chat-input"
                       type="text"
-                      value={adminInput ?? ''}
+                      value={adminInput}
                       onChange={(e) => setAdminInput(e.target.value)}
-                      placeholder="พิมพ์ข้อความหาแอดมิน..."
-                      className="flex-1 bg-sky-50/50 border border-sky-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-hidden focus:border-sky-400 placeholder:text-slate-400"
+                      placeholder="พิมพ์ข้อความถึงแอดมิน..."
+                      className="flex-1 bg-sky-50/60 border border-sky-200 focus:border-sky-400 focus:bg-white rounded-2xl px-3.5 py-2 text-xs outline-none transition"
+                      disabled={sendingAdmin}
                     />
                     <button
                       type="submit"
                       disabled={!adminInput.trim() || sendingAdmin}
-                      className="w-9 h-9 rounded-xl bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white flex items-center justify-center transition shadow-xs shrink-0"
+                      className="w-9 h-9 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white flex items-center justify-center disabled:opacity-40 hover:shadow-md transition"
                     >
                       {sendingAdmin ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -513,32 +592,6 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
           )}
         </div>
       )}
-
-      {/* Floating Trigger Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="pointer-events-auto group relative flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-hidden"
-        title="แชทกับน้องหลาม NayMos"
-      >
-        {/* Cute Shark Image Badge Button */}
-        <div className="relative w-16 h-16 sm:w-20 sm:h-20 drop-shadow-xl filter">
-          <Image
-            src="/images/shark-chat.webp"
-            alt="แชทเลย! น้องหลาม NayMos"
-            fill
-            className="object-contain"
-            priority
-          />
-        </div>
-
-        {/* Unread Message Badge Notification */}
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full ring-2 ring-white shadow-md animate-bounce">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </button>
-    </div>
+    </>
   );
 }
