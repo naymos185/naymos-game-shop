@@ -18,15 +18,21 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // อัปเดตข้อมูลเกม
+    // Build update payload – only include provided fields
+    const updatePayload: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (body.name !== undefined) updatePayload.name = String(body.name);
+    if (body.description !== undefined) updatePayload.description = body.description ? String(body.description) : null;
+    if (body.category !== undefined) updatePayload.category = body.category ? String(body.category) : 'อื่นๆ';
+    // Product Category (Generic) – do not touch legacy category
+    if (body.product_category_id !== undefined) {
+      updatePayload.product_category_id = body.product_category_id || null;
+    }
+
     const { error: gameError } = await supabase
       .from('games')
-      .update({
-        name: body.name ? String(body.name) : undefined,
-        description: body.description ? String(body.description) : null,
-        category: body.category ? String(body.category) : 'อื่นๆ',
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq('id', gameId);
 
     if (gameError) {
@@ -48,14 +54,11 @@ export async function POST(request: Request) {
         .eq('game_id', gameId);
 
       const fieldsToDelete = (currentFields ?? [])
-        .map(f => f.id)
-        .filter(id => !existingFieldIds.includes(id));
+        .map((f) => f.id)
+        .filter((id) => !existingFieldIds.includes(id));
 
       if (fieldsToDelete.length > 0) {
-        await supabase
-          .from('game_fields')
-          .delete()
-          .in('id', fieldsToDelete);
+        await supabase.from('game_fields').delete().in('id', fieldsToDelete);
       }
 
       // เพิ่ม/อัปเดต fields ใหม่
@@ -73,13 +76,8 @@ export async function POST(request: Request) {
         };
 
         if (f.id && !f.id.startsWith('temp-') && !f.id.startsWith('preset-')) {
-          // อัปเดต field เก่า
-          await supabase
-            .from('game_fields')
-            .update(fieldData)
-            .eq('id', f.id);
+          await supabase.from('game_fields').update(fieldData).eq('id', f.id);
         } else {
-          // เพิ่ม field ใหม่
           await supabase.from('game_fields').insert(fieldData);
         }
       }
@@ -89,7 +87,7 @@ export async function POST(request: Request) {
   } catch (e) {
     return NextResponse.json(
       { success: false, message: e instanceof Error ? e.message : 'ผิดพลาด' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
