@@ -61,9 +61,11 @@ function mockToGameWithDetails(m: MockGame, index: number): GameWithDetails {
 export async function getActiveGames(): Promise<GameWithDetails[]> {
   try {
     const supabase = await createClient();
+
+    // ดึง games แบบไม่ join ก่อน (ปลอดภัยกว่า)
     const { data: games, error } = await supabase
       .from('games')
-      .select('*, product_category:product_categories(*)')
+      .select('*')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
 
@@ -72,7 +74,9 @@ export async function getActiveGames(): Promise<GameWithDetails[]> {
     }
 
     const ids = games.map((g) => g.id);
-    const [{ data: fields }, { data: products }] = await Promise.all([
+
+    // ดึง fields + products + categories แยก (ไม่ให้พังทั้งก้อน)
+    const [fieldsRes, productsRes, categoriesRes] = await Promise.all([
       supabase.from('game_fields').select('*').in('game_id', ids).order('sort_order'),
       supabase
         .from('products')
@@ -80,24 +84,23 @@ export async function getActiveGames(): Promise<GameWithDetails[]> {
         .in('game_id', ids)
         .eq('is_active', true)
         .order('sort_order'),
+      supabase.from('product_categories').select('*').eq('is_active', true),
     ]);
 
-    return games.map((g) => {
-      const { product_category, ...rest } = g as Game & {
-        product_category?: ProductCategory | ProductCategory[] | null;
-      };
-      const cat = Array.isArray(product_category)
-        ? product_category[0] ?? null
-        : product_category ?? null;
+    const fields = fieldsRes.data ?? [];
+    const products = productsRes.data ?? [];
+    const categories = (categoriesRes.data ?? []) as ProductCategory[];
+    const catMap = new Map(categories.map((c) => [c.id, c]));
 
-      return {
-        ...(rest as Game),
-        product_category: cat,
-        color: COLOR_MAP[g.slug] ?? 'from-blue-600 to-blue-800',
-        game_fields: (fields ?? []).filter((f) => f.game_id === g.id) as GameField[],
-        products: (products ?? []).filter((p) => p.game_id === g.id) as Product[],
-      };
-    });
+    return games.map((g) => ({
+      ...(g as Game),
+      product_category: g.product_category_id
+        ? catMap.get(g.product_category_id) ?? null
+        : null,
+      color: COLOR_MAP[g.slug] ?? 'from-blue-600 to-blue-800',
+      game_fields: fields.filter((f) => f.game_id === g.id) as GameField[],
+      products: products.filter((p) => p.game_id === g.id) as Product[],
+    }));
   } catch {
     return allowMockFallback() ? MOCK_GAMES.map(mockToGameWithDetails) : [];
   }
@@ -108,7 +111,7 @@ export async function getGameBySlug(slug: string): Promise<GameWithDetails | nul
     const supabase = await createClient();
     const { data: game, error } = await supabase
       .from('games')
-      .select('*, product_category:product_categories(*)')
+      .select('*')
       .eq('slug', slug)
       .eq('is_active', true)
       .maybeSingle();
@@ -119,7 +122,7 @@ export async function getGameBySlug(slug: string): Promise<GameWithDetails | nul
       return mock ? mockToGameWithDetails(mock, 0) : null;
     }
 
-    const [{ data: fields }, { data: products }] = await Promise.all([
+    const [fieldsRes, productsRes, catRes] = await Promise.all([
       supabase.from('game_fields').select('*').eq('game_id', game.id).order('sort_order'),
       supabase
         .from('products')
@@ -127,21 +130,21 @@ export async function getGameBySlug(slug: string): Promise<GameWithDetails | nul
         .eq('game_id', game.id)
         .eq('is_active', true)
         .order('sort_order'),
+      game.product_category_id
+        ? supabase
+            .from('product_categories')
+            .select('*')
+            .eq('id', game.product_category_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
-    const { product_category, ...rest } = game as Game & {
-      product_category?: ProductCategory | ProductCategory[] | null;
-    };
-    const cat = Array.isArray(product_category)
-      ? product_category[0] ?? null
-      : product_category ?? null;
-
     return {
-      ...(rest as Game),
-      product_category: cat,
+      ...(game as Game),
+      product_category: (catRes.data as ProductCategory) ?? null,
       color: COLOR_MAP[game.slug] ?? 'from-blue-600 to-blue-800',
-      game_fields: (fields ?? []) as GameField[],
-      products: (products ?? []) as Product[],
+      game_fields: (fieldsRes.data ?? []) as GameField[],
+      products: (productsRes.data ?? []) as Product[],
     };
   } catch {
     if (!allowMockFallback()) return null;
@@ -155,18 +158,24 @@ export async function getAllGamesAdmin(): Promise<Game[]> {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('games')
-      .select('*, product_category:product_categories(*)')
+      .select('*')
       .order('sort_order', { ascending: true });
     if (error || !data) return [];
-    return data.map((g) => {
-      const { product_category, ...rest } = g as Game & {
-        product_category?: ProductCategory | ProductCategory[] | null;
-      };
-      const cat = Array.isArray(product_category)
-        ? product_category[0] ?? null
-        : product_category ?? null;
-      return { ...(rest as Game), product_category: cat };
-    });
+
+    const { data: categories } = await supabase
+      .from('product_categories')
+      .select('*');
+
+    const catMap = new Map(
+      ((categories ?? []) as ProductCategory[]).map((c) => [c.id, c]),
+    );
+
+    return data.map((g) => ({
+      ...(g as Game),
+      product_category: g.product_category_id
+        ? catMap.get(g.product_category_id) ?? null
+        : null,
+    }));
   } catch {
     return [];
   }
