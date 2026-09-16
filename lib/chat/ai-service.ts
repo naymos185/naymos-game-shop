@@ -259,7 +259,7 @@ ${knowledgeContext}
 
       // Try Groq (free tier, OpenAI-compatible)
       if (groqApiKey) {
-        const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+        const groqModels = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'groq/compound-mini', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
         for (const model of groqModels) {
           const answer = await callOpenAiCompatible(
             'https://api.groq.com/openai/v1/chat/completions',
