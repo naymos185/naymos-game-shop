@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
 import { MOCK_GAMES, type MockGame } from '@/lib/data/games';
-import type { Game, GameField, Product } from '@/types/game';
+import type { Game, GameField, Product, ProductCategory } from '@/types/game';
 
 export type GameWithDetails = Game & {
   game_fields: GameField[];
   products: Product[];
   color: string;
+  product_category?: ProductCategory | null;
 };
 
 function allowMockFallback(): boolean {
@@ -36,7 +37,7 @@ function mockToGameWithDetails(m: MockGame, index: number): GameWithDetails {
     game_fields: m.fields.map((f, i) => ({
       id: `mock-field-${m.slug}-${f.name}`,
       game_id: `mock-${m.slug}`,
-      name: f.name,
+      key: f.name,
       label: f.label,
       type: 'text' as const,
       placeholder: f.placeholder,
@@ -62,7 +63,7 @@ export async function getActiveGames(): Promise<GameWithDetails[]> {
     const supabase = await createClient();
     const { data: games, error } = await supabase
       .from('games')
-      .select('*')
+      .select('*, product_category:product_categories(*)')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
 
@@ -81,12 +82,22 @@ export async function getActiveGames(): Promise<GameWithDetails[]> {
         .order('sort_order'),
     ]);
 
-    return games.map((g) => ({
-      ...(g as Game),
-      color: COLOR_MAP[g.slug] ?? 'from-blue-600 to-blue-800',
-      game_fields: (fields ?? []).filter((f) => f.game_id === g.id) as GameField[],
-      products: (products ?? []).filter((p) => p.game_id === g.id) as Product[],
-    }));
+    return games.map((g) => {
+      const { product_category, ...rest } = g as Game & {
+        product_category?: ProductCategory | ProductCategory[] | null;
+      };
+      const cat = Array.isArray(product_category)
+        ? product_category[0] ?? null
+        : product_category ?? null;
+
+      return {
+        ...(rest as Game),
+        product_category: cat,
+        color: COLOR_MAP[g.slug] ?? 'from-blue-600 to-blue-800',
+        game_fields: (fields ?? []).filter((f) => f.game_id === g.id) as GameField[],
+        products: (products ?? []).filter((p) => p.game_id === g.id) as Product[],
+      };
+    });
   } catch {
     return allowMockFallback() ? MOCK_GAMES.map(mockToGameWithDetails) : [];
   }
@@ -97,7 +108,7 @@ export async function getGameBySlug(slug: string): Promise<GameWithDetails | nul
     const supabase = await createClient();
     const { data: game, error } = await supabase
       .from('games')
-      .select('*')
+      .select('*, product_category:product_categories(*)')
       .eq('slug', slug)
       .eq('is_active', true)
       .maybeSingle();
@@ -118,8 +129,16 @@ export async function getGameBySlug(slug: string): Promise<GameWithDetails | nul
         .order('sort_order'),
     ]);
 
+    const { product_category, ...rest } = game as Game & {
+      product_category?: ProductCategory | ProductCategory[] | null;
+    };
+    const cat = Array.isArray(product_category)
+      ? product_category[0] ?? null
+      : product_category ?? null;
+
     return {
-      ...(game as Game),
+      ...(rest as Game),
+      product_category: cat,
       color: COLOR_MAP[game.slug] ?? 'from-blue-600 to-blue-800',
       game_fields: (fields ?? []) as GameField[],
       products: (products ?? []) as Product[],
@@ -136,10 +155,18 @@ export async function getAllGamesAdmin(): Promise<Game[]> {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('games')
-      .select('*')
+      .select('*, product_category:product_categories(*)')
       .order('sort_order', { ascending: true });
     if (error || !data) return [];
-    return data as Game[];
+    return data.map((g) => {
+      const { product_category, ...rest } = g as Game & {
+        product_category?: ProductCategory | ProductCategory[] | null;
+      };
+      const cat = Array.isArray(product_category)
+        ? product_category[0] ?? null
+        : product_category ?? null;
+      return { ...(rest as Game), product_category: cat };
+    });
   } catch {
     return [];
   }
