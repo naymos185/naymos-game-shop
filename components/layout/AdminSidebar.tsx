@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
+  MessageSquare,
   Landmark,
   ShoppingCart,
   Gamepad2,
@@ -25,6 +26,7 @@ import { cn } from '@/lib/utils/cn';
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/chat', label: 'Live Chat ลูกค้า', icon: MessageSquare },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/admin/games', label: 'Games', icon: Gamepad2 },
   { href: '/admin/products', label: 'Products', icon: Package },
@@ -39,7 +41,7 @@ const navItems = [
   { href: '/admin/wallet', label: 'Wallet', icon: Wallet },
   { href: '/admin/finance', label: 'Finance', icon: BarChart3 },
   { href: '/admin/reports', label: 'Reports', icon: FileText },
-  { href: '/admin/support', label: 'Support', icon: Headphones },
+  { href: '/admin/support', label: 'Support Tickets', icon: Headphones },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -72,7 +74,7 @@ export function AdminSidebar() {
               className={cn(
                 'flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition',
                 active
-                  ? 'bg-sky-50 text-sky-600 border border-sky-200/80 shadow-xs'
+                  ? 'bg-sky-50 text-sky-600 border border-sky-200/80 shadow-xs font-semibold'
                   : 'text-slate-600 hover:bg-sky-50/50 hover:text-sky-600'
               )}
             >
