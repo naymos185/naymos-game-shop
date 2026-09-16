@@ -1,20 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { GameFieldEditor } from './GameFieldEditor';
-import type { Game, GameField } from '@/types/game';
+import type { Game, GameField, ProductCategory } from '@/types/game';
 
 type Props = {
   game: Game & { game_fields: GameField[] };
+  categories?: ProductCategory[];
 };
 
-export function GameEditForm({ game }: Props) {
+export function GameEditForm({ game, categories = [] }: Props) {
   const router = useRouter();
   const [ชื่อเกม, setชื่อเกม] = useState(game.name);
   const [คำอธิบาย, setคำอธิบาย] = useState(game.description || '');
   const [หมวด, setหมวด] = useState(game.category || 'อื่นๆ');
+  const [productCategoryId, setProductCategoryId] = useState(game.product_category_id || '');
   const [fields, setFields] = useState<GameField[]>(game.game_fields || []);
   const [กำลังส่ง, setกำลังส่ง] = useState(false);
   const [ข้อความ, setข้อความ] = useState<string | null>(null);
@@ -32,7 +34,8 @@ export function GameEditForm({ game }: Props) {
           name: ชื่อเกม,
           description: คำอธิบาย,
           category: หมวด,
-          game_fields: fields.map(f => ({
+          product_category_id: productCategoryId || null,
+          game_fields: fields.map((f) => ({
             id: f.id.startsWith('temp-') || f.id.startsWith('preset-') ? undefined : f.id,
             key: f.key,
             label: f.label,
@@ -59,7 +62,7 @@ export function GameEditForm({ game }: Props) {
   return (
     <form onSubmit={onSubmit} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-3">
       <h2 className="font-semibold text-sm">แก้ไขเกม: {game.name}</h2>
-      
+
       <div className="grid sm:grid-cols-2 gap-3">
         <input
           required
@@ -69,16 +72,28 @@ export function GameEditForm({ game }: Props) {
           className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
         />
         <input
-          placeholder="หมวด เช่น MOBA"
+          placeholder="หมวด Genre เช่น MOBA (Legacy)"
           value={หมวด}
           onChange={(e) => setหมวด(e.target.value)}
           className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
         />
+        <select
+          value={productCategoryId}
+          onChange={(e) => setProductCategoryId(e.target.value)}
+          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+        >
+          <option value="">— Product Category —</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
         <input
           placeholder="คำอธิบาย"
           value={คำอธิบาย}
           onChange={(e) => setคำอธิบาย(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500 sm:col-span-2"
+          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
         />
       </div>
 
@@ -92,7 +107,11 @@ export function GameEditForm({ game }: Props) {
         {กำลังส่ง && <Loader2 className="h-4 w-4 animate-spin" />}
         บันทึก
       </button>
-      {ข้อความ && <p className={`text-xs ${ข้อความ.includes('สำเร็จ') ? 'text-green-400' : 'text-zinc-400'}`}>{ข้อความ}</p>}
+      {ข้อความ && (
+        <p className={`text-xs ${ข้อความ.includes('สำเร็จ') || ข้อความ === 'บันทึกแล้ว' ? 'text-green-400' : 'text-zinc-400'}`}>
+          {ข้อความ}
+        </p>
+      )}
     </form>
   );
 }
