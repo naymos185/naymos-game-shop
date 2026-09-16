@@ -36,6 +36,7 @@ export async function POST(request: Request) {
         slug,
         description: body.description ? String(body.description) : null,
         category: body.category ? String(body.category) : 'อื่นๆ',
+        product_category_id: body.product_category_id || null,
         is_active: body.is_active !== false,
         sort_order: Number(body.sort_order ?? 100) || 100,
       })
