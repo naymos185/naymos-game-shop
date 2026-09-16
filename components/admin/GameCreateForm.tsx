@@ -4,14 +4,19 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { GameFieldEditor } from './GameFieldEditor';
-import type { GameField } from '@/types/game';
+import type { GameField, ProductCategory } from '@/types/game';
 
-export function GameCreateForm() {
+type Props = {
+  categories?: ProductCategory[];
+};
+
+export function GameCreateForm({ categories = [] }: Props) {
   const router = useRouter();
   const [ชื่อเกม, setชื่อเกม] = useState('');
   const [slug, setSlug] = useState('');
   const [คำอธิบาย, setคำอธิบาย] = useState('');
   const [หมวด, setหมวด] = useState('อื่นๆ');
+  const [productCategoryId, setProductCategoryId] = useState('');
   const [fields, setFields] = useState<GameField[]>([]);
   const [กำลังส่ง, setกำลังส่ง] = useState(false);
   const [ข้อความ, setข้อความ] = useState<string | null>(null);
@@ -29,7 +34,8 @@ export function GameCreateForm() {
           slug: slug || undefined,
           description: คำอธิบาย,
           category: หมวด,
-          game_fields: fields.map(f => ({
+          product_category_id: productCategoryId || null,
+          game_fields: fields.map((f) => ({
             key: f.key,
             label: f.label,
             type: f.type,
@@ -47,6 +53,7 @@ export function GameCreateForm() {
         setSlug('');
         setคำอธิบาย('');
         setหมวด('อื่นๆ');
+        setProductCategoryId('');
         setFields([]);
         router.refresh();
       }
@@ -59,7 +66,7 @@ export function GameCreateForm() {
   return (
     <form onSubmit={onSubmit} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-3">
       <h2 className="font-semibold text-sm">เพิ่มเกมใหม่</h2>
-      
+
       <div className="grid sm:grid-cols-2 gap-3">
         <input
           required
@@ -75,11 +82,23 @@ export function GameCreateForm() {
           className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-mono outline-none focus:border-red-500"
         />
         <input
-          placeholder="หมวด เช่น MOBA"
+          placeholder="หมวด Genre เช่น MOBA (Legacy)"
           value={หมวด}
           onChange={(e) => setหมวด(e.target.value)}
           className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
         />
+        <select
+          value={productCategoryId}
+          onChange={(e) => setProductCategoryId(e.target.value)}
+          className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-red-500"
+        >
+          <option value="">— Product Category —</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
         <input
           placeholder="คำอธิบาย"
           value={คำอธิบาย}
