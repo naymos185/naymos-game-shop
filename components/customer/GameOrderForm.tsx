@@ -444,8 +444,8 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
 
       {/* Step 3: Exact UI from Image 2 */}
       {step === 3 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md rounded-3xl border border-sky-100 bg-sky-50/60 p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl border border-sky-100 bg-sky-50/60 p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 my-auto">
             <button
               type="button"
               onClick={() => router.push('/order-tracking')}
@@ -504,21 +504,30 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
 
             {slipMsg && <p className="text-center text-xs text-sky-600">{slipMsg}</p>}
 
-            <button
-              type="button"
-              disabled={!slipFile || submittingSlip}
-              onClick={handleSubmitSlip}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 disabled:opacity-40 py-3.5 text-sm font-bold text-white transition shadow-lg shadow-sky-500/25"
-            >
-              {submittingSlip ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  ยืนยันการชำระเงิน
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!slipFile || submittingSlip}
+                onClick={handleSubmitSlip}
+                className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 disabled:opacity-40 py-3.5 text-sm font-bold text-white transition shadow-lg shadow-sky-500/25"
+              >
+                {submittingSlip ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    ยืนยันการชำระเงิน
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/order-tracking')}
+                className="shrink-0 rounded-2xl border border-sky-200 bg-white hover:bg-sky-50 text-slate-600 py-3.5 px-4 text-sm font-bold transition"
+              >
+                ปิด
+              </button>
+            </div>
           </div>
         </div>
       )}

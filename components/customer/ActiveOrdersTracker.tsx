@@ -279,8 +279,8 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
 
       {/* QR & Slip Upload Modal (Sky-Blue & White Theme) */}
       {payingOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-md rounded-3xl border border-sky-100 bg-white p-6 sm:p-7 shadow-2xl space-y-4 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-md max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl border border-sky-100 bg-white p-4 sm:p-6 shadow-2xl space-y-4 text-center my-auto">
             <button
               type="button"
               onClick={() => setPayingOrder(null)}
@@ -345,25 +345,34 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
 
             {msg && <p className="text-center text-xs font-bold text-rose-500">{msg}</p>}
 
-            {/* Submit button */}
-            <button
-              type="button"
-              disabled={!slipFile || submittingSlip}
-              onClick={handleSubmitSlip}
-              className="w-full flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 disabled:opacity-40 py-3 text-sm font-bold text-white transition shadow-md shadow-sky-500/20"
-            >
-              {submittingSlip ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>กำลังอัปโหลดสลิป...</span>
-                </>
-              ) : (
-                <>
-                  <span>ยืนยันการชำระเงิน</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+            {/* Submit & Close buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!slipFile || submittingSlip}
+                onClick={handleSubmitSlip}
+                className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 disabled:opacity-40 py-3.5 text-sm font-bold text-white transition shadow-md shadow-sky-500/20"
+              >
+                {submittingSlip ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>กำลังอัปโหลดสลิป...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>ยืนยันการชำระเงิน</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPayingOrder(null)}
+                className="shrink-0 rounded-2xl border border-sky-200 bg-white hover:bg-sky-50 text-slate-600 py-3.5 px-4 text-sm font-bold transition"
+              >
+                ปิด
+              </button>
+            </div>
           </div>
         </div>
       )}

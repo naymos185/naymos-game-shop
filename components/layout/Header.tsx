@@ -38,11 +38,11 @@ export async function Header() {
         <div className="flex h-16 sm:h-18 items-center justify-between gap-2 sm:gap-4">
           {/* Logo with Mascot */}
           <Link href="/" className="flex items-center gap-2 sm:gap-2.5 shrink-0 group">
-            <div className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-sky-50 border border-sky-200 p-0.5 overflow-hidden shadow-xs group-hover:scale-105 transition-transform duration-200">
+            <div className="relative h-10 sm:h-12 w-auto shrink-0 flex items-center group-hover:scale-105 transition-transform duration-200">
               <img
                 src="/images/logo.png"
-                alt="NayMos GameShop Mascot"
-                className="w-full h-full object-contain"
+                alt="NayMos GameShop"
+                className="h-10 sm:h-12 w-auto object-contain select-none"
               />
             </div>
             <div className="flex flex-col">
