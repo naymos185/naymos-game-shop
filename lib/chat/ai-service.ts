@@ -13,6 +13,51 @@ export interface SharkAiOptions {
   };
 }
 
+interface OpenAiCompatibleMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+// Shared caller for OpenAI-compatible APIs (OpenAI, Groq, OpenRouter)
+async function callOpenAiCompatible(
+  endpoint: string,
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  history: OpenAiCompatibleMessage[],
+  maxTokens: number
+): Promise<string | null> {
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...history,
+      ],
+      temperature: 0.65,
+      max_tokens: maxTokens,
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.warn(`${endpoint} (${model}) failed with HTTP ${response.status}:`, errText.slice(0, 300));
+    return null;
+  }
+
+  const resData = await response.json();
+  const choice = resData?.choices?.[0]?.message?.content;
+  if (choice && choice.trim()) {
+    return choice.trim();
+  }
+  return null;
+}
+
 export async function askSmartSharkAi({
   query,
   knowledgeList,
@@ -21,7 +66,7 @@ export async function askSmartSharkAi({
   liveStoreData,
 }: SharkAiOptions): Promise<{
   answer: string;
-  source: 'knowledge' | 'gemini' | 'openai' | 'fallback';
+  source: 'knowledge' | 'gemini' | 'openai' | 'groq' | 'fallback';
   matchedTitle?: string;
 }> {
   const trimmed = query.trim();
@@ -72,14 +117,13 @@ export async function askSmartSharkAi({
     }
   }
 
-  // Layer 2: External AI (Google Gemini or OpenAI)
-  const rawGeminiKey = process.env.GEMINI_API_KEY;
-  const rawOpenaiKey = process.env.OPENAI_API_KEY;
+  // Layer 2: External AI (Google Gemini / OpenAI / Groq)
+  const cleanKey = (raw?: string) => (raw ? raw.trim().replace(/^["']|["']$/g, '') : '');
+  const geminiApiKey = cleanKey(process.env.GEMINI_API_KEY);
+  const openaiApiKey = cleanKey(process.env.OPENAI_API_KEY);
+  const groqApiKey = cleanKey(process.env.GROQ_API_KEY);
 
-  const geminiApiKey = rawGeminiKey ? rawGeminiKey.trim().replace(/^["']|["']$/g, '') : '';
-  const openaiApiKey = rawOpenaiKey ? rawOpenaiKey.trim().replace(/^["']|["']$/g, '') : '';
-
-  if (geminiApiKey || openaiApiKey) {
+  if (geminiApiKey || openaiApiKey || groqApiKey) {
     try {
       const knowledgeContext = activeEntries
         .slice(0, 15)
@@ -122,11 +166,12 @@ ${knowledgeContext}
 
 ให้ตอบคำถามของลูกค้าโดยอ้างอิงข้อมูลข้างต้นและบทสนทนาก่อนหน้าอย่างแม่นยำและเป็นธรรมชาติ`;
 
-      // Build history messages
-      const formattedHistory = conversationHistory.slice(-6).map((m) => ({
-        role: m.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: m.text }],
-      }));
+      const historyMessages: OpenAiCompatibleMessage[] = conversationHistory
+        .slice(-6)
+        .map((m) => ({
+          role: m.sender === 'user' ? ('user' as const) : ('assistant' as const),
+          content: m.text,
+        }));
 
       // Try Google Gemini
       if (geminiApiKey) {
@@ -140,7 +185,10 @@ ${knowledgeContext}
         for (const model of geminiModels) {
           try {
             const contents = [
-              ...formattedHistory,
+              ...conversationHistory.slice(-6).map((m) => ({
+                role: m.sender === 'user' ? 'user' : 'model',
+                parts: [{ text: m.text }],
+              })),
               { role: 'user', parts: [{ text: trimmed }] },
             ];
 
@@ -193,42 +241,35 @@ ${knowledgeContext}
         }
       }
 
-      // Try OpenAI fallback
+      // Try OpenAI
       if (openaiApiKey) {
-        const openaiHistory = conversationHistory.slice(-6).map((m) => ({
-          role: m.sender === 'user' ? ('user' as const) : ('assistant' as const),
-          content: m.text,
-        }));
+        const answer = await callOpenAiCompatible(
+          'https://api.openai.com/v1/chat/completions',
+          openaiApiKey,
+          'gpt-4o-mini',
+          systemPrompt,
+          [...historyMessages, { role: 'user', content: trimmed }],
+          800
+        );
+        if (answer) {
+          return { answer, source: 'openai' };
+        }
+      }
 
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${openaiApiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...openaiHistory,
-              { role: 'user', content: trimmed },
-            ],
-            temperature: 0.65,
-            max_tokens: 500,
-          }),
-        });
-
-        if (!response.ok) {
-          const errText = await response.text();
-          console.warn(`OpenAI failed with HTTP ${response.status}:`, errText.slice(0, 300));
-        } else {
-          const resData = await response.json();
-          const choice = resData?.choices?.[0]?.message?.content;
-          if (choice && choice.trim()) {
-            return {
-              answer: choice.trim(),
-              source: 'openai',
-            };
+      // Try Groq (free tier, OpenAI-compatible)
+      if (groqApiKey) {
+        const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+        for (const model of groqModels) {
+          const answer = await callOpenAiCompatible(
+            'https://api.groq.com/openai/v1/chat/completions',
+            groqApiKey,
+            model,
+            systemPrompt,
+            [...historyMessages, { role: 'user', content: trimmed }],
+            800
+          );
+          if (answer) {
+            return { answer, source: 'groq' };
           }
         }
       }
