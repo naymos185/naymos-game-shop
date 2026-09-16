@@ -444,8 +444,9 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                     className="flex items-center gap-1.5"
                   >
                     <input
+                      key="ai-chat-input"
                       type="text"
-                      value={aiInput}
+                      value={aiInput ?? ''}
                       onChange={(e) => setAiInput(e.target.value)}
                       placeholder="ถามน้องหลามได้เลยค้าบ..."
                       className="flex-1 bg-sky-50/50 border border-sky-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-hidden focus:border-sky-400 placeholder:text-slate-400"
@@ -487,8 +488,9 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                       )}
                     </button>
                     <input
+                      key="admin-chat-input"
                       type="text"
-                      value={adminInput}
+                      value={adminInput ?? ''}
                       onChange={(e) => setAdminInput(e.target.value)}
                       placeholder="พิมพ์ข้อความหาแอดมิน..."
                       className="flex-1 bg-sky-50/50 border border-sky-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-hidden focus:border-sky-400 placeholder:text-slate-400"

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { answerWithSharkAI } from '@/lib/chat/knowledge';
+import { askSmartSharkAi } from '@/lib/chat/ai-service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,10 +29,14 @@ export async function POST(req: NextRequest) {
       .select('*')
       .eq('is_active', true);
 
-    const result = answerWithSharkAI(query, knowledge || []);
+    const result = await askSmartSharkAi({
+      query,
+      knowledgeList: knowledge || [],
+    });
 
     return NextResponse.json({
       answer: result.answer,
+      source: result.source,
       matchedTitle: result.matchedTitle ?? null,
     });
   } catch (err: unknown) {

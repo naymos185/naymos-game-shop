@@ -3,7 +3,7 @@ import type { ChatAiKnowledge } from './types';
 export const SHARK_FALLBACK_ANSWER =
   'หลามก็ไม่ทราบเหมือนกันค้าบ🥹 แต่สามารถติดต่อ admin ได้เลยนะค้าบบบบ';
 
-const FORBIDDEN_PATTERNS = [
+export const FORBIDDEN_PATTERNS = [
   /\b(database|schema|postgres|supabase|sql|password|secret|api[_-]?key|token|service[_-]?role|credentials|env|config)\b/i,
   /\b(root|vulnerability|exploit|injection|backend|source[_-]?code|admin[_-]?pass)\b/i,
   /รหัสผ่าน|ฐานข้อมูล|ซอร์สโค้ด|คีย์ลับ|ข้อมูลเซิร์ฟเวอร์|แฮก|เจาะระบบ/,
