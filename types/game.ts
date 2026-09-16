@@ -12,6 +12,17 @@ export interface GameField {
   sort_order: number;
 }
 
+export interface ProductCategory {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Game {
   id: string;
   slug: string;
@@ -19,10 +30,13 @@ export interface Game {
   description?: string | null;
   icon?: string | null;
   banner?: string | null;
+  /** @deprecated Legacy Game Genre (Battle Royale / MOBA / etc.) – keep for display only */
   category?: string | null;
+  product_category_id?: string | null;
   is_active: boolean;
   sort_order: number;
   game_fields?: GameField[];
+  product_category?: ProductCategory | null;
 }
 
 export interface Product {
