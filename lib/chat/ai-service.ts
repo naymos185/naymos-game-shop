@@ -88,7 +88,7 @@ ${knowledgeContext || '- ทางร้านให้บริการเต�
 
       if (geminiApiKey) {
         // Try multiple Gemini models in case of version/quota
-        const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
+        const models = ['gemini-3.6-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest', 'gemini-2.0-flash', 'gemini-1.5-flash'];
         for (const model of models) {
           try {
             const geminiRes = await fetch(
