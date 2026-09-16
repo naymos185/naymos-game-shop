@@ -4,26 +4,31 @@ import Link from 'next/link';
 import { Gamepad2 } from 'lucide-react';
 import { useMemo, useRef, useState, type PointerEvent } from 'react';
 import type { GameWithDetails } from '@/lib/games/queries';
+import type { ProductCategory } from '@/types/game';
 
 type GameGridProps = {
   games: GameWithDetails[];
+  categories: ProductCategory[];
 };
 
-const ALL_GAMES = 'ทั้งหมด';
+const ALL = 'ทั้งหมด';
 
-export function GameGrid({ games }: GameGridProps) {
-  const categories = useMemo(
-    () => [ALL_GAMES, ...Array.from(new Set(games.map((game) => game.category)))],
-    [games],
-  );
-  const [category, setCategory] = useState(ALL_GAMES);
+export function GameGrid({ games, categories }: GameGridProps) {
+  const [activeCategory, setActiveCategory] = useState<string>(ALL);
   const [touchedCard, setTouchedCard] = useState<string | null>(null);
   const trackingPointer = useRef<number | null>(null);
 
-  const visibleGames = useMemo(
-    () => (category === ALL_GAMES ? games : games.filter((game) => game.category === category)),
-    [category, games],
+  const filterTabs = useMemo(
+    () => [ALL, ...categories.map((c) => c.name)],
+    [categories],
   );
+
+  const visibleGames = useMemo(() => {
+    if (activeCategory === ALL) return games;
+    const cat = categories.find((c) => c.name === activeCategory);
+    if (!cat) return games;
+    return games.filter((g) => g.product_category_id === cat.id);
+  }, [activeCategory, games, categories]);
 
   const cardAtPoint = (clientX: number, clientY: number) => {
     const element = document.elementFromPoint(clientX, clientY);
@@ -51,17 +56,17 @@ export function GameGrid({ games }: GameGridProps) {
 
   return (
     <>
-      {categories.length > 2 && (
-        <div className="mb-7 flex gap-2 overflow-x-auto pb-2" aria-label="หมวดหมู่เกม">
-          {categories.map((item) => {
-            const isActive = item === category;
+      {filterTabs.length > 1 && (
+        <div className="mb-7 flex gap-2 overflow-x-auto pb-2" aria-label="หมวดหมู่สินค้า">
+          {filterTabs.map((item) => {
+            const isActive = item === activeCategory;
             return (
               <button
                 key={item}
                 type="button"
                 aria-pressed={isActive}
                 onClick={() => {
-                  if (!isActive) setCategory(item);
+                  if (!isActive) setActiveCategory(item);
                 }}
                 className={`game-category shrink-0 rounded-xl border px-4 py-2 text-sm font-semibold ${
                   isActive
@@ -77,7 +82,7 @@ export function GameGrid({ games }: GameGridProps) {
       )}
 
       <div
-        key={category}
+        key={activeCategory}
         className="game-grid-enter grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -99,7 +104,9 @@ export function GameGrid({ games }: GameGridProps) {
             </div>
             <div className="p-4">
               <h2 className="font-semibold">{game.name}</h2>
-              <p className="mt-0.5 text-sm text-zinc-500">{game.category}</p>
+              <p className="mt-0.5 text-sm text-zinc-500">
+                {game.product_category?.name ?? game.category ?? ''}
+              </p>
               <p className="mt-2 text-xs text-red-400">{game.products.length} แพ็กเกจ</p>
             </div>
           </Link>
