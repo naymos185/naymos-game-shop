@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     if (!query) {
       return NextResponse.json({
-        answer: 'สวัสดีครับพี่ ยินดีช่วยเหลือครับ มีอะไรให้ผมช่วยดูแล สอบถามได้เลยนะครับ ✨',
+        answer: 'สวัสดีครับพี่ ยินดีช่วยเหลือครับ มีอะไรให้ผมช่วยดูแล สอบถามได้เลยนะครับ ',
         source: 'knowledge',
       });
     }

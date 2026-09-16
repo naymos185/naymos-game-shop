@@ -46,7 +46,7 @@ export default function AdminChatPage() {
     is_enabled: true,
     provider: 'auto',
     model_name: 'gemini-2.5-flash',
-    welcome_message: 'สวัสดีครับพี่ ยินดีช่วยเหลือครับ มีอะไรให้ผมช่วยดูแล สอบถามได้เลยนะครับ ✨',
+    welcome_message: 'สวัสดีครับพี่ ยินดีช่วยเหลือครับ มีอะไรให้ผมช่วยดูแล สอบถามได้เลยนะครับ ',
     fallback_message: 'ขอโทษนะครับพี่ ตอนนี้ระบบผู้ช่วยอัตโนมัติมีปัญหานิดหน่อยครับ พี่สามารถส่งข้อความไว้ได้เลยครับ เดี๋ยวแอดมินเข้ามาช่วยดูให้ครับ',
   });
   const [savingSettings, setSavingSettings] = useState(false);

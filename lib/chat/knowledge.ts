@@ -1,7 +1,7 @@
 import type { ChatAiKnowledge } from './types';
 
 export const SHARK_FALLBACK_ANSWER =
-  'ขออภัยนะครับพี่ เรื่องนี้ผมยังไม่มีข้อมูลที่แน่ชัดครับ แนะนำกดแท็บ "ติดต่อแอดมิน" เพื่อให้ทีมงานช่วยดูแลได้เลยครับ 🙏';
+  'ขออภัยนะครับพี่ เรื่องนี้ผมยังไม่มีข้อมูลที่แน่ชัดครับ แนะนำกดแท็บ "ติดต่อแอดมิน" เพื่อให้ทีมงานช่วยดูแลได้เลยครับ ';
 
 export const FORBIDDEN_PATTERNS = [
   /\b(database|schema|postgres|supabase|sql|password|secret|api[_-]?key|token|service[_-]?role|credentials|env|config)\b/i,
@@ -17,7 +17,7 @@ export function answerWithSharkAI(
 
   if (!trimmed) {
     return {
-      answer: 'สวัสดีครับพี่ ยินดีช่วยเหลือครับ มีอะไรให้ผมช่วยดูแล สอบถามได้เลยนะครับ ✨',
+      answer: 'สวัสดีครับพี่ ยินดีช่วยเหลือครับ มีอะไรให้ผมช่วยดูแล สอบถามได้เลยนะครับ ',
     };
   }
 

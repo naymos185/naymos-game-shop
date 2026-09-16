@@ -41,7 +41,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
   >([
     {
       sender: 'ai',
-      text: 'สวัสดีครับพี่ ยินดีช่วยเหลือครับ มีอะไรให้ผมช่วยดูแล สอบถามได้เลยนะครับ ✨',
+      text: 'สวัสดีครับพี่ ยินดีช่วยเหลือครับ มีอะไรให้ผมช่วยดูแล สอบถามได้เลยนะครับ',
       time: 'ตอนนี้',
     },
   ]);
@@ -252,7 +252,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
 
   return (
     <>
-      {/* Floating Trigger Button */}
+      {/* Floating Trigger Button (No background) */}
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={() => {
@@ -261,31 +261,33 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
               setUnreadCount(0);
             }
           }}
-          className="relative group flex items-center justify-center w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-tr from-sky-500 via-blue-500 to-indigo-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-sky-200"
+          className="relative group flex items-center justify-center transition-all duration-300 focus:outline-none active:scale-95"
           aria-label="ติดต่อและสอบถาม"
         >
           {isOpen ? (
-            <X className="w-8 h-8 text-white transition-transform duration-300 rotate-90 group-hover:rotate-180" />
+            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-sky-500 hover:bg-sky-600 text-white shadow-xl flex items-center justify-center transition-all duration-200 border-2 border-white">
+              <X className="w-7 h-7 text-white transition-transform duration-300 group-hover:rotate-90" />
+            </div>
           ) : (
-            <div className="relative w-full h-full flex items-center justify-center">
+            <div className="relative flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <Image
                 src="/images/shark-chat.png"
                 alt="NayMos Chat"
-                width={52}
-                height={52}
-                className="object-contain drop-shadow-md group-hover:scale-110 transition-transform"
+                width={64}
+                height={64}
+                className="w-16 h-16 sm:w-18 sm:h-18 object-contain drop-shadow-xl filter select-none pointer-events-none"
                 priority
               />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+              <span className="absolute top-0 right-0 flex h-3.5 w-3.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white shadow-xs"></span>
               </span>
             </div>
           )}
 
           {/* Unread Message Badge */}
           {unreadCount > 0 && !isOpen && (
-            <span className="absolute -top-2 -left-2 bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-white animate-bounce">
+            <span className="absolute -top-1 -left-1 bg-rose-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-white animate-bounce">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
@@ -392,7 +394,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                   <>
                     <div className="text-center my-2">
                       <span className="text-[11px] bg-sky-100/70 text-sky-700 px-3 py-1 rounded-full border border-sky-200">
-                        ⚡ ผู้ช่วยอัตโนมัติตอบคำถามทั่วไปและบริการร้าน
+                        ผู้ช่วยอัตโนมัติตอบคำถามทั่วไปและบริการร้าน
                       </span>
                     </div>
 
@@ -445,7 +447,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                   <>
                     <div className="text-center my-2">
                       <span className="text-[11px] bg-amber-50 text-amber-700 px-3 py-1 rounded-full border border-amber-200">
-                        🛡️ สนทนาสดกับแอดมิน NayMos GameShop
+                        สนทนาสดกับแอดมิน NayMos GameShop
                       </span>
                     </div>
 
@@ -520,7 +522,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                   >
                     <input
                       type="text"
-                      value={aiInput}
+                      value={aiInput ?? ''}
                       onChange={(e) => setAiInput(e.target.value)}
                       placeholder="พิมพ์คำถาม เช่น เติมเกมยังไง, ช่องทางชำระเงิน..."
                       className="flex-1 bg-sky-50/60 border border-sky-200 focus:border-sky-400 focus:bg-white rounded-2xl px-3.5 py-2 text-xs outline-none transition"
@@ -568,7 +570,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                     </button>
                     <input
                       type="text"
-                      value={adminInput}
+                      value={adminInput ?? ''}
                       onChange={(e) => setAdminInput(e.target.value)}
                       placeholder="พิมพ์ข้อความถึงแอดมิน..."
                       className="flex-1 bg-sky-50/60 border border-sky-200 focus:border-sky-400 focus:bg-white rounded-2xl px-3.5 py-2 text-xs outline-none transition"
