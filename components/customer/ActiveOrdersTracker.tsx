@@ -1,5 +1,7 @@
 'use client';
 
+import { PromptPayQRCard } from './PromptPayQRCard';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, QrCode, CheckCircle2, Clock, UploadCloud, X, ArrowRight, Ban } from 'lucide-react';
@@ -298,27 +300,13 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
             </div>
 
             {/* QR Code */}
-            <div className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-sky-50/40 border border-sky-100 mx-auto w-fit shadow-xs">
-              <img
-                src={
-                  storeInfo.promptpay_id
-                    ? `https://promptpay.io/${encodeURIComponent(storeInfo.promptpay_id)}/${payingOrder.total}.png`
-                    : `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
-                        storeInfo.account_name + ' | ' + payingOrder.order_number
-                      )}`
-                }
-                alt="QR Code"
-                className="w-48 h-48 object-contain rounded-xl bg-white p-1"
-              />
-              <span className="text-[11px] font-bold text-sky-700 mt-1.5 flex items-center gap-1">
-                {storeInfo.bank_name || 'พร้อมเพย์'} · {storeInfo.account_name}
-              </span>
-              {storeInfo.promptpay_id && (
-                <span className="text-[10px] font-mono font-bold text-slate-500 mt-0.5">
-                  เลขบัญชี / พร้อมเพย์: {storeInfo.promptpay_id}
-                </span>
-              )}
-            </div>
+            <PromptPayQRCard
+              amount={Number(payingOrder.total)}
+              orderNumber={payingOrder.order_number}
+              promptpayId="0988251064"
+              accountName="ศักดาวิชญ์ คำใจ"
+              bankName="พร้อมเพย์"
+            />
 
             <div className="text-center py-1">
               <p className="text-xs font-semibold text-slate-500">ยอดชำระสุทธิ</p>

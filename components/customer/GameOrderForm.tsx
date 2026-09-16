@@ -1,5 +1,7 @@
 'use client';
 
+import { PromptPayQRCard } from './PromptPayQRCard';
+
 import { useState } from 'react';
 import type { GameWithDetails } from '@/lib/games/queries';
 import { Check, AlertCircle, Loader2, X, UploadCloud, ArrowRight } from 'lucide-react';
@@ -458,14 +460,13 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
               <p className="text-xs font-semibold text-slate-500">ออเดอร์: <span className="text-sky-600 font-bold">{orderNumber}</span></p>
             </div>
 
-            <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white mx-auto w-fit shadow-inner">
-              <img
-                src={`https://promptpay.io/0812345678/${finalAmount || totalPayable}.png`}
-                alt="QR Code"
-                className="w-48 h-48 object-contain"
-              />
-              <span className="text-xs font-bold text-sky-700 mt-1">PromptPay QR</span>
-            </div>
+            <PromptPayQRCard
+              amount={Number(finalAmount || totalPayable)}
+              orderNumber={orderNumber || ''}
+              promptpayId="0988251064"
+              accountName="ศักดาวิชญ์ คำใจ"
+              bankName="พร้อมเพย์"
+            />
 
             <div className="text-center">
               <p className="text-xs text-slate-500">ยอดชำระสุทธิ</p>

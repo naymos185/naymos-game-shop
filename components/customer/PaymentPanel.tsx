@@ -1,5 +1,7 @@
 'use client';
 
+import { PromptPayQRCard } from './PromptPayQRCard';
+
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { Loader2, Copy, Check, CreditCard, Download, ShieldCheck } from 'lucide-react';
