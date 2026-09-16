@@ -19,6 +19,7 @@ import {
   Headphones,
   Settings,
   FileText,
+  Tags,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/admin/games', label: 'Games', icon: Gamepad2 },
+  { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/providers', label: 'Providers', icon: Server },
   { href: '/admin/payments', label: 'Payments', icon: CreditCard },
