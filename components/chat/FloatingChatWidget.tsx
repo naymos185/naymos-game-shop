@@ -391,7 +391,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
               >
                 {activeTab === 'ai' ? (
                   // AI Tab Messages
-                  <>
+                  <div key="tab-ai-content" className="space-y-3.5">
                     <div className="text-center my-2">
                       <span className="text-[11px] bg-sky-100/70 text-sky-700 px-3 py-1 rounded-full border border-sky-200">
                         ผู้ช่วยอัตโนมัติตอบคำถามทั่วไปและบริการร้าน
@@ -441,10 +441,10 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                         <span>กำลังหาคำตอบให้พี่อยู่นะครับ...</span>
                       </div>
                     )}
-                  </>
+                  </div>
                 ) : (
                   // Admin Tab Messages
-                  <>
+                  <div key="tab-admin-content" className="space-y-3.5">
                     <div className="text-center my-2">
                       <span className="text-[11px] bg-amber-50 text-amber-700 px-3 py-1 rounded-full border border-amber-200">
                         สนทนาสดกับแอดมิน NayMos GameShop
@@ -506,7 +506,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                         );
                       })
                     )}
-                  </>
+                  </div>
                 )}
               </div>
 
@@ -514,6 +514,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
               <div className="p-3 bg-white border-t border-sky-100">
                 {activeTab === 'ai' ? (
                   <form
+                    key="form-ai-input"
                     onSubmit={(e) => {
                       e.preventDefault();
                       handleSendAi();
@@ -521,14 +522,16 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                     className="flex items-center gap-2"
                   >
                     <input
+                      key="input-ai-text"
                       type="text"
                       value={aiInput ?? ''}
-                      onChange={(e) => setAiInput(e.target.value)}
+                      onChange={(e) => setAiInput(e.target.value ?? '')}
                       placeholder="พิมพ์คำถาม เช่น เติมเกมยังไง, ช่องทางชำระเงิน..."
                       className="flex-1 bg-sky-50/60 border border-sky-200 focus:border-sky-400 focus:bg-white rounded-2xl px-3.5 py-2 text-xs outline-none transition"
                       disabled={aiLoading}
                     />
                     <button
+                      key="btn-ai-submit"
                       type="submit"
                       disabled={!aiInput.trim() || aiLoading}
                       className="w-9 h-9 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white flex items-center justify-center disabled:opacity-40 hover:shadow-md transition"
@@ -542,6 +545,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                   </form>
                 ) : (
                   <form
+                    key="form-admin-input"
                     onSubmit={(e) => {
                       e.preventDefault();
                       handleSendAdmin();
@@ -549,6 +553,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                     className="flex items-center gap-2"
                   >
                     <input
+                      key="input-admin-file"
                       type="file"
                       ref={fileInputRef}
                       onChange={handleImageUpload}
@@ -556,6 +561,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                       className="hidden"
                     />
                     <button
+                      key="btn-admin-image"
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadingImage || sendingAdmin}
@@ -569,14 +575,16 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                       )}
                     </button>
                     <input
+                      key="input-admin-text"
                       type="text"
                       value={adminInput ?? ''}
-                      onChange={(e) => setAdminInput(e.target.value)}
+                      onChange={(e) => setAdminInput(e.target.value ?? '')}
                       placeholder="พิมพ์ข้อความถึงแอดมิน..."
                       className="flex-1 bg-sky-50/60 border border-sky-200 focus:border-sky-400 focus:bg-white rounded-2xl px-3.5 py-2 text-xs outline-none transition"
                       disabled={sendingAdmin}
                     />
                     <button
+                      key="btn-admin-submit"
                       type="submit"
                       disabled={!adminInput.trim() || sendingAdmin}
                       className="w-9 h-9 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white flex items-center justify-center disabled:opacity-40 hover:shadow-md transition"
