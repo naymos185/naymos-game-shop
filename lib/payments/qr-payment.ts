@@ -1,9 +1,10 @@
 import type { PaymentProvider } from './payment.interface';
 import type { Payment, PaymentStatus } from '@/types/payment';
+import { generatePromptPayPayload } from './promptpay';
 
 /**
  * Standard PromptPay Payment Provider.
- * Generates official PromptPay payment reference and QR URL/payload.
+ * Generates official EMVCo PromptPay payment reference and QR payload.
  */
 export class PromptPayPayment implements PaymentProvider {
   readonly id = 'promptpay';
@@ -25,10 +26,14 @@ export class PromptPayPayment implements PaymentProvider {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + (data.expiresInMinutes ?? 30));
 
-    const targetAccount = (data.promptpayId || this.defaultPromptPayId || process.env.NEXT_PUBLIC_PROMPTPAY_ID || '').trim();
-    const qrData = targetAccount
-      ? `https://promptpay.io/${encodeURIComponent(targetAccount)}/${data.amount}.png`
-      : `PROMPTPAY|${data.orderNumber}|${data.amount}`;
+    const targetAccount = (
+      data.promptpayId ||
+      this.defaultPromptPayId ||
+      process.env.NEXT_PUBLIC_PROMPTPAY_ID ||
+      '0988251064'
+    ).trim();
+
+    const qrData = generatePromptPayPayload(targetAccount, data.amount);
 
     return {
       payment: {
@@ -41,7 +46,7 @@ export class PromptPayPayment implements PaymentProvider {
         expires_at: expiresAt.toISOString(),
       },
       qrData,
-      paymentUrl: qrData.startsWith('https://') ? qrData : undefined,
+      paymentUrl: undefined,
     };
   }
 

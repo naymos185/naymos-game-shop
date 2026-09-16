@@ -20,7 +20,7 @@ import {
 
 interface HeaderNavProps {
   activeOrderCount?: number;
-  profile?: { id: string; email?: string; full_name?: string; role?: string } | null;
+  profile?: { id: string; email?: string | null; full_name?: string | null; role?: string | null } | null;
 }
 
 export function HeaderNav({ activeOrderCount = 0, profile }: HeaderNavProps) {

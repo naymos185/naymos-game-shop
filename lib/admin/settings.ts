@@ -9,9 +9,9 @@ export type StoreSettings = {
 
 const DEFAULTS: StoreSettings = {
   name: 'NayMos GameShop',
-  promptpay_id: '',
+  promptpay_id: '0988251064',
   bank_name: 'พร้อมเพย์',
-  account_name: 'NayMos GameShop',
+  account_name: 'ศักดาวิชญ์ คำใจ',
 };
 
 export async function getStoreSettings(): Promise<StoreSettings> {
@@ -27,7 +27,7 @@ export async function getStoreSettings(): Promise<StoreSettings> {
     const v = data.value as Record<string, unknown>;
     return {
       name: String(v.name ?? DEFAULTS.name),
-      promptpay_id: String(v.promptpay_id ?? ''),
+      promptpay_id: String(v.promptpay_id ?? DEFAULTS.promptpay_id),
       bank_name: String(v.bank_name ?? DEFAULTS.bank_name),
       account_name: String(v.account_name ?? DEFAULTS.account_name),
     };
