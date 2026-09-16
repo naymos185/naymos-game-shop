@@ -19,6 +19,17 @@ export async function POST(req: NextRequest) {
     const query = typeof body.query === 'string' ? body.query.trim() : '';
     const conversationHistory: ChatHistoryItem[] = Array.isArray(body.history) ? body.history : [];
 
+    const admin = createAdminClient();
+
+    // 1. Fetch AI settings (fallback message, enabled status, etc.)
+    const { data: settings } = await admin
+      .from('chat_ai_settings')
+      .select('fallback_message, is_enabled')
+      .limit(1)
+      .maybeSingle();
+
+    const fallbackMessage = settings?.fallback_message || undefined;
+
     if (!query) {
       return NextResponse.json({
         answer: 'สวัสดีครับพี่ ยินดีช่วยเหลือครับ มีอะไรให้ผมช่วยดูแล สอบถามได้เลยนะครับ ✨',
@@ -26,16 +37,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const admin = createAdminClient();
-
-    // 1. Fetch active knowledge
+    // 2. Fetch active knowledge
     const { data: knowledge } = await admin
       .from('chat_ai_knowledge')
       .select('*')
       .eq('is_active', true)
       .order('priority', { ascending: false });
 
-    // 2. Fetch live store games for context
+    // 3. Fetch live store games for context
     const { data: gamesData } = await admin
       .from('games')
       .select('name')
@@ -48,6 +57,7 @@ export async function POST(req: NextRequest) {
       query,
       knowledgeList: (knowledge as ChatAiKnowledge[]) || [],
       conversationHistory,
+      fallbackMessage,
       liveStoreData: {
         games: activeGameNames,
         paymentMethods: ['PromptPay QR Code', 'NayMos Wallet'],

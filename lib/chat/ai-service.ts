@@ -5,6 +5,7 @@ export interface SharkAiOptions {
   query: string;
   knowledgeList: ChatAiKnowledge[];
   conversationHistory?: ChatHistoryItem[];
+  fallbackMessage?: string;
   liveStoreData?: {
     games?: string[];
     paymentMethods?: string[];
@@ -16,6 +17,7 @@ export async function askSmartSharkAi({
   query,
   knowledgeList,
   conversationHistory = [],
+  fallbackMessage,
   liveStoreData,
 }: SharkAiOptions): Promise<{
   answer: string;
@@ -37,7 +39,10 @@ export async function askSmartSharkAi({
   const lower = trimmed.toLowerCase();
   for (const pattern of FORBIDDEN_PATTERNS) {
     if (pattern.test(lower)) {
-      return { answer: SHARK_FALLBACK_ANSWER, source: 'fallback' };
+      return {
+        answer: fallbackMessage?.trim() || SHARK_FALLBACK_ANSWER,
+        source: 'fallback',
+      };
     }
   }
 
@@ -139,6 +144,16 @@ ${knowledgeContext}
               { role: 'user', parts: [{ text: trimmed }] },
             ];
 
+            // Thinking models (2.5) consume output tokens for reasoning by default.
+            // Disable thinking and raise the token budget so answers are never empty.
+            const generationConfig: Record<string, unknown> = {
+              temperature: 0.65,
+              maxOutputTokens: 2048,
+            };
+            if (model.startsWith('gemini-2.5')) {
+              generationConfig.thinkingConfig = { thinkingBudget: 0 };
+            }
+
             const response = await fetch(
               `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
               {
@@ -149,24 +164,29 @@ ${knowledgeContext}
                     parts: [{ text: systemPrompt }],
                   },
                   contents,
-                  generationConfig: {
-                    temperature: 0.65,
-                    maxOutputTokens: 500,
-                  },
+                  generationConfig,
                 }),
               }
             );
 
-            if (response.ok) {
-              const resData = await response.json();
-              const candidate = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (candidate && candidate.trim()) {
-                return {
-                  answer: candidate.trim(),
-                  source: 'gemini',
-                };
-              }
+            if (!response.ok) {
+              const errText = await response.text();
+              console.warn(
+                `Gemini model ${model} failed with HTTP ${response.status}:`,
+                errText.slice(0, 300)
+              );
+              continue;
             }
+
+            const resData = await response.json();
+            const candidate = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (candidate && candidate.trim()) {
+              return {
+                answer: candidate.trim(),
+                source: 'gemini',
+              };
+            }
+            console.warn(`Gemini model ${model} returned empty candidate`);
           } catch (modelErr) {
             console.warn(`Gemini model ${model} failed, trying next:`, modelErr);
           }
@@ -198,7 +218,10 @@ ${knowledgeContext}
           }),
         });
 
-        if (response.ok) {
+        if (!response.ok) {
+          const errText = await response.text();
+          console.warn(`OpenAI failed with HTTP ${response.status}:`, errText.slice(0, 300));
+        } else {
           const resData = await response.json();
           const choice = resData?.choices?.[0]?.message?.content;
           if (choice && choice.trim()) {
@@ -214,9 +237,9 @@ ${knowledgeContext}
     }
   }
 
-  // Graceful Fallback
+  // Graceful Fallback (uses admin-configurable message when available)
   return {
-    answer: SHARK_FALLBACK_ANSWER,
+    answer: fallbackMessage?.trim() || SHARK_FALLBACK_ANSWER,
     source: 'fallback',
   };
 }

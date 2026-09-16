@@ -1,7 +1,7 @@
 import type { ChatAiKnowledge } from './types';
 
 export const SHARK_FALLBACK_ANSWER =
-  'ขอโทษนะครับพี่ ตอนนี้ระบบผู้ช่วยอัตโนมัติมีปัญหานิดหน่อยครับ พี่สามารถส่งข้อความไว้ได้เลยครับ เดี๋ยวแอดมินเข้ามาช่วยดูให้ครับ';
+  'ขออภัยนะครับพี่ เรื่องนี้ผมยังไม่มีข้อมูลที่แน่ชัดครับ แนะนำกดแท็บ "ติดต่อแอดมิน" เพื่อให้ทีมงานช่วยดูแลได้เลยครับ 🙏';
 
 export const FORBIDDEN_PATTERNS = [
   /\b(database|schema|postgres|supabase|sql|password|secret|api[_-]?key|token|service[_-]?role|credentials|env|config)\b/i,
