@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getAllGamesAdmin } from '@/lib/games/queries';
+import { getAllProductCategoriesAdmin } from '@/lib/categories/queries';
 import { createClient } from '@/lib/supabase/server';
 import { GameRowActions } from '@/components/admin/GameRowActions';
 import { GameCreateForm } from '@/components/admin/GameCreateForm';
@@ -9,7 +10,10 @@ export const metadata: Metadata = { title: 'จัดการเกม' };
 export const dynamic = 'force-dynamic';
 
 export default async function AdminGamesPage() {
-  const games = await getAllGamesAdmin();
+  const [games, categories] = await Promise.all([
+    getAllGamesAdmin(),
+    getAllProductCategoriesAdmin(),
+  ]);
 
   const counts: Record<string, number> = {};
   try {
@@ -31,7 +35,7 @@ export default async function AdminGamesPage() {
         </p>
       </div>
 
-      <GameCreateForm />
+      <GameCreateForm categories={categories} />
 
       {games.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 p-10 text-center">
@@ -45,6 +49,7 @@ export default async function AdminGamesPage() {
               <tr>
                 <th className="px-4 py-3 font-medium">เกม</th>
                 <th className="px-4 py-3 font-medium">Slug</th>
+                <th className="px-4 py-3 font-medium">Product Category</th>
                 <th className="px-4 py-3 font-medium">แพ็ก</th>
                 <th className="px-4 py-3 font-medium">สถานะ</th>
                 <th className="px-4 py-3 font-medium">ลูกค้า</th>
@@ -55,6 +60,9 @@ export default async function AdminGamesPage() {
                 <tr key={g.id} className="bg-zinc-950/50 hover:bg-zinc-900/50">
                   <td className="px-4 py-3 text-white font-medium">{g.name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-zinc-500">{g.slug}</td>
+                  <td className="px-4 py-3 text-zinc-300 text-xs">
+                    {g.product_category?.name ?? '—'}
+                  </td>
                   <td className="px-4 py-3 text-zinc-300">{counts[g.id] ?? 0}</td>
                   <td className="px-4 py-3">
                     <GameRowActions id={g.id} is_active={g.is_active} />
