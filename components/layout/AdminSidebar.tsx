@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
+  Layers,
   MessageSquare,
   Landmark,
   ShoppingCart,
@@ -28,6 +29,7 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/chat', label: 'Live Chat ลูกค้า', icon: MessageSquare },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
+  { href: '/admin/categories', label: 'หมวดหมู่สินค้า', icon: Layers },
   { href: '/admin/games', label: 'Games', icon: Gamepad2 },
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/providers', label: 'Providers', icon: Server },

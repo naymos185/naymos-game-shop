@@ -1,8 +1,9 @@
-export type GameFieldType = 'text' | 'number' | 'select';
+export type GameFieldType = 'text' | 'number' | 'select' | 'password';
 
 export interface GameField {
   id: string;
   game_id: string;
+  key?: string;
   name: string;
   label: string;
   type: GameFieldType;
@@ -10,6 +11,17 @@ export interface GameField {
   required: boolean;
   options?: string[];
   sort_order: number;
+}
+
+export interface ProductCategory {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Game {
@@ -20,6 +32,8 @@ export interface Game {
   icon?: string | null;
   banner?: string | null;
   category?: string | null;
+  product_category_id?: string | null;
+  product_category?: ProductCategory | null;
   is_active: boolean;
   sort_order: number;
   game_fields?: GameField[];

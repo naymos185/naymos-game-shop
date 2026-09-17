@@ -45,7 +45,7 @@ export function HeaderNav({ activeOrderCount = 0, profile }: HeaderNavProps) {
     },
     {
       href: '/games',
-      label: 'เกมทั้งหมด',
+      label: 'รายการทั้งหมด',
       icon: Gamepad2,
       isActive: isGamesActive,
     },
