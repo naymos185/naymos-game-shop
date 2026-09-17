@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       promptpay_id: String(body.promptpay_id ?? '').trim(),
       bank_name: String(body.bank_name ?? 'พร้อมเพย์').trim(),
       account_name: String(body.account_name ?? '').trim(),
+      terms_of_service: String(body.terms_of_service ?? '').trim(),
     });
     if (!result.success) {
       return NextResponse.json(result, { status: 400 });

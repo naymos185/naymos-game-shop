@@ -34,7 +34,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
 
   const [store, setStore] = useState({
-    promptpay_id: '0988251064',
+    promptpay_id: '',
     account_name: 'ศักดาวิชญ์ คำใจ',
     bank_name: 'พร้อมเพย์',
   });
@@ -48,7 +48,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
       .then((j) => {
         if (j.success && j.settings) {
           setStore({
-            promptpay_id: j.settings.promptpay_id || '0988251064',
+            promptpay_id: j.settings.promptpay_id || '',
             account_name: j.settings.account_name || 'ศักดาวิชญ์ คำใจ',
             bank_name: j.settings.bank_name || 'พร้อมเพย์',
           });
@@ -73,7 +73,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
     if (!data) return;
 
     let cancelled = false;
-    const promptpayTarget = store.promptpay_id || '0988251064';
+    const promptpayTarget = store.promptpay_id || '';
     
     // Determine payload string
     let payload = data.qr_data;
@@ -241,7 +241,7 @@ export function PaymentPanel({ orderNumber }: { orderNumber: string }) {
     );
   }
 
-  const promptpayId = store.promptpay_id || '0988251064';
+  const promptpayId = store.promptpay_id || '';
   const accountName = store.account_name || 'ศักดาวิชญ์ คำใจ';
   const bankName = store.bank_name || 'พร้อมเพย์';
 

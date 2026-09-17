@@ -40,6 +40,8 @@ export function GameOrderForm({
   const [paymentMethod, setPaymentMethod] = useState<'promptpay' | 'truemoney'>('promptpay');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsError, setTermsError] = useState(false);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [storeTerms, setStoreTerms] = useState<string>("");
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
@@ -62,6 +64,9 @@ export function GameOrderForm({
       .then((r) => r.json())
       .then((j) => {
         if (j.success && j.settings) {
+          if (j.settings.terms_of_service) {
+            setStoreTerms(j.settings.terms_of_service);
+          }
           setStore({
             promptpay_id: j.settings.promptpay_id || '0988251064',
             account_name: j.settings.account_name || 'ศักดาวิชญ์ คำใจ',
@@ -699,17 +704,38 @@ export function GameOrderForm({
 
           {/* Terms checkbox */}
           <div>
-            <label className="flex items-start gap-2.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={acceptedTerms}
-                onChange={(e) => setAcceptedTerms(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded text-sky-500 focus:ring-sky-400 border-slate-300"
-              />
-              <span className="text-xs text-slate-600">
-                ฉันได้ตรวจสอบข้อมูลไอดีถูกต้อง และยอมรับเงื่อนไขการให้บริการของ NayMos GameShop
-              </span>
-            </label>
+            <div className="flex flex-col gap-1">
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => {
+                    setAcceptedTerms(e.target.checked);
+                    if (e.target.checked) setTermsError(false);
+                  }}
+                  className="mt-0.5 w-4 h-4 rounded text-sky-600 border-sky-300 focus:ring-sky-500"
+                />
+                <span className="text-xs text-slate-700 font-medium select-none flex-1">
+                  ฉันได้ตรวจสอบข้อมูลไอดีถูกต้อง และยอมรับ{' '}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setTermsModalOpen(true);
+                    }}
+                    className="text-sky-600 font-bold underline hover:text-sky-800 transition inline-flex items-center gap-0.5"
+                  >
+                    ข้อตกลงการใช้บริการ
+                  </button>
+                </span>
+              </label>
+              {termsError && (
+                <p className="text-xs text-rose-500 font-medium flex items-center gap-1 pl-6">
+                  <AlertCircle className="w-3.5 h-3.5" /> กรุณากดยอมรับข้อตกลงก่อนดำเนินการต่อ
+                </p>
+              )}
+            </div>
             {termsError && (
               <p className="text-xs text-red-500 mt-1">
                 กรุณายอมรับเงื่อนไขก่อนดำเนินการต่อ

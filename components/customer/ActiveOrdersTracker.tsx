@@ -249,7 +249,7 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
 
                   {isProcessing && (
                     <span className="inline-block text-xs font-medium text-slate-500 bg-sky-50 rounded-lg px-3 py-1.5">
-                      กำลังเติม กรุณารอสักครู่...
+                      แอดมินกำลังดำเนินการเติม <span className="inline-flex items-center gap-0.5 ml-1 font-mono"><span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce"></span><span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce [animation-delay:0.2s]"></span><span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce [animation-delay:0.4s]"></span></span> กรุณารอสักครู่...
                     </span>
                   )}
 
