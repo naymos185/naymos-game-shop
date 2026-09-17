@@ -74,7 +74,7 @@ export default async function AdminGamesPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-right">
-                    <GameRowActions game={g} />
+                    <GameRowActions id={g.id} name={g.name} icon={g.icon} is_active={g.is_active} />
                   </td>
                 </tr>
               ))}
