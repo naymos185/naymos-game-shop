@@ -279,99 +279,135 @@ export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOr
 
       {/* QR & Slip Upload Modal (Sky-Blue & White Theme) */}
       {payingOrder && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-md max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl border border-sky-100 bg-white p-4 sm:p-6 shadow-2xl space-y-4 text-center my-auto">
-            <button
-              type="button"
-              onClick={() => setPayingOrder(null)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 hover:bg-sky-50 rounded-full transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="text-center space-y-1">
-              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-600 border border-sky-200/60">
-                สแกนชำระเงิน
-              </span>
-              <h3 className="text-xl font-black text-slate-900 mt-1">พร้อมเพย์ / QR Payment</h3>
-              <p className="text-xs text-slate-500 font-mono">
-                ออเดอร์: <span className="font-bold text-slate-800">{payingOrder.order_number}</span>
-              </p>
+        <div
+          className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className="relative w-full max-w-4xl bg-white rounded-3xl border border-sky-100 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 sm:px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white shrink-0">
+              <div className="flex items-center gap-2.5">
+                <QrCode className="w-5 h-5" />
+                <h3 className="font-extrabold text-sm sm:text-base">
+                  สแกนชำระเงินผ่าน PromptPay
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setPayingOrder(null);
+                  setSlipFile(null);
+                  setSlipPreview(null);
+                  setMsg(null);
+                }}
+                className="p-1 rounded-full bg-white/20 hover:bg-white/30 text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            {/* QR Code */}
-            <PromptPayQRCard
-              amount={Number(payingOrder.total)}
-              orderNumber={payingOrder.order_number}
-              promptpayId="0988251064"
-              accountName="ศักดาวิชญ์ คำใจ"
-              bankName="พร้อมเพย์"
-            />
-
-            <div className="text-center py-1">
-              <p className="text-xs font-semibold text-slate-500">ยอดชำระสุทธิ</p>
-              <p className="text-3xl font-black text-sky-600">฿{Number(payingOrder.total).toLocaleString()} <span className="text-base font-bold text-slate-600">บาท</span></p>
-            </div>
-
-            {/* Slip Upload Box */}
-            <div className="space-y-1.5 text-left">
-              <label className="block text-xs font-bold text-slate-700">
-                แนบรูปภาพสลิปการโอนเงิน (จำเป็น)
-              </label>
-              <div className="relative border-2 border-dashed border-sky-200 hover:border-sky-400 rounded-2xl p-4 text-center cursor-pointer transition bg-sky-50/30 hover:bg-sky-50/70">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                {slipPreview ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <img src={slipPreview} alt="Slip Preview" className="w-12 h-12 object-cover rounded-xl border border-sky-200 shadow-xs" />
-                    <div className="text-left">
-                      <p className="text-xs font-bold text-emerald-600">เลือกรูปสลิปแล้ว</p>
-                      <p className="text-[10px] text-slate-400">คลิกเพื่อเปลี่ยนรูป</p>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-5 sm:p-8 overflow-y-auto">
+              <div className="md:col-span-7 flex flex-col justify-between space-y-4">
+                <div className="space-y-4">
+                  <div className="p-3.5 rounded-2xl bg-sky-50/70 border border-sky-100 flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] text-slate-500 font-medium">หมายเลขออเดอร์:</span>
+                      <div className="text-sm sm:text-base font-mono font-black text-sky-800">
+                        {payingOrder.order_number}
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-1.5 text-slate-600">
-                    <UploadCloud className="w-6 h-6 text-sky-500" />
-                    <span className="text-xs font-bold text-slate-700">กดเพื่อเลือกรูปภาพสลิปจากเครื่อง</span>
-                    <span className="text-[10px] text-slate-400">รองรับไฟล์ JPG, PNG</span>
+
+                  <div className="border border-slate-200/80 rounded-2xl overflow-hidden text-xs sm:text-sm">
+                    <div className="bg-slate-50 px-4 py-2.5 font-bold text-slate-700 border-b border-slate-200/80">
+                      รายละเอียดการชำระเงิน
+                    </div>
+                    <div className="divide-y divide-slate-100 p-3.5 space-y-2">
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-slate-500">ยอดชำระทั้งหมด:</span>
+                        <span className="text-lg sm:text-xl font-black text-emerald-600">
+                          ฿{Number(payingOrder.total).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-slate-500">ช่องทางการชำระ:</span>
+                        <span className="font-semibold text-slate-800">
+                          {storeInfo.bank_name || 'พร้อมเพย์ (PromptPay)'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-slate-500">ชื่อบัญชี:</span>
+                        <span className="font-bold text-sky-900">
+                          ศักดาวิชญ์ คำใจ
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                )}
+
+                  <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/90 flex items-start gap-2.5 text-xs text-amber-900">
+                    <div>
+                      <span className="font-bold">คำเตือนสำคัญ: </span>
+                      <span>กรุณาตรวจสอบชื่อบัญชีให้ถูกต้องก่อนโอนเงินทุกครั้ง</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-sky-50/50 border border-sky-100">
+                    <label className="block text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+                      <UploadCloud className="w-4 h-4 text-sky-500" />
+                      แนบสลิปเพื่อยืนยันการโอนเงิน
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-500 file:text-white hover:file:bg-sky-600 transition"
+                    />
+
+                    {slipPreview && (
+                      <div className="mt-3 relative w-24 h-24 rounded-lg overflow-hidden border border-sky-200">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={slipPreview} alt="Slip preview" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+
+                    {msg && <p className="text-xs text-red-500 font-semibold mt-2">{msg}</p>}
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleSubmitSlip}
+                    disabled={submittingSlip || !slipFile}
+                    className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                  >
+                    {submittingSlip ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>กำลังส่งสลิป...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>ยืนยันการโอนเงิน &rarr;</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {msg && <p className="text-center text-xs font-bold text-rose-500">{msg}</p>}
-
-            {/* Submit & Close buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={!slipFile || submittingSlip}
-                onClick={handleSubmitSlip}
-                className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 disabled:opacity-40 py-3.5 text-sm font-bold text-white transition shadow-md shadow-sky-500/20"
-              >
-                {submittingSlip ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>กำลังอัปโหลดสลิป...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>ยืนยันการชำระเงิน</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setPayingOrder(null)}
-                className="shrink-0 rounded-2xl border border-sky-200 bg-white hover:bg-sky-50 text-slate-600 py-3.5 px-4 text-sm font-bold transition"
-              >
-                ปิด
-              </button>
+              <div className="md:col-span-5 flex flex-col items-center justify-center bg-slate-50/60 p-4 sm:p-6 rounded-2xl border border-slate-100">
+                <PromptPayQRCard
+                  amount={Number(payingOrder.total)}
+                  orderNumber={payingOrder.order_number}
+                  promptpayId="0988251064"
+                  accountName="ศักดาวิชญ์ คำใจ"
+                  bankName="พร้อมเพย์"
+                  showDetails={true}
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -6,9 +6,15 @@ import {
   incrementCouponUsage,
 } from '@/lib/coupons/validate';
 
+export type OrderItemInput = {
+  product_id: string;
+  quantity: number;
+};
+
 export type CreateOrderPayload = {
   game_id: string;
-  product_id: string;
+  product_id?: string;
+  items?: OrderItemInput[];
   player_data: Record<string, string>;
   contact_email?: string;
   contact_phone?: string;
@@ -22,6 +28,7 @@ export type CreateOrderResult =
       order: Pick<Order, 'id' | 'order_number' | 'status' | 'total'> & {
         discount?: number;
         subtotal?: number;
+        items?: any[];
       };
     }
   | { success: false; message: string };
@@ -29,8 +36,16 @@ export type CreateOrderResult =
 export async function createOrder(
   payload: CreateOrderPayload
 ): Promise<CreateOrderResult> {
-  if (!payload.game_id || !payload.product_id) {
-    return { success: false, message: 'ข้อมูลเกมหรือแพ็กเกจไม่ครบ' };
+  // Normalize items: support both multi-item and legacy single product_id
+  let itemsToProcess: OrderItemInput[] = [];
+  if (Array.isArray(payload.items) && payload.items.length > 0) {
+    itemsToProcess = payload.items.filter(i => i.product_id && Number(i.quantity) > 0);
+  } else if (payload.product_id) {
+    itemsToProcess = [{ product_id: payload.product_id, quantity: 1 }];
+  }
+
+  if (!payload.game_id || itemsToProcess.length === 0) {
+    return { success: false, message: 'ข้อมูลเกมหรือแพ็กเกจไม่ถูกต้อง กรุณาเลือกอย่างน้อย 1 รายการ' };
   }
 
   const supabase = await createClient();
@@ -55,29 +70,52 @@ export async function createOrder(
 
   const isReseller = profile?.role === 'reseller' || profile?.role === 'admin' || profile?.role === 'super_admin';
 
-  const { data: product, error: productError } = await supabase
+  // Fetch all requested products from DB to strictly verify server-side
+  const productIds = itemsToProcess.map(i => i.product_id);
+  const { data: dbProducts, error: productError } = await supabase
     .from('products')
-    .select('id, game_id, price, reseller_price, name, is_active')
-    .eq('id', payload.product_id)
-    .maybeSingle();
+    .select('id, game_id, price, reseller_price, name, amount, is_active')
+    .in('id', productIds);
 
-  if (productError || !product) {
-    return { success: false, message: 'ไม่พบแพ็กเกจที่เลือก' };
-  }
-  if (!product.is_active) {
-    return { success: false, message: 'แพ็กเกจนี้ปิดใช้งานชั่วคราว' };
-  }
-  if (product.game_id !== payload.game_id) {
-    return { success: false, message: 'แพ็กเกจไม่ตรงกับเกม' };
+  if (productError || !dbProducts || dbProducts.length === 0) {
+    return { success: false, message: 'ไม่พบแพ็กเกจที่เลือกในระบบ' };
   }
 
-  // Calculate pricing based on role
-  let rawPrice = Number(product.price);
-  if (isReseller && product.reseller_price != null && Number(product.reseller_price) > 0) {
-    rawPrice = Number(product.reseller_price);
+  const productMap = new Map(dbProducts.map(p => [p.id, p]));
+
+  let subtotal = 0;
+  const verifiedItems: any[] = [];
+
+  for (const item of itemsToProcess) {
+    const prod = productMap.get(item.product_id);
+    if (!prod) {
+      return { success: false, message: `ไม่พบแพ็กเกจไอดี ${item.product_id}` };
+    }
+    if (!prod.is_active) {
+      return { success: false, message: `แพ็กเกจ "${prod.name}" ปิดใช้งานชั่วคราว` };
+    }
+    if (prod.game_id !== payload.game_id) {
+      return { success: false, message: `แพ็กเกจ "${prod.name}" ไม่ตรงกับเกมที่เลือก` };
+    }
+
+    const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
+    let unitPrice = Number(prod.price || 0);
+    if (isReseller && prod.reseller_price != null && Number(prod.reseller_price) > 0) {
+      unitPrice = Number(prod.reseller_price);
+    }
+
+    const lineTotal = unitPrice * qty;
+    subtotal += lineTotal;
+    verifiedItems.push({
+      product_id: prod.id,
+      name: prod.name,
+      amount: prod.amount,
+      quantity: qty,
+      unit_price: unitPrice,
+      subtotal: lineTotal,
+    });
   }
 
-  const subtotal = rawPrice;
   let discount = 0;
   let couponCode: string | null = null;
 
@@ -112,14 +150,24 @@ export async function createOrder(
   const total = Math.max(0, subtotal - discount);
   const orderNumber = generateOrderNumber();
 
+  // Primary product_id is the first product
+  const primaryProductId = itemsToProcess[0].product_id;
+
+  // Store detailed item breakdown in player_data._items for full fidelity
+  const enrichedPlayerData = {
+    ...payload.player_data,
+    _order_items: verifiedItems,
+    _total_packages_count: verifiedItems.reduce((acc, i) => acc + i.quantity, 0),
+  };
+
   const { data: newOrder, error: insertError } = await supabase
     .from('orders')
     .insert({
       order_number: orderNumber,
       user_id: user.id,
       game_id: payload.game_id,
-      product_id: payload.product_id,
-      player_data: payload.player_data,
+      product_id: primaryProductId,
+      player_data: enrichedPlayerData,
       subtotal,
       discount: discount || 0,
       total,
@@ -146,6 +194,7 @@ export async function createOrder(
       total: Number(newOrder.total),
       discount,
       subtotal,
+      items: verifiedItems,
     },
   };
 }

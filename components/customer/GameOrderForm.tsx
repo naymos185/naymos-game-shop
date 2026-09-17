@@ -1,16 +1,41 @@
 'use client';
 
 import { PromptPayQRCard } from './PromptPayQRCard';
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { GameWithDetails } from '@/lib/games/queries';
-import { Check, AlertCircle, Loader2, X, UploadCloud, ArrowRight } from 'lucide-react';
+import {
+  Check,
+  AlertCircle,
+  Loader2,
+  X,
+  UploadCloud,
+  ArrowRight,
+  Plus,
+  Minus,
+  Trash2,
+  ShieldCheck,
+  Copy,
+  AlertTriangle,
+  QrCode,
+  PackageCheck,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDetails; userRole?: string; isLoggedIn?: boolean }) {
+export function GameOrderForm({
+  game,
+  userRole,
+  isLoggedIn,
+}: {
+  game: GameWithDetails;
+  userRole?: string;
+  isLoggedIn?: boolean;
+}) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
+
+  // Multi-package selection: Map of productId -> quantity
+  const [selectedItems, setSelectedItems] = useState<{ [productId: string]: number }>({});
+
   const [playerData, setPlayerData] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState<'promptpay' | 'truemoney'>('promptpay');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -23,6 +48,29 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
   const [error, setError] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState('');
   const [finalAmount, setFinalAmount] = useState(0);
+  const [copiedOrder, setCopiedOrder] = useState(false);
+
+  // Dynamic store bank settings
+  const [store, setStore] = useState({
+    promptpay_id: '0988251064',
+    account_name: 'ศักดาวิชญ์ คำใจ',
+    bank_name: 'พร้อมเพย์',
+  });
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success && j.settings) {
+          setStore({
+            promptpay_id: j.settings.promptpay_id || '0988251064',
+            account_name: j.settings.account_name || 'ศักดาวิชญ์ คำใจ',
+            bank_name: j.settings.bank_name || 'พร้อมเพย์',
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Slip upload state for Step 3 modal
   const [slipFile, setSlipFile] = useState<File | null>(null);
@@ -33,20 +81,115 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
   // Normalize products and fields
   const products = game.products || (game as any).packages || [];
   const rawFields = game.game_fields || (game as any).fields || [];
-  const fields = rawFields.length > 0 ? rawFields : [
-    { id: 'default-uid', name: 'uid', label: 'UID / Player ID', type: 'text', placeholder: 'กรอก UID ผู้เล่น', required: true }
-  ];
+  const fields =
+    rawFields.length > 0
+      ? rawFields
+      : [
+          {
+            id: 'default-uid',
+            name: 'uid',
+            label: 'UID / Player ID',
+            type: 'text',
+            placeholder: 'กรอก UID ผู้เล่น',
+            required: true,
+          },
+        ];
 
-  const isReseller = userRole === 'reseller' || userRole === 'admin' || userRole === 'super_admin';
-  const selectedProduct = products.find((p: any) => p.id === selectedPkg);
+  const isReseller =
+    userRole === 'reseller' || userRole === 'admin' || userRole === 'super_admin';
+
   const getProductPrice = (p: any) => {
     if (isReseller && p.reseller_price != null && Number(p.reseller_price) > 0) {
       return Number(p.reseller_price);
     }
     return Number(p.price || 0);
   };
-  const basePrice = selectedProduct ? getProductPrice(selectedProduct) : 0;
-  const totalPayable = Math.max(0, basePrice - couponDiscount);
+
+  // Extract currency unit name from game or products (e.g. เพชร, Diamonds, UC, Coins)
+  const getCurrencyUnit = () => {
+    const sample = products[0]?.name || '';
+    if (/เพชร|diamond/i.test(sample) || /free fire|rov|mobile legends/i.test(game.name)) {
+      return 'เพชร';
+    }
+    if (/uc/i.test(sample) || /pubg/i.test(game.name)) {
+      return 'UC';
+    }
+    if (/point|แต้ม/i.test(sample) || /valorant/i.test(game.name)) {
+      return 'VP';
+    }
+    if (/coin|เหรียญ/i.test(sample)) {
+      return 'เหรียญ';
+    }
+    return 'หน่วย';
+  };
+
+  const currencyUnit = getCurrencyUnit();
+
+  // Multi-package quantity handlers
+  const handleToggleSelect = (pId: string) => {
+    setSelectedItems((prev) => {
+      const next = { ...prev };
+      if (next[pId]) {
+        delete next[pId];
+      } else {
+        next[pId] = 1;
+      }
+      return next;
+    });
+  };
+
+  const handleUpdateQty = (pId: string, delta: number) => {
+    setSelectedItems((prev) => {
+      const current = prev[pId] || 0;
+      const updated = current + delta;
+      const next = { ...prev };
+      if (updated <= 0) {
+        delete next[pId];
+      } else {
+        next[pId] = updated;
+      }
+      return next;
+    });
+  };
+
+  const handleRemoveItem = (pId: string) => {
+    setSelectedItems((prev) => {
+      const next = { ...prev };
+      delete next[pId];
+      return next;
+    });
+  };
+
+  // Real-time calculations
+  const selectedProductList = products
+    .filter((p: any) => selectedItems[p.id] && selectedItems[p.id] > 0)
+    .map((p: any) => {
+      const qty = selectedItems[p.id];
+      const unitPrice = getProductPrice(p);
+      // parse numeric amount from product name or amount field if present
+      let numericAmount = 0;
+      if (p.amount != null && !isNaN(Number(p.amount))) {
+        numericAmount = Number(p.amount);
+      } else {
+        const match = p.name.match(/[\d,]+/);
+        if (match) {
+          numericAmount = parseInt(match[0].replace(/,/g, ''), 10) || 0;
+        }
+      }
+      return {
+        product: p,
+        qty,
+        unitPrice,
+        subtotal: unitPrice * qty,
+        totalCurrency: numericAmount * qty,
+      };
+    });
+
+  const totalItemTypesCount = selectedProductList.length;
+  const totalPackagesCount = selectedProductList.reduce((acc, i) => acc + i.qty, 0);
+  const baseSubtotal = selectedProductList.reduce((acc, i) => acc + i.subtotal, 0);
+  const totalCurrencySum = selectedProductList.reduce((acc, i) => acc + i.totalCurrency, 0);
+  const totalPayable = Math.max(0, baseSubtotal - couponDiscount);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -58,12 +201,13 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
         const data = await res.json();
         const coupons = data.coupons || data;
         const found = coupons.find(
-          (c: any) => c.code.toUpperCase() === couponCode.trim().toUpperCase() && c.is_active
+          (c: any) =>
+            c.code.toUpperCase() === couponCode.trim().toUpperCase() && c.is_active
         );
         if (found) {
           let disc = 0;
           if (found.discount_type === 'percent') {
-            disc = (basePrice * Number(found.discount_value)) / 100;
+            disc = (baseSubtotal * Number(found.discount_value)) / 100;
           } else {
             disc = Number(found.discount_value);
           }
@@ -84,29 +228,23 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
     setCheckingCoupon(false);
   };
 
-  const handleNextToStep2 = () => {
-    setError(null);
-    if (!isLoggedIn) {
-      setError('กรุณาเข้าสู่ระบบหรือสมัครสมาชิกก่อนดำเนินการต่อ');
-      router.push(`/login?next=/games/${game.slug || ''}`);
-      return;
-    }
-
-    if (!selectedPkg) {
-      setError('กรุณาเลือกแพ็กเกจ');
-      return;
-    }
+  const handleProceedToStep2 = () => {
+    // Validate player data
     for (const f of fields) {
-      const key = f.name || (f as any).field_key;
-      if (f.required && !playerData[key]?.trim()) {
+      if (f.required && !playerData[f.name]?.trim()) {
         setError(`กรุณากรอก ${f.label}`);
         return;
       }
     }
+    if (totalPackagesCount === 0) {
+      setError('กรุณาเลือกแพ็กเกจอย่างน้อย 1 รายการ');
+      return;
+    }
+    setError(null);
     setStep(2);
   };
 
-  const handleSubmitOrder = async () => {
+  const handleConfirmOrder = async () => {
     if (!acceptedTerms) {
       setTermsError(true);
       return;
@@ -115,37 +253,42 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
     setLoading(true);
     setError(null);
 
+    const itemsPayload = selectedProductList.map((item) => ({
+      product_id: item.product.id,
+      quantity: item.qty,
+    }));
+
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           game_id: game.id,
-          product_id: selectedPkg,
+          product_id: itemsPayload[0]?.product_id,
+          items: itemsPayload,
           player_data: playerData,
-          coupon_code: couponDiscount > 0 ? couponCode : undefined,
           payment_method: paymentMethod,
+          coupon_code: couponDiscount > 0 ? couponCode : undefined,
         }),
       });
 
       const data = await res.json();
-
       if (!res.ok || !data.success) {
         setError(data.message || 'สร้างคำสั่งซื้อไม่สำเร็จ');
         setLoading(false);
         return;
       }
 
-      setOrderNumber(data.order_number || data.orderNumber || '');
-      setFinalAmount(totalPayable);
+      setOrderNumber(data.order.order_number);
+      setFinalAmount(data.order.total);
       setStep(3);
     } catch {
-      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่');
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
     }
     setLoading(false);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSlipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSlipFile(file);
@@ -155,8 +298,8 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
     }
   };
 
-  const handleSubmitSlip = async () => {
-    if (!orderNumber || !slipFile) return;
+  const handleUploadSlip = async () => {
+    if (!slipPreview) return;
     setSubmittingSlip(true);
     setSlipMsg(null);
     try {
@@ -170,7 +313,7 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
       });
       const data = await res.json();
       if (data.success) {
-        router.push('/order-tracking');
+        router.push(`/order-tracking?number=${orderNumber}`);
       } else {
         setSlipMsg(data.message || 'ส่งสลิปไม่สำเร็จ');
       }
@@ -180,353 +323,598 @@ export function GameOrderForm({ game, userRole, isLoggedIn }: { game: GameWithDe
     setSubmittingSlip(false);
   };
 
+  const copyOrder = () => {
+    if (!orderNumber) return;
+    navigator.clipboard.writeText(orderNumber);
+    setCopiedOrder(true);
+    setTimeout(() => setCopiedOrder(false), 2000);
+  };
+
   return (
-    <div>
-      {/* Step 1: Selection */}
+    <div className="w-full space-y-6 sm:space-y-8">
+      {/* Step Indicator */}
+      <div className="flex items-center justify-between border-b border-sky-100 pb-4">
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+              step >= 1 ? 'bg-sky-500 text-white shadow-xs' : 'bg-slate-100 text-slate-400'
+            }`}
+          >
+            1
+          </div>
+          <span className="text-xs sm:text-sm font-semibold text-slate-800">เลือกแพ็กเกจ</span>
+        </div>
+        <div className="h-0.5 w-12 sm:w-20 bg-sky-100" />
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+              step >= 2 ? 'bg-sky-500 text-white shadow-xs' : 'bg-slate-100 text-slate-400'
+            }`}
+          >
+            2
+          </div>
+          <span className="text-xs sm:text-sm font-semibold text-slate-800">ยืนยันข้อมูล</span>
+        </div>
+        <div className="h-0.5 w-12 sm:w-20 bg-sky-100" />
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+              step === 3 ? 'bg-emerald-500 text-white shadow-xs' : 'bg-slate-100 text-slate-400'
+            }`}
+          >
+            3
+          </div>
+          <span className="text-xs sm:text-sm font-semibold text-slate-800">ชำระเงิน</span>
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* STEP 1: Form & Multi-package selection */}
       {step === 1 && (
-        <div className="space-y-8">
-          <div>
-            <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold text-sky-700 border border-sky-300">1</span>
-              เลือกแพ็กเกจ
+        <div className="space-y-6">
+          {/* 1. Account info */}
+          <div className="bg-white rounded-2xl border border-sky-100 p-4 sm:p-6 shadow-xs">
+            <h3 className="text-sm sm:text-base font-bold text-slate-800 mb-3 sm:mb-4 flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs">
+                1
+              </span>
+              กรอกข้อมูลผู้เล่น / ข้อมูลไอดี
             </h3>
-            {products.length === 0 ? (
-              <p className="text-xs text-slate-400">ยังไม่มีแพ็กเกจในเกมนี้ (เพิ่มได้ในหน้าจัดการสินค้าหลังบ้าน)</p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {products.map((p: any) => {
-                  const isSelected = selectedPkg === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setSelectedPkg(p.id)}
-                      className={`relative rounded-xl border p-3.5 text-left transition ${
-                        isSelected
-                          ? 'border-2 border-sky-500 bg-sky-50 text-slate-900 shadow-xs'
-                          : 'border-sky-100 bg-white/50 text-slate-600 hover:border-sky-200'
-                      }`}
-                    >
-                      <div className="font-semibold text-sm">{p.name}</div>
-                      <div className="mt-1">
-                        {isReseller && p.reseller_price != null && Number(p.reseller_price) > 0 ? (
-                          <div className="flex flex-col">
-                            <span className="inline-block text-[10px] text-emerald-400 font-medium">ราคาส่งตัวแทน</span>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-emerald-400 font-bold">฿{Number(p.reseller_price).toLocaleString()}</span>
-                              <span className="text-[11px] text-slate-400 line-through">฿{Number(p.price).toLocaleString()}</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-xs text-sky-600 font-bold">฿{Number(p.price).toLocaleString()}</div>
-                        )}
-                      </div>
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-sky-100 text-sky-700 border border-sky-300">
-                          <Check className="h-2.5 w-2.5 stroke-[3]" />
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {fields.map((f: any) => (
+                <div key={f.id || f.name}>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    {f.label || f.name} {f.required && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type={f.type || 'text'}
+                    placeholder={f.placeholder || `กรอก ${f.label || f.name}`}
+                    value={playerData[f.name] || ''}
+                    onChange={(e) =>
+                      setPlayerData((prev) => ({ ...prev, [f.name]: e.target.value }))
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-sky-100 bg-sky-50/20 text-xs sm:text-sm focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-sky-400/20 focus:border-sky-500 transition"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold text-sky-700 border border-sky-300">2</span>
-              ข้อมูลผู้เล่น
-            </h3>
-            <div className="space-y-3">
-              {fields.map((f: any) => {
-                const key = f.name || f.field_key || 'uid';
+          {/* 2. Packages list with Multi-select and Quantity control (+, -, qty) */}
+          <div className="bg-white rounded-2xl border border-sky-100 p-4 sm:p-6 shadow-xs">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs">
+                  2
+                </span>
+                เลือกแพ็กเกจ (สามารถเลือกได้หลายแพ็ก)
+              </h3>
+              {totalPackagesCount > 0 && (
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-700">
+                  เลือกแล้ว {totalPackagesCount} แพ็ก
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {products.map((p: any) => {
+                const qty = selectedItems[p.id] || 0;
+                const isSelected = qty > 0;
+                const price = getProductPrice(p);
+
                 return (
-                  <div key={f.id || key}>
-                    <label className="block text-xs text-slate-500 mb-1">
-                      {f.label} {f.required && <span className="text-sky-600">*</span>}
-                    </label>
-                    <input
-                      type={key.includes('pass') ? 'password' : 'text'}
-                      value={playerData[key] || ''}
-                      onChange={(e) => setPlayerData({ ...playerData, [key]: e.target.value })}
-                      placeholder={f.placeholder || `กรอก ${f.label}`}
-                      style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
-                      className="w-full rounded-xl border-2 border-sky-200 bg-white px-3.5 py-2.5 text-sm font-semibold !text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-200/50 focus:outline-none"
-                    />
+                  <div
+                    key={p.id}
+                    className={`relative p-3.5 rounded-xl border transition-all flex flex-col justify-between ${
+                      isSelected
+                        ? 'border-sky-500 bg-sky-50/40 shadow-xs ring-1 ring-sky-400/40'
+                        : 'border-slate-200/80 hover:border-sky-200 hover:bg-slate-50/60'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-bold text-xs sm:text-sm text-slate-800 leading-snug">
+                          {p.name}
+                        </span>
+                        {isSelected && (
+                          <span className="w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] shrink-0">
+                            <Check className="w-3 h-3" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 flex items-baseline gap-1.5">
+                        <span className="text-sm sm:text-base font-extrabold text-sky-600">
+                          ฿{price.toLocaleString()}
+                        </span>
+                        {isReseller && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 font-semibold">
+                            ราคาตัวแทน
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quantity Selector on each card */}
+                    <div className="mt-3 pt-2.5 border-t border-sky-100/60 flex items-center justify-between">
+                      {isSelected ? (
+                        <div className="flex items-center gap-1.5 w-full justify-between">
+                          <span className="text-[11px] text-slate-500 font-medium">จำนวน:</span>
+                          <div className="inline-flex items-center border border-sky-300 rounded-lg bg-white overflow-hidden shadow-2xs">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateQty(p.id, -1)}
+                              className="px-2 py-1 hover:bg-sky-50 text-slate-600 transition"
+                              title="ลดจำนวน"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              value={qty}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                if (!isNaN(val) && val >= 1) {
+                                  setSelectedItems((prev) => ({ ...prev, [p.id]: val }));
+                                }
+                              }}
+                              className="w-9 text-center text-xs font-bold text-slate-800 focus:outline-hidden"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateQty(p.id, 1)}
+                              className="px-2 py-1 hover:bg-sky-50 text-slate-600 transition"
+                              title="เพิ่มจำนวน"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSelect(p.id)}
+                          className="w-full py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-semibold transition flex items-center justify-center gap-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>เลือกแพ็กนี้</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold text-sky-700 border border-sky-300">3</span>
-              เลือกช่องทางชำระเงิน
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('promptpay')}
-                className={`rounded-xl border p-3.5 text-center transition ${
-                  paymentMethod === 'promptpay' ? 'border-2 border-sky-500 bg-sky-100/70 text-sky-900 shadow-sm ring-2 ring-sky-300' : 'border-sky-100 bg-white text-slate-600 hover:border-sky-200'
-                }`}
-              >
-                <div className="font-bold text-sm text-sky-800">พร้อมเพย์ QR</div>
-                <div className="text-xs text-sky-600 font-bold mt-0.5">PromptPay</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('truemoney')}
-                className={`rounded-xl border p-3.5 text-center transition ${
-                  paymentMethod === 'truemoney' ? 'border-2 border-amber-500 bg-amber-50 text-amber-900 shadow-sm ring-2 ring-amber-300' : 'border-sky-100 bg-white text-slate-600 hover:border-sky-200'
-                }`}
-              >
-                <div className="font-bold text-sm text-amber-800">ทรูมันนี่ QR</div>
-                <div className="text-xs text-amber-600 font-bold mt-0.5">TrueMoney QR</div>
-              </button>
-            </div>
-          </div>
+          {/* 3. Real-time Order Summary Card */}
+          {totalPackagesCount > 0 && (
+            <div className="bg-gradient-to-br from-white to-sky-50/50 rounded-2xl border-2 border-sky-200/80 p-4 sm:p-6 shadow-sm">
+              <div className="flex items-center justify-between pb-3 border-b border-sky-100">
+                <h4 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
+                  <PackageCheck className="w-4 h-4 text-sky-500" />
+                  สรุปออเดอร์ ({totalItemTypesCount} รายการ, {totalPackagesCount} แพ็ก)
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setSelectedItems({})}
+                  className="text-xs text-red-500 hover:underline font-medium"
+                >
+                  ล้างรายการทั้งหมด
+                </button>
+              </div>
 
-          {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-sky-500/15 border border-sky-500/30 p-3 text-xs text-sky-600">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
+              {/* Items breakdown list */}
+              <div className="divide-y divide-sky-100/60 my-3">
+                {selectedProductList.map(({ product, qty, unitPrice, subtotal }) => (
+                  <div
+                    key={product.id}
+                    className="py-2.5 flex items-center justify-between text-xs sm:text-sm"
+                  >
+                    <div className="flex-1 pr-3">
+                      <div className="font-semibold text-slate-800">{product.name}</div>
+                      <div className="text-[11px] text-slate-500">
+                        ฿{unitPrice.toLocaleString()} × {qty} แพ็ก
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-slate-800">฿{subtotal.toLocaleString()}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(product.id)}
+                        className="text-slate-400 hover:text-red-500 p-1 rounded-md transition"
+                        title="ลบรายการนี้"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Estimated Currency to receive */}
+              {totalCurrencySum > 0 && (
+                <div className="p-3 rounded-xl bg-sky-100/60 border border-sky-200/80 flex items-center justify-between text-xs sm:text-sm mb-3">
+                  <span className="font-semibold text-sky-900">ของที่จะได้รับทั้งหมด:</span>
+                  <span className="font-extrabold text-sky-700 text-sm sm:text-base">
+                    {totalCurrencySum.toLocaleString()} {currencyUnit}
+                  </span>
+                </div>
+              )}
+
+              {/* Price summary */}
+              <div className="pt-2 border-t border-sky-100 space-y-1.5 text-xs sm:text-sm">
+                <div className="flex justify-between text-slate-600">
+                  <span>ราคารวม:</span>
+                  <span>฿{baseSubtotal.toLocaleString()}</span>
+                </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-medium">
+                    <span>ส่วนลด:</span>
+                    <span>-฿{couponDiscount.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-baseline pt-2 border-t border-sky-200/70 text-slate-800">
+                  <span className="font-bold text-sm sm:text-base">ยอดชำระทั้งหมด:</span>
+                  <span className="text-xl sm:text-2xl font-black text-sky-600">
+                    ฿{totalPayable.toLocaleString()}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={handleNextToStep2}
-            className="w-full rounded-xl bg-gradient-to-r from-sky-400 via-sky-500 to-blue-600 hover:from-sky-500 hover:to-blue-700 py-3 text-sm font-bold text-white transition shadow-lg"
-          >
-            ไปที่หน้ารายละเอียดคำสั่งซื้อ
-          </button>
+          {/* Action button */}
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={handleProceedToStep2}
+              disabled={totalPackagesCount === 0}
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm sm:text-base transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <span>ต่อไป: ยืนยันข้อมูล</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Step 2: Details & Terms */}
+      {/* STEP 2: Review & Coupon & Accept terms */}
       {step === 2 && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">เงื่อนไขการให้บริการ</h4>
-              <div className="h-56 overflow-y-auto rounded-xl border border-sky-100 bg-white/60 p-4 text-xs text-slate-500 leading-relaxed space-y-2">
-                <p className="font-semibold text-slate-600">1. การสั่งซื้อและการเติมเกม</p>
-                <p>กรุณาตรวจสอบความถูกต้องของ UID หรือ บัญชีผู้ใช้ ก่อนทำการสั่งซื้อ ทางร้านจะไม่รับผิดชอบหากกรอกข้อมูลผิดพลาด</p>
-                <p className="font-semibold text-slate-600">2. ระยะเวลาดำเนินการ</p>
-                <p>การเติมเงินจะดำเนินการภายใน 5-15 นาทีหลังยืนยันการชำระเงินและแนบสลิปเรียบร้อย</p>
-                <p className="font-semibold text-slate-600">3. นโยบายการคืนเงิน</p>
-                <p>หากการเติมเงินสำเร็จแล้ว จะไม่สามารถขอคืนเงินหรือยกเลิกคำสั่งซื้อได้ในทุกกรณี</p>
+        <div className="space-y-6 bg-white rounded-2xl border border-sky-100 p-4 sm:p-6 shadow-xs">
+          <h3 className="text-base sm:text-lg font-bold text-slate-800">
+            ตรวจสอบข้อมูลคำสั่งซื้อ
+          </h3>
+
+          {/* Player data summary */}
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs sm:text-sm space-y-1.5">
+            <div className="font-bold text-slate-700 mb-1">ข้อมูลผู้เล่น:</div>
+            {Object.entries(playerData).map(([k, v]) => (
+              <div key={k} className="flex justify-between">
+                <span className="text-slate-500">{k}:</span>
+                <span className="font-semibold text-slate-800">{v}</span>
               </div>
+            ))}
+          </div>
 
-              <label className="flex items-start gap-2.5 cursor-pointer pt-2">
-                <input
-                  type="checkbox"
-                  checked={acceptedTerms}
-                  onChange={(e) => {
-                    setAcceptedTerms(e.target.checked);
-                    if (e.target.checked) setTermsError(false);
-                  }}
-                  className="mt-0.5 h-4 w-4 rounded border-sky-300 bg-white text-sky-500 focus:ring-sky-400 accent-sky-500 cursor-pointer"
-                />
-                <span className="text-xs text-slate-600 select-none">
-                  ฉันยอมรับเงื่อนไขการให้บริการ <span className="text-sky-600">*</span>
-                </span>
-              </label>
-
-              {termsError && (
-                <p className="text-xs text-sky-600 flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  กรุณากดยอมรับเงื่อนไขการให้บริการก่อนกดยืนยัน
-                </p>
-              )}
+          {/* Packages breakdown */}
+          <div className="border border-sky-100 rounded-xl overflow-hidden">
+            <div className="bg-sky-50/70 px-4 py-2.5 text-xs font-bold text-sky-900 border-b border-sky-100">
+              รายการแพ็กเกจ ({totalPackagesCount} แพ็ก)
             </div>
-
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">สรุปรายการคำสั่งซื้อ</h4>
-              <div className="rounded-xl border border-sky-100 bg-white/70 p-4 space-y-2.5 text-xs">
-                <div className="flex justify-between py-1 border-b border-sky-100/80">
-                  <span className="text-slate-500">เกม:</span>
-                  <span className="font-bold text-slate-800">{game.name}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-sky-100/80">
-                  <span className="text-slate-500">แพ็กเกจ:</span>
-                  <span className="font-bold text-slate-800">{selectedProduct?.name}</span>
-                </div>
-                {fields.map((f: any) => {
-                  const key = f.name || f.field_key || 'uid';
-                  return (
-                    <div key={f.id || key} className="flex justify-between py-1 border-b border-sky-100/80">
-                      <span className="text-slate-500">{f.label}:</span>
-                      <span className="font-bold text-slate-900">
-                        {key.includes('pass') ? '••••••••' : playerData[key]}
-                      </span>
-                    </div>
-                  );
-                })}
-                <div className="flex justify-between py-1 border-b border-sky-100/80">
-                  <span className="text-slate-500">ช่องทางชำระเงิน:</span>
-                  <span className="text-slate-800 capitalize font-bold">{paymentMethod === 'promptpay' ? 'พร้อมเพย์ QR' : 'ทรูมันนี่ QR'}</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-500">ราคาปกติ:</span>
-                  <span className="text-slate-800 font-bold">฿{Number(basePrice).toLocaleString()}</span>
-                </div>
-                {couponDiscount > 0 && (
-                  <div className="flex justify-between py-1 text-emerald-400">
-                    <span>ส่วนลด:</span>
-                    <span>-฿{Number(couponDiscount).toLocaleString()}</span>
+            <div className="divide-y divide-sky-100/60 p-3">
+              {selectedProductList.map(({ product, qty, unitPrice, subtotal }) => (
+                <div
+                  key={product.id}
+                  className="py-2 flex justify-between text-xs sm:text-sm"
+                >
+                  <div>
+                    <span className="font-semibold text-slate-800">{product.name}</span>
+                    <span className="text-slate-500 text-xs ml-2">
+                      (฿{unitPrice.toLocaleString()} × {qty})
+                    </span>
                   </div>
-                )}
-                <div className="flex justify-between pt-2 border-t border-sky-100 text-sm font-bold">
-                  <span className="text-slate-800 font-bold">ยอดชำระสุทธิ:</span>
-                  <span className="text-sky-600 font-black">฿{Number(totalPayable).toLocaleString()}</span>
+                  <span className="font-bold text-slate-800">฿{subtotal.toLocaleString()}</span>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-500 mb-1">โค้ดส่วนลด</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="กรอกโค้ดส่วนลด"
-                    style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
-                    className="flex-1 rounded-xl border-2 border-sky-200 bg-white px-3 py-2 text-xs font-semibold !text-slate-900 placeholder:text-slate-400 uppercase focus:border-sky-500 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleApplyCoupon}
-                    disabled={checkingCoupon || !couponCode.trim()}
-                    className="rounded-xl bg-slate-100 hover:bg-zinc-700 disabled:opacity-50 px-3.5 py-2 text-xs font-semibold text-slate-700"
-                  >
-                    {checkingCoupon ? <Loader2 className="h-3 w-3 animate-spin" /> : 'ใช้โค้ด'}
-                  </button>
-                </div>
-                {couponMsg && (
-                  <p className={`text-[11px] mt-1.5 ${couponDiscount > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                    {couponMsg}
-                  </p>
-                )}
-              </div>
+              ))}
             </div>
           </div>
 
-          {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-sky-500/15 border border-sky-500/30 p-3 text-xs text-sky-600">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
+          {/* Coupon Code Input */}
+          <div className="pt-2">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              โค้ดส่วนลด (ถ้ามี)
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="กรอกโค้ดส่วนลด"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                className="flex-1 px-3.5 py-2 rounded-xl border border-sky-100 bg-sky-50/20 text-xs sm:text-sm focus:bg-white focus:outline-hidden focus:border-sky-500 uppercase"
+              />
+              <button
+                type="button"
+                onClick={handleApplyCoupon}
+                disabled={checkingCoupon || !couponCode.trim()}
+                className="px-4 py-2 rounded-xl bg-sky-100 text-sky-700 hover:bg-sky-200 text-xs font-bold transition disabled:opacity-50"
+              >
+                {checkingCoupon ? 'ตรวจ...' : 'ใช้โค้ด'}
+              </button>
             </div>
-          )}
+            {couponMsg && (
+              <p
+                className={`text-xs mt-1.5 ${
+                  couponDiscount > 0 ? 'text-emerald-600 font-semibold' : 'text-red-500'
+                }`}
+              >
+                {couponMsg}
+              </p>
+            )}
+          </div>
 
+          {/* Total summary */}
+          <div className="p-4 rounded-xl bg-sky-50/60 border border-sky-100 flex items-center justify-between">
+            <div>
+              <span className="text-xs text-slate-500">ยอดชำระสุทธิ:</span>
+              <div className="text-xl sm:text-2xl font-black text-sky-600">
+                ฿{totalPayable.toLocaleString()}
+              </div>
+            </div>
+            {totalCurrencySum > 0 && (
+              <div className="text-right">
+                <span className="text-xs text-slate-500">จะได้รับรวม:</span>
+                <div className="text-sm sm:text-base font-bold text-sky-800">
+                  {totalCurrencySum.toLocaleString()} {currencyUnit}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Terms checkbox */}
+          <div>
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 rounded text-sky-500 focus:ring-sky-400 border-slate-300"
+              />
+              <span className="text-xs text-slate-600">
+                ฉันได้ตรวจสอบข้อมูลไอดีถูกต้อง และยอมรับเงื่อนไขการให้บริการของ NayMos GameShop
+              </span>
+            </label>
+            {termsError && (
+              <p className="text-xs text-red-500 mt-1">
+                กรุณายอมรับเงื่อนไขก่อนดำเนินการต่อ
+              </p>
+            )}
+          </div>
+
+          {/* Actions */}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="rounded-xl border border-sky-200 hover:bg-slate-100 px-5 py-3 text-xs font-semibold text-slate-600 transition"
+              className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs sm:text-sm font-semibold hover:bg-slate-50 transition"
             >
               ย้อนกลับ
             </button>
             <button
               type="button"
+              onClick={handleConfirmOrder}
               disabled={loading}
-              onClick={handleSubmitOrder}
-              className="flex-1 rounded-xl bg-gradient-to-r from-sky-400 via-sky-500 to-blue-600 hover:from-sky-500 hover:to-blue-700 disabled:opacity-50 py-3 text-sm font-bold text-white transition shadow-lg flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-xs disabled:opacity-50"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'ยืนยันการชำระเงิน'}
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>กำลังสร้างออเดอร์...</span>
+                </>
+              ) : (
+                <>
+                  <QrCode className="w-4 h-4" />
+                  <span>ชำระเงินด้วย PromptPay QR &rarr;</span>
+                </>
+              )}
             </button>
           </div>
         </div>
       )}
 
-      {/* Step 3: Exact UI from Image 2 */}
+      {/* STEP 3: QR Payment Modal with Full Backdrop Blur, 2-Column Responsive Layout, and Click Blocking */}
       {step === 3 && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl border border-sky-100 bg-sky-50/60 p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 my-auto">
-            <button
-              type="button"
-              onClick={() => router.push('/order-tracking')}
-              className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white rounded-full bg-white border border-sky-100"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="text-center space-y-1.5">
-              <span className="inline-block px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-bold tracking-wide">สแกนชำระเงิน</span>
-              <h3 className="text-xl font-black text-slate-900">พร้อมเพย์ / QR Payment</h3>
-              <p className="text-xs font-semibold text-slate-500">ออเดอร์: <span className="text-sky-600 font-bold">{orderNumber}</span></p>
+        <div
+          className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Modal Container: 2 columns on wide screen, vertical on mobile */}
+          <div
+            className="relative w-full max-w-4xl bg-white rounded-3xl border border-sky-100 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 sm:px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white shrink-0">
+              <div className="flex items-center gap-2.5">
+                <QrCode className="w-5 h-5" />
+                <h3 className="font-extrabold text-sm sm:text-base">
+                  สแกนชำระเงินผ่าน PromptPay
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => router.push(`/order-tracking?number=${orderNumber}`)}
+                className="p-1 rounded-full bg-white/20 hover:bg-white/30 text-white transition"
+                title="ปิดหน้านี้และไปติดตามออเดอร์"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <PromptPayQRCard
-              amount={Number(finalAmount || totalPayable)}
-              orderNumber={orderNumber || ''}
-              promptpayId="0988251064"
-              accountName="ศักดาวิชญ์ คำใจ"
-              bankName="พร้อมเพย์"
-            />
+            {/* Modal Body: 2 Columns on desktop / iPad landscape */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-5 sm:p-8 overflow-y-auto">
+              {/* Left Column (md:col-span-6 or 7): Payment Details */}
+              <div className="md:col-span-7 flex flex-col justify-between space-y-4">
+                <div className="space-y-4">
+                  {/* Order Number & Copy */}
+                  <div className="p-3.5 rounded-2xl bg-sky-50/70 border border-sky-100 flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] text-slate-500 font-medium">หมายเลขออเดอร์:</span>
+                      <div className="text-sm sm:text-base font-mono font-black text-sky-800">
+                        {orderNumber}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={copyOrder}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-sky-200 text-sky-700 hover:bg-sky-50 text-xs font-semibold transition shadow-2xs"
+                    >
+                      {copiedOrder ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>คัดลอกแล้ว</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-sky-500" />
+                          <span>คัดลอก</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-            <div className="text-center">
-              <p className="text-xs text-slate-500">ยอดชำระสุทธิ</p>
-              <p className="text-2xl font-black text-sky-600">฿{Number(finalAmount || totalPayable).toLocaleString()} บาท</p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-600">
-                แนบรูปภาพสลิปการโอนเงิน (จำเป็น)
-              </label>
-              <div className="relative border-2 border-dashed border-sky-200 hover:border-sky-400 rounded-2xl p-4 text-center cursor-pointer transition bg-white/50">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                {slipPreview ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <img src={slipPreview} alt="Slip Preview" className="w-12 h-12 object-cover rounded-lg border border-sky-200" />
-                    <div className="text-left">
-                      <p className="text-xs font-medium text-emerald-400">เลือกรูปสลิปแล้ว</p>
-                      <p className="text-[10px] text-slate-400">คลิกเพื่อเปลี่ยนรูป</p>
+                  {/* Payment Details Table */}
+                  <div className="border border-slate-200/80 rounded-2xl overflow-hidden text-xs sm:text-sm">
+                    <div className="bg-slate-50 px-4 py-2.5 font-bold text-slate-700 border-b border-slate-200/80">
+                      รายละเอียดการชำระเงิน
+                    </div>
+                    <div className="divide-y divide-slate-100 p-3.5 space-y-2">
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-slate-500">ยอดชำระทั้งหมด:</span>
+                        <span className="text-lg sm:text-xl font-black text-emerald-600">
+                          ฿{finalAmount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-slate-500">ช่องทางการชำระ:</span>
+                        <span className="font-semibold text-slate-800">
+                          {store.bank_name || 'พร้อมเพย์ (PromptPay)'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-slate-500">ชื่อบัญชี:</span>
+                        <span className="font-bold text-sky-900">
+                          {store.account_name}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-slate-500">จำนวนแพ็กเกจ:</span>
+                        <span className="font-semibold text-slate-800">
+                          {totalPackagesCount} แพ็ก
+                        </span>
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-1.5 text-slate-500">
-                    <UploadCloud className="w-6 h-6 text-sky-500" />
-                    <span className="text-xs font-medium">กดเพื่อเลือกรูปภาพสลิปจากเครื่อง</span>
-                    <span className="text-[10px] text-slate-400">รองรับไฟล์ JPG, PNG</span>
+
+                  {/* Crucial Account Warning */}
+                  <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/90 flex items-start gap-2.5 text-xs text-amber-900">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">คำเตือนสำคัญ: </span>
+                      <span>
+                        กรุณาตรวจสอบชื่อบัญชีให้ถูกต้องก่อนโอนเงินทุกครั้ง ยอดเงินต้องตรงกับเศษสตางค์ (ถ้ามี)
+                      </span>
+                    </div>
                   </div>
-                )}
+
+                  {/* Slip Upload Input */}
+                  <div className="p-3.5 rounded-2xl bg-sky-50/50 border border-sky-100">
+                    <label className="block text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+                      <UploadCloud className="w-4 h-4 text-sky-500" />
+                      แนบสลิปเพื่อยืนยันการโอนเงิน
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleSlipChange}
+                      className="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-500 file:text-white hover:file:bg-sky-600 transition"
+                    />
+                    {slipPreview && (
+                      <div className="mt-3 relative w-24 h-24 rounded-lg overflow-hidden border border-sky-200">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={slipPreview}
+                          alt="Slip preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    {slipMsg && (
+                      <p className="text-xs text-red-500 font-semibold mt-2">{slipMsg}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Confirm upload button */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleUploadSlip}
+                    disabled={submittingSlip || !slipFile}
+                    className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                  >
+                    {submittingSlip ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>กำลังอัปโหลดสลิป...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>ยืนยันการโอนเงิน &rarr;</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {slipMsg && <p className="text-center text-xs text-sky-600">{slipMsg}</p>}
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={!slipFile || submittingSlip}
-                onClick={handleSubmitSlip}
-                className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 disabled:opacity-40 py-3.5 text-sm font-bold text-white transition shadow-lg shadow-sky-500/25"
-              >
-                {submittingSlip ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    ยืนยันการชำระเงิน
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push('/order-tracking')}
-                className="shrink-0 rounded-2xl border border-sky-200 bg-white hover:bg-sky-50 text-slate-600 py-3.5 px-4 text-sm font-bold transition"
-              >
-                ปิด
-              </button>
+              {/* Right Column (md:col-span-5): Clean QR Code without center logo */}
+              <div className="md:col-span-5 flex flex-col items-center justify-center bg-slate-50/60 p-4 sm:p-6 rounded-2xl border border-slate-100">
+                <PromptPayQRCard
+                  amount={finalAmount}
+                  orderNumber={orderNumber}
+                  promptpayId={store.promptpay_id}
+                  accountName={store.account_name}
+                  bankName={store.bank_name}
+                  showDetails={true}
+                />
+              </div>
             </div>
           </div>
         </div>

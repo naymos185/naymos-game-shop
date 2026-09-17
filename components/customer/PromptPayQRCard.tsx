@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import QRCode from 'qrcode';
-import { Copy, Check, Download, Loader2 } from 'lucide-react';
+import { Copy, Check, Download, Loader2, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { generatePromptPayPayload } from '@/lib/payments/promptpay';
 
 interface PromptPayQRCardProps {
@@ -11,6 +11,7 @@ interface PromptPayQRCardProps {
   promptpayId?: string;
   accountName?: string;
   bankName?: string;
+  showDetails?: boolean;
 }
 
 export function PromptPayQRCard({
@@ -19,6 +20,7 @@ export function PromptPayQRCard({
   promptpayId = '0988251064',
   accountName = 'ศักดาวิชญ์ คำใจ',
   bankName = 'พร้อมเพย์',
+  showDetails = true,
 }: PromptPayQRCardProps) {
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -33,15 +35,17 @@ export function PromptPayQRCard({
     const payload = generatePromptPayPayload(targetAccount, amount);
     const canvas = document.createElement('canvas');
     canvasRef.current = canvas;
-    const qrSize = 340;
+    const qrSize = 360;
 
+    // Requirement: REMOVE CENTER LOGO COMPLETELY
+    // Clean, high-contrast, maximum scanability on mobile screens
     QRCode.toCanvas(
       canvas,
       payload,
       {
         width: qrSize,
         margin: 2,
-        errorCorrectionLevel: 'H', // High error correction (~30%) for central logo
+        errorCorrectionLevel: 'M',
         color: {
           dark: '#0369a1', // Sky-700
           light: '#ffffff',
@@ -49,47 +53,7 @@ export function PromptPayQRCard({
       },
       (err) => {
         if (err || cancelled) return;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        // Overlay central NayMos GameShop logo
-        const logo = new Image();
-        logo.crossOrigin = 'anonymous';
-        logo.src = '/images/logo.png';
-        logo.onload = () => {
-          if (cancelled) return;
-
-          const logoSize = qrSize * 0.22;
-          const x = (qrSize - logoSize) / 2;
-          const y = (qrSize - logoSize) / 2;
-          const radius = logoSize * 0.22;
-
-          // Draw white rounded background with subtle border for contrast
-          ctx.save();
-          ctx.beginPath();
-          ctx.roundRect(x - 4, y - 4, logoSize + 8, logoSize + 8, radius + 2);
-          ctx.fillStyle = '#ffffff';
-          ctx.fill();
-          ctx.lineWidth = 1.5;
-          ctx.strokeStyle = '#bae6fd'; // sky-200
-          ctx.stroke();
-
-          // Clip logo to rounded rect
-          ctx.beginPath();
-          ctx.roundRect(x, y, logoSize, logoSize, radius);
-          ctx.clip();
-          ctx.drawImage(logo, x, y, logoSize, logoSize);
-          ctx.restore();
-
-          setQrImageUrl(canvas.toDataURL('image/png'));
-        };
-
-        logo.onerror = () => {
-          if (!cancelled) {
-            setQrImageUrl(canvas.toDataURL('image/png'));
-          }
-        };
+        setQrImageUrl(canvas.toDataURL('image/png'));
       }
     );
 
@@ -119,58 +83,63 @@ export function PromptPayQRCard({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center p-3.5 sm:p-4 rounded-2xl bg-sky-50/50 border border-sky-100 mx-auto w-full max-w-[280px] shadow-xs">
+    <div className="flex flex-col items-center justify-center p-3 sm:p-5 rounded-2xl bg-white border border-sky-100 shadow-sm w-full max-w-[320px] mx-auto">
       {qrImageUrl ? (
-        <div className="relative">
+        <div className="relative group p-2 bg-white rounded-xl border border-sky-200/70 shadow-xs">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={qrImageUrl}
             alt="PromptPay QR Code"
-            className="w-48 h-48 sm:w-52 sm:h-52 object-contain rounded-xl bg-white p-1 border border-sky-100 shadow-sm"
+            className="w-56 h-56 sm:w-60 sm:h-60 object-contain rounded-lg bg-white"
           />
         </div>
       ) : (
-        <div className="w-48 h-48 sm:w-52 sm:h-52 flex flex-col items-center justify-center text-slate-400 gap-2 bg-white rounded-xl border border-sky-100">
-          <Loader2 className="h-6 w-6 animate-spin text-sky-500" />
-          <span className="text-xs">กำลังสร้าง QR Code...</span>
+        <div className="w-56 h-56 sm:w-60 sm:h-60 flex flex-col items-center justify-center text-slate-400 gap-2 bg-sky-50/50 rounded-xl border border-sky-100">
+          <Loader2 className="h-7 w-7 animate-spin text-sky-500" />
+          <span className="text-xs font-medium">กำลังโหลด QR Code...</span>
         </div>
       )}
 
-      {/* Account Info */}
-      <span className="text-[11px] font-bold text-sky-800 mt-2 text-center">
-        {targetBank} · {targetName}
-      </span>
+      {showDetails && (
+        <div className="w-full mt-3 flex flex-col items-center text-center">
+          <div className="text-xs text-slate-600 font-medium">
+            <span>ชื่อบัญชี: </span>
+            <span className="font-bold text-sky-900">{targetName}</span>
+          </div>
+          <div className="text-[11px] text-slate-500 mt-0.5">
+            ธนาคาร: {targetBank}
+          </div>
 
-      {/* PromptPay Number with Copy */}
-      <button
-        type="button"
-        onClick={copyPromptPay}
-        className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-sky-200 text-sky-700 hover:bg-sky-50 text-[11px] font-mono font-bold transition shadow-2xs"
-        title="กดเพื่อคัดลอกเบอร์พร้อมเพย์"
-      >
-        <span>พร้อมเพย์: {targetAccount}</span>
-        {copied ? (
-          <Check className="w-3 h-3 text-emerald-500" />
-        ) : (
-          <Copy className="w-3 h-3 text-sky-500" />
-        )}
-      </button>
+          <button
+            type="button"
+            onClick={copyPromptPay}
+            className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 border border-sky-200 text-sky-700 hover:bg-sky-100/80 text-xs font-mono font-bold transition shadow-2xs"
+            title="กดเพื่อคัดลอกเบอร์พร้อมเพย์"
+          >
+            <span>พร้อมเพย์: {targetAccount}</span>
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-emerald-500" />
+            ) : (
+              <Copy className="w-3.5 h-3.5 text-sky-500" />
+            )}
+          </button>
 
-      {/* Watermark security label */}
-      <p className="text-[10px] text-sky-700/60 font-medium mt-1.5 text-center select-none leading-tight">
-        QR นี้ใช้สำหรับการรับบริการ NayMosGameShop เท่านั้น!!
-      </p>
+          {qrImageUrl && (
+            <button
+              type="button"
+              onClick={downloadQr}
+              className="mt-2 inline-flex items-center gap-1 text-xs text-sky-600 hover:text-sky-800 hover:underline font-medium"
+            >
+              <Download className="w-3.5 h-3.5" />
+              บันทึกรูป QR Code
+            </button>
+          )}
 
-      {/* Download button */}
-      {qrImageUrl && (
-        <button
-          type="button"
-          onClick={downloadQr}
-          className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-sky-600 hover:text-sky-800 hover:underline font-medium"
-        >
-          <Download className="w-3 h-3" />
-          บันทึกรูป QR Code
-        </button>
+          <div className="mt-2.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200/80 text-[11px] text-amber-800 flex items-center gap-1.5 text-left">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span className="font-medium">กรุณาตรวจสอบชื่อบัญชีให้ถูกต้องก่อนโอนเงินทุกครั้ง</span>
+          </div>
+        </div>
       )}
     </div>
   );

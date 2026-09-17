@@ -7,7 +7,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const result = await createOrder({
       game_id: String(body.game_id ?? ''),
-      product_id: String(body.product_id ?? ''),
+      product_id: body.product_id ? String(body.product_id) : undefined,
+      items: Array.isArray(body.items) ? body.items : undefined,
       player_data: (body.player_data ?? {}) as Record<string, string>,
       contact_email: body.contact_email ? String(body.contact_email) : undefined,
       contact_phone: body.contact_phone ? String(body.contact_phone) : undefined,
