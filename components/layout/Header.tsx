@@ -40,7 +40,7 @@ export async function Header() {
           <Link href="/" className="flex items-center gap-2 sm:gap-2.5 shrink-0 group">
             <div className="relative h-10 sm:h-12 w-auto shrink-0 flex items-center group-hover:scale-105 transition-transform duration-200">
               <img
-                src="/images/logo.png"
+                src="/images/logo.webp"
                 alt="NayMos GameShop"
                 className="h-10 sm:h-12 w-auto object-contain select-none"
               />

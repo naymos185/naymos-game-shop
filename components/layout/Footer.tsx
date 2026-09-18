@@ -32,7 +32,7 @@ export function Footer() {
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-2xl bg-sky-50 border border-sky-200 p-0.5 overflow-hidden shadow-xs shrink-0">
                 <img
-                  src="/images/logo.png"
+                  src="/images/logo.webp"
                   alt="NayMos GameShop"
                   className="w-full h-full object-contain"
                 />

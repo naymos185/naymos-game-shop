@@ -271,7 +271,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
           ) : (
             <div className="relative flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <Image
-                src="/images/shark-chat.png"
+                src="/images/shark-chat.webp"
                 alt="NayMos Chat"
                 width={64}
                 height={64}
@@ -303,7 +303,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm p-1.5 flex items-center justify-center border border-white/30">
                   <Image
-                    src="/images/shark-chat.png"
+                    src="/images/shark-chat.webp"
                     alt="NayMos Assistant"
                     width={32}
                     height={32}
@@ -408,7 +408,7 @@ export function FloatingChatWidget({ currentUser }: FloatingChatWidgetProps) {
                         {msg.sender === 'ai' && (
                           <div className="w-7 h-7 rounded-full bg-sky-100 border border-sky-200 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-xs mt-1">
                             <Image
-                              src="/images/shark-chat.png"
+                              src="/images/shark-chat.webp"
                               alt="AI"
                               width={24}
                               height={24}

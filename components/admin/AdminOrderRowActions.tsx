@@ -35,7 +35,7 @@ export function AdminOrderRowActions({ order }: { order: any }) {
       });
       const data = await res.json();
       if (data.success) {
-        window.location.reload();
+        router.refresh();
       } else {
         alert(data.message || 'ลบออเดอร์ไม่สำเร็จ');
       }

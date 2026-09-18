@@ -86,7 +86,7 @@ export default async function HomePage() {
           <div className="p-4 sm:p-6 bg-gradient-to-b from-white/90 via-white to-sky-50/50 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-sky-100">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-200 p-1 shrink-0 shadow-xs hidden sm:block">
-                <img src="/images/logo.png" alt="NayMos Mascot" className="w-full h-full object-contain" />
+                <img src="/images/logo.webp" alt="NayMos Mascot" className="w-full h-full object-contain" />
               </div>
               <div className="text-center sm:text-left">
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center justify-center sm:justify-start gap-1.5">

@@ -40,7 +40,7 @@ export function GameRowActions({
       if (!data.success) {
         setActive(!v);
       } else {
-        window.location.reload();
+        router.refresh();
       }
     } catch {
       setActive(!v);
@@ -60,7 +60,7 @@ export function GameRowActions({
       const data = await res.json();
       if (data.success) {
         setEditing(false);
-        window.location.reload();
+        router.refresh();
       } else {
         setMsg(data.message || 'บันทึกไม่สำเร็จ');
       }
@@ -89,7 +89,7 @@ export function GameRowActions({
       });
       const data = await res.json();
       if (data.success) {
-        window.location.reload();
+        router.refresh();
       } else {
         alert(data.message || 'ลบเกมไม่สำเร็จ');
       }
