@@ -9,7 +9,7 @@ import { Sparkles, ChevronRight, ShieldCheck } from 'lucide-react';
 
 type Props = { params: Promise<{ slug: string }> };
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60; // Cache game detail for instant clicks
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

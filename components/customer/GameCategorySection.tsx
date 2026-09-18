@@ -151,7 +151,7 @@ export function GameCategorySection({
           {filteredGames.map((game) => (
             <Link
               key={game.id}
-              href={`/games/${game.slug}`}
+              href={`/games/${game.slug}`} prefetch={true}
               className="group relative flex flex-col bg-white rounded-xl sm:rounded-2xl border border-sky-100/90 p-2 sm:p-2.5 hover:border-sky-300 hover:shadow-lg hover:shadow-sky-500/10 transition-all duration-300 hover:-translate-y-0.5"
             >
               {/* Image container: Slightly reduced size, airy & balanced proportions */}
