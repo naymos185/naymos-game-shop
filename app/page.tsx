@@ -14,7 +14,7 @@ import {
   Diamond,
   Heart,
 } from 'lucide-react';
-import { getActiveGames } from '@/lib/games/queries';
+import { getActiveGames, getProductCategories } from '@/lib/games/queries';
 import { getActivePromotions } from '@/lib/promotions/queries';
 import { getActiveBanners } from '@/lib/banners/queries';
 
@@ -61,8 +61,9 @@ const FEATURES = [
 
 export default async function HomePage() {
   // Fetch in parallel for maximum speed
-  const [games, promotions, banners] = await Promise.all([
+  const [games, categories, promotions, banners] = await Promise.all([
     getActiveGames(),
+    getProductCategories(),
     getActivePromotions(),
     getActiveBanners(),
   ]);
@@ -185,7 +186,7 @@ export default async function HomePage() {
       )}
 
       {/* Game Category / Game Cards - Kawaii Micro-interactions */}
-      <GameCategorySection games={games} />
+      <GameCategorySection games={games} categories={categories} />
 
       {/* Trust & Features Section */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 py-10">

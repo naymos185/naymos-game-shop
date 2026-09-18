@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Prompt } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'sonner';
+import { QueryProvider } from '@/components/providers/QueryProvider';
 
 const prompt = Prompt({
   variable: '--font-prompt',
@@ -30,7 +31,9 @@ export default function RootLayout({
   return (
     <html lang="th" className={`${prompt.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col font-sans bg-[#f0f9ff] text-slate-800" suppressHydrationWarning>
-        {children}
+        <QueryProvider>
+          {children}
+        </QueryProvider>
         <Toaster theme="light" position="top-center" richColors />
       </body>
     </html>
