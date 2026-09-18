@@ -1,5 +1,6 @@
 export type OrderStatus =
   | 'PENDING_PAYMENT'
+  | 'QUEUED'
   | 'PAID'
   | 'PROCESSING'
   | 'SUCCESS'
@@ -30,7 +31,12 @@ export interface Order {
   subtotal?: number;
   discount?: number;
   status: OrderStatus;
-  player_data: Record<string, string>;
+  player_data: Record<string, any>;
+  payment_confirmed_at?: string | null;
+  processing_started_at?: string | null;
+  completed_at?: string | null;
+  processing_admin_id?: string | null;
+  completed_admin_id?: string | null;
   created_at: string;
   updated_at: string;
 }

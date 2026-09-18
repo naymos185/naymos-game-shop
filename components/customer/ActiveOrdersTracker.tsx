@@ -1,462 +1,247 @@
 'use client';
 
-import { PromptPayQRCard } from './PromptPayQRCard';
-
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Loader2, QrCode, CheckCircle2, Clock, UploadCloud, X, ArrowRight, Ban } from 'lucide-react';
-import Link from 'next/link';
-
-export interface ActiveOrder {
+export type ActiveOrder = {
   id: string;
   order_number: string;
   status: string;
-  total: number;
+  total?: number;
+  amount?: number;
   created_at: string;
-  game_name?: string;
-  product_name?: string;
-  player_data?: Record<string, unknown>;
-}
-
-const storeInfo = {
-  promptpay_id: process.env.NEXT_PUBLIC_PROMPTPAY_ID || "",
-  account_name: "NayMos GameShop",
-  bank_name: "พร้อมเพย์",
+  payment_confirmed_at?: string | null;
+  game_id?: string;
+  product_id?: string;
+  player_data?: Record<string, any>;
 };
 
-export function ActiveOrdersTracker({ initialOrders }: { initialOrders: ActiveOrder[] }) {
-  const router = useRouter();
-  const [orders, setOrders] = useState<ActiveOrder[]>(initialOrders);
-  const [payingOrder, setPayingOrder] = useState<ActiveOrder | null>(null);
-  const [slipFile, setSlipFile] = useState<File | null>(null);
-  const [slipPreview, setSlipPreview] = useState<string | null>(null);
-  const [submittingSlip, setSubmittingSlip] = useState(false);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [orderToCancel, setOrderToCancel] = useState<ActiveOrder | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
 
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import {
+  Clock,
+  PlayCircle,
+  CheckCircle2,
+  AlertCircle,
+  Copy,
+  Check,
+  ChevronRight,
+  ListOrdered,
+  Sparkles,
+} from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+
+export function ActiveOrdersTracker({
+  initialOrders = [],
+  userId,
+}: {
+  initialOrders?: any[];
+  userId?: string;
+}) {
+  const [orders, setOrders] = useState<any[]>(initialOrders);
+  const [allQueuedOrders, setAllQueuedOrders] = useState<{ id: string; payment_confirmed_at: string }[]>([]);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Fetch all currently queued orders to calculate dynamic queue positions
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    const supabase = createClient();
 
-  // Handle slip file select
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSlipFile(file);
-      const reader = new FileReader();
-      reader.onload = () => setSlipPreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
+    async function loadQueuedOrders() {
+      const { data } = await supabase
+        .from('orders')
+        .select('id, payment_confirmed_at, created_at')
+        .in('status', ['QUEUED', 'PAID'])
+        .order('payment_confirmed_at', { ascending: true, nullsFirst: false });
 
-  // Submit slip to change status to PROCESSING (รอดำเนินการเติม)
-  const handleSubmitSlip = async () => {
-    if (!payingOrder || !slipFile) return;
-    setSubmittingSlip(true);
-    setMsg(null);
-    try {
-      const res = await fetch('/api/orders/pay-slip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_number: payingOrder.order_number,
-          slip_image: slipPreview,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setOrders((prev) =>
-          prev.map((o) => (o.id === payingOrder.id ? { ...o, status: 'PROCESSING' } : o))
-        );
-        setPayingOrder(null);
-        setSlipFile(null);
-        setSlipPreview(null);
-        router.refresh();
-      } else {
-        setMsg(data.message || 'ส่งสลิปไม่สำเร็จ');
+      if (data) {
+        setAllQueuedOrders(data as any);
       }
-    } catch {
-      setMsg('เกิดข้อผิดพลาดในการเชื่อมต่อ');
     }
-    setSubmittingSlip(false);
-  };
 
-  // Cancel pending order
-  const handleCancelOrder = async (order: ActiveOrder) => {
-    setCancellingId(order.id);
-    try {
-      const res = await fetch('/api/orders/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_number: order.order_number }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setOrders((prev) => prev.filter((o) => o.id !== order.id));
-        setOrderToCancel(null);
-        router.refresh();
-      } else {
-        alert(data.message || 'ยกเลิกออเดอร์ไม่สำเร็จ');
-      }
-    } catch {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-    }
-    setCancellingId(null);
-  };
+    loadQueuedOrders();
 
-  // Confirm completed order -> archives order out of tracking page to history
-  const handleConfirmComplete = async (order: ActiveOrder) => {
-    setConfirmingId(order.id);
-    try {
-      const res = await fetch('/api/orders/confirm-complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_number: order.order_number }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setOrders((prev) => prev.filter((o) => o.id !== order.id));
-        router.refresh();
-      } else {
-        alert(data.message || 'ยืนยันไม่สำเร็จ');
-      }
-    } catch {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-    }
-    setConfirmingId(null);
-  };
+    // Subscribe to realtime changes on orders table
+    const channel = supabase
+      .channel('customer-orders-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            if (userId && payload.new.user_id === userId) {
+              setOrders((prev) => [payload.new, ...prev]);
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            setOrders((prev) =>
+              prev.map((o) => (o.id === payload.new.id ? { ...o, ...payload.new } : o))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setOrders((prev) => prev.filter((o) => o.id === payload.old.id));
+          }
+          // Refresh queued list on any order state change
+          loadQueuedOrders();
+        }
+      )
+      .subscribe();
 
-  if (orders.length === 0) {
-    return (
-      <div className="rounded-3xl border border-sky-100 bg-white/90 p-10 text-center shadow-xs">
-        <div className="mx-auto w-14 h-14 rounded-2xl bg-sky-100/70 text-sky-600 flex items-center justify-center mb-4 shadow-inner">
-          <Clock className="w-7 h-7" />
-        </div>
-        <h3 className="text-lg font-black text-slate-900 mb-1.5">ไม่มีออเดอร์ที่รอดำเนินการ</h3>
-        <p className="text-sm text-slate-500 font-medium mb-6 max-w-md mx-auto leading-relaxed">
-          คุณไม่มีคำสั่งซื้อที่ค้างอยู่ หรือออเดอร์ได้รับการยืนยันและย้ายไปที่หน้าประวัติแล้ว
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link
-            href="/games"
-            className="rounded-full bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-500 hover:to-blue-700 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-sky-200/50 transition hover:scale-[1.02] active:scale-[0.98]"
-          >
-            เลือกเติมเกมเลย
-          </Link>
-          <Link
-            href="/account/orders"
-            className="rounded-full border border-sky-200 bg-white hover:bg-sky-50 px-6 py-2.5 text-sm font-semibold text-sky-700 shadow-2xs transition hover:scale-[1.02] active:scale-[0.98]"
-          >
-            ดูประวัติทั้งหมด
-          </Link>
-        </div>
-      </div>
-    );
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  function copyText(text: string, id: string) {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   }
+
+  // Calculate dynamic queue position for an order (1-indexed)
+  function getQueuePosition(order: any): number {
+    const sorted = [...allQueuedOrders].sort((a, b) => {
+      const tA = new Date(a.payment_confirmed_at || 0).getTime();
+      const tB = new Date(b.payment_confirmed_at || 0).getTime();
+      return tA - tB;
+    });
+    const idx = sorted.findIndex((o) => o.id === order.id);
+    return idx >= 0 ? idx + 1 : 1;
+  }
+
+  if (orders.length === 0) return null;
 
   return (
     <div className="space-y-4">
-      {orders.map((o) => {
-        const isWaitingPayment = o.status === 'pending' || o.status === 'PENDING_PAYMENT';
-        const isProcessing = o.status === 'PAID' || o.status === 'PROCESSING';
-        const isCompleted = o.status === 'SUCCESS' || o.status === 'completed';
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-sky-950 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-sky-500" />
+          ออเดอร์ของฉัน (ติดตามสถานะ Realtime)
+        </h3>
+        <Link href="/order-tracking" className="text-xs text-sky-600 hover:text-sky-800 font-medium flex items-center gap-0.5">
+          ดูทั้งหมด <ChevronRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
 
-        return (
-          <div
-            key={o.id}
-            className="rounded-2xl border border-sky-100 bg-white/90 p-5 shadow-lg transition-all hover:border-sky-300"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  {/* Status Badges */}
-                  {isWaitingPayment && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 px-3 py-1 text-xs font-semibold text-amber-400">
-                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                      รอชำระเงิน
-                    </span>
-                  )}
-                  {isProcessing && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 border border-blue-500/40 px-3 py-1 text-xs font-semibold text-blue-400">
-                      <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                      รอดำเนินการเติม
-                    </span>
-                  )}
-                  {isCompleted && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 px-3 py-1 text-xs font-semibold text-emerald-400">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      เติมเสร็จแล้ว
-                    </span>
-                  )}
-                  <span className="font-mono text-sm font-bold text-slate-800 tracking-wide">
-                    {o.order_number}
-                  </span>
-                </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        {orders.map((o) => {
+          const isPending = o.status === 'pending' || o.status === 'PENDING_PAYMENT';
+          const isQueued = o.status === 'QUEUED' || (o.status === 'PAID' && !o.processing_started_at);
+          const isProcessing = o.status === 'PROCESSING' || o.status === 'processing';
+          const isCompleted = o.status === 'SUCCESS' || o.status === 'completed';
 
-                <p className="text-sm">
-                  <span className="font-bold text-slate-900">{o.game_name || 'เกม'}</span> · <span className="font-medium text-slate-600">{o.product_name || 'แพ็กเกจ'}</span>
-                </p>
+          const queuePos = isQueued ? getQueuePosition(o) : null;
+          const pd = (o.player_data as Record<string, any>) || {};
+          const uid = pd.uid || pd.player_id || pd.id || Object.values(pd)[0] || '';
 
-                <p suppressHydrationWarning className="text-xs text-zinc-500">
-                  เวลาสั่งซื้อ: {mounted ? new Date(o.created_at).toLocaleString('th-TH') : 'กำลังโหลดเวลา...'}
-                </p>
-              </div>
-
-              {/* Action buttons & Price */}
-              <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-3 sm:pt-0 border-t border-sky-100/80 sm:border-0">
-                <div className="text-left sm:text-right">
-                  <span className="text-xs text-zinc-500 block">ยอดรวม</span>
-                  <span className="text-lg font-black text-sky-600">฿{Number(o.total).toLocaleString()}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {isWaitingPayment && (
-                    <>
-                      <button
-                        type="button"
-                        disabled={cancellingId === o.id}
-                        onClick={() => setOrderToCancel(o)}
-                        className="inline-flex items-center gap-1 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 px-3 py-2 text-xs font-medium text-sky-600 transition"
-                      >
-                        {cancellingId === o.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <>
-                            <Ban className="w-3.5 h-3.5" />
-                            ยกเลิกออเดอร์
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPayingOrder(o);
-                          setSlipFile(null);
-                          setSlipPreview(null);
-                          setMsg(null);
-                        }}
-                        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-xs font-bold text-black transition shadow"
-                      >
-                        <QrCode className="w-4 h-4" />
-                        ชำระเงิน
-                      </button>
-                    </>
-                  )}
-
-                  {isProcessing && (
-                    <span className="inline-block text-xs font-medium text-slate-500 bg-sky-50 rounded-lg px-3 py-1.5">
-                      แอดมินกำลังดำเนินการเติม <span className="inline-flex items-center gap-0.5 ml-1 font-mono"><span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce"></span><span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce [animation-delay:0.2s]"></span><span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce [animation-delay:0.4s]"></span></span> กรุณารอสักครู่...
-                    </span>
-                  )}
-
-                  {isCompleted && (
-                    <button
-                      type="button"
-                      disabled={confirmingId === o.id}
-                      onClick={() => handleConfirmComplete(o)}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-4 py-2 text-xs font-bold text-white transition shadow"
-                    >
-                      {confirmingId === o.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          ยืนยันรับสินค้า
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-
-      {/* QR & Slip Upload Modal (Sky-Blue & White Theme) */}
-      {payingOrder && (
-        <div
-          className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div
-            className="relative w-full max-w-4xl bg-white rounded-3xl border border-sky-100 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-5 sm:px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white shrink-0">
-              <div className="flex items-center gap-2.5">
-                <QrCode className="w-5 h-5" />
-                <h3 className="font-extrabold text-sm sm:text-base">
-                  สแกนชำระเงินผ่าน PromptPay
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setPayingOrder(null);
-                  setSlipFile(null);
-                  setSlipPreview(null);
-                  setMsg(null);
-                }}
-                className="p-1 rounded-full bg-white/20 hover:bg-white/30 text-white transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-5 sm:p-8 overflow-y-auto">
-              <div className="md:col-span-7 flex flex-col justify-between space-y-4">
-                <div className="space-y-4">
-                  <div className="p-3.5 rounded-2xl bg-sky-50/70 border border-sky-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-[11px] text-slate-500 font-medium">หมายเลขออเดอร์:</span>
-                      <div className="text-sm sm:text-base font-mono font-black text-sky-800">
-                        {payingOrder.order_number}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border border-slate-200/80 rounded-2xl overflow-hidden text-xs sm:text-sm">
-                    <div className="bg-slate-50 px-4 py-2.5 font-bold text-slate-700 border-b border-slate-200/80">
-                      รายละเอียดการชำระเงิน
-                    </div>
-                    <div className="divide-y divide-slate-100 p-3.5 space-y-2">
-                      <div className="flex justify-between items-center py-1">
-                        <span className="text-slate-500">ยอดชำระทั้งหมด:</span>
-                        <span className="text-lg sm:text-xl font-black text-emerald-600">
-                          ฿{Number(payingOrder.total).toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center py-1">
-                        <span className="text-slate-500">ช่องทางการชำระ:</span>
-                        <span className="font-semibold text-slate-800">
-                          {storeInfo.bank_name || 'พร้อมเพย์ (PromptPay)'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center py-1">
-                        <span className="text-slate-500">ชื่อบัญชี:</span>
-                        <span className="font-bold text-sky-900">
-                          ศักดาวิชญ์ คำใจ
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/90 flex items-start gap-2.5 text-xs text-amber-900">
-                    <div>
-                      <span className="font-bold">คำเตือนสำคัญ: </span>
-                      <span>กรุณาตรวจสอบชื่อบัญชีให้ถูกต้องก่อนโอนเงินทุกครั้ง</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3.5 rounded-2xl bg-sky-50/50 border border-sky-100">
-                    <label className="block text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
-                      <UploadCloud className="w-4 h-4 text-sky-500" />
-                      แนบสลิปเพื่อยืนยันการโอนเงิน
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-500 file:text-white hover:file:bg-sky-600 transition"
-                    />
-
-                    {slipPreview && (
-                      <div className="mt-3 relative w-24 h-24 rounded-lg overflow-hidden border border-sky-200">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={slipPreview} alt="Slip preview" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-
-                    {msg && <p className="text-xs text-red-500 font-semibold mt-2">{msg}</p>}
-                  </div>
-                </div>
-
-                <div className="pt-2">
+          return (
+            <div
+              key={o.id}
+              className={`rounded-2xl p-4 border bg-white shadow-xs transition space-y-3 ${
+                isProcessing
+                  ? 'border-blue-300 ring-2 ring-blue-100 bg-blue-50/20'
+                  : isQueued
+                  ? 'border-sky-300 bg-sky-50/20'
+                  : isCompleted
+                  ? 'border-emerald-200'
+                  : 'border-amber-200'
+              }`}
+            >
+              {/* Top: Order number & copy */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-xs font-bold text-slate-800">{o.order_number}</span>
                   <button
                     type="button"
-                    onClick={handleSubmitSlip}
-                    disabled={submittingSlip || !slipFile}
-                    className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                    onClick={() => copyText(o.order_number, o.id)}
+                    className="p-1 rounded text-slate-400 hover:text-sky-600"
+                    title="คัดลอกหมายเลขออเดอร์"
                   >
-                    {submittingSlip ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>กำลังส่งสลิป...</span>
-                      </>
+                    {copiedId === o.id ? (
+                      <Check className="w-3 h-3 text-emerald-500" />
                     ) : (
-                      <>
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>ยืนยันการโอนเงิน &rarr;</span>
-                      </>
+                      <Copy className="w-3 h-3" />
                     )}
                   </button>
                 </div>
+
+                <span className="font-mono font-bold text-xs text-sky-700">
+                  ฿{Number(o.total || o.amount).toLocaleString()}
+                </span>
               </div>
 
-              <div className="md:col-span-5 flex flex-col items-center justify-center bg-slate-50/60 p-4 sm:p-6 rounded-2xl border border-slate-100">
-                <PromptPayQRCard
-                  amount={Number(payingOrder.total)}
-                  orderNumber={payingOrder.order_number}
-                  promptpayId="0988251064"
-                  accountName="ศักดาวิชญ์ คำใจ"
-                  bankName="พร้อมเพย์"
-                  showDetails={true}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Cancel Order Confirmation Modal (Custom Cute Blue/White Modal) */}
-      {orderToCancel && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-sm rounded-3xl border border-sky-100 bg-white p-6 shadow-2xl space-y-4 text-center">
-            <div className="mx-auto w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shadow-inner">
-              <Ban className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900">ยืนยันการยกเลิกคำสั่งซื้อ</h3>
-              <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
-                คุณแน่ใจหรือไม่ว่าต้องการยกเลิกคำสั่งซื้อ{' '}
-                <span className="font-mono font-bold text-slate-800">{orderToCancel.order_number}</span>?
-                <br />
-                เมื่อยกเลิกแล้วจะไม่สามารถกู้คืนได้
-              </p>
-            </div>
-            <div className="flex gap-2.5 pt-2">
-              <button
-                type="button"
-                disabled={cancellingId === orderToCancel.id}
-                onClick={() => setOrderToCancel(null)}
-                className="flex-1 rounded-full border border-sky-200 bg-sky-50/60 hover:bg-sky-100 py-2.5 text-xs font-bold text-slate-700 transition"
-              >
-                ไม่ยกเลิก
-              </button>
-              <button
-                type="button"
-                disabled={cancellingId === orderToCancel.id}
-                onClick={() => handleCancelOrder(orderToCancel)}
-                className="flex-1 rounded-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 disabled:opacity-50 py-2.5 text-xs font-bold text-white transition shadow-sm shadow-rose-500/20 flex items-center justify-center gap-1.5"
-              >
-                {cancellingId === orderToCancel.id ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>กำลังยกเลิก...</span>
-                  </>
-                ) : (
-                  'ยืนยันยกเลิก'
+              {/* Status Banner with Deterministic Pure CSS animations */}
+              <div className="rounded-xl p-3 border">
+                {isPending && (
+                  <div className="flex items-center gap-2 text-amber-700 bg-amber-50/80 -m-3 p-3 rounded-xl border border-amber-200">
+                    <Clock className="w-4 h-4 shrink-0" />
+                    <div className="text-xs">
+                      <span className="font-bold block">รอชำระเงิน</span>
+                      <span className="text-[11px] text-amber-600">กรุณาชำระเงินและอัปโหลดสลิปเพื่อเข้าคิว</span>
+                    </div>
+                  </div>
                 )}
-              </button>
+
+                {isQueued && (
+                  <div className="flex items-center justify-between text-sky-800 bg-sky-50/90 -m-3 p-3 rounded-xl border border-sky-200">
+                    <div className="flex items-center gap-2.5">
+                      <ListOrdered className="w-4 h-4 text-sky-600 shrink-0" />
+                      <div>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-sky-950">
+                          <span>รอคิวการเติม</span>
+                          {/* Lightweight 3 dots bounce animation */}
+                          <span className="inline-flex items-center gap-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce [animation-delay:0.2s]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce [animation-delay:0.4s]" />
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-sky-700 font-semibold block mt-0.5">
+                          ขณะนี้คุณอยู่คิวที่ <span className="font-bold text-sky-950 text-xs">{queuePos}</span>
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-sky-200 text-sky-700">
+                      คิว {queuePos}
+                    </span>
+                  </div>
+                )}
+
+                {isProcessing && (
+                  <div className="flex items-center gap-2.5 text-blue-800 bg-blue-50/90 -m-3 p-3 rounded-xl border border-blue-200">
+                    <PlayCircle className="w-4 h-4 text-blue-600 shrink-0 animate-spin" />
+                    <div className="text-xs">
+                      <div className="flex items-center gap-1.5 font-bold text-blue-950">
+                        <span>แอดมินกำลังดำเนินการเติม</span>
+                        <span className="inline-flex items-center gap-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.2s]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.4s]" />
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-blue-700">กำลังเติมไอเทมเข้าบัญชีเกมของคุณ โปรดรอสักครู่ครับ</span>
+                    </div>
+                  </div>
+                )}
+
+                {isCompleted && (
+                  <div className="flex items-center gap-2 text-emerald-800 bg-emerald-50/90 -m-3 p-3 rounded-xl border border-emerald-200">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div className="text-xs">
+                      <span className="font-bold block text-emerald-950">เติมสำเร็จเรียบร้อย</span>
+                      <span className="text-[11px] text-emerald-700">ไอเทมเข้าไอดีเรียบร้อยแล้ว ขอบคุณที่ใช้บริการครับ</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* UID Info */}
+              {uid && (
+                <div className="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-100">
+                  <span className="text-[11px] text-slate-400">UID ผู้เล่น:</span>
+                  <span className="font-mono font-medium text-slate-800">{String(uid)}</span>
+                </div>
+              )}
             </div>
-          </div>
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }

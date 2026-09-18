@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
   CheckCircle2,
@@ -13,11 +13,13 @@ import {
   AlertTriangle,
   User,
   Gamepad2,
-  Receipt,
+  ListOrdered,
   FileCheck,
   Loader2,
+  ShieldCheck,
   ExternalLink,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import { AdminOrderRowActions } from './AdminOrderRowActions';
 
 export function AdminOrdersManager({
@@ -32,7 +34,7 @@ export function AdminOrdersManager({
   profilesMap: Record<string, any>;
 }) {
   const [orders, setOrders] = useState(initialOrders);
-  const [activeTab, setActiveTab] = useState<'pending' | 'processing' | 'completed'>('processing');
+  const [activeTab, setActiveTab] = useState<'pending' | 'queued' | 'processing' | 'completed'>('queued');
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -40,20 +42,68 @@ export function AdminOrdersManager({
 
   // Package fulfillment checklist state: orderId -> { itemKey -> boolean }
   const [checkedPacks, setCheckedPacks] = useState<Record<string, Record<string, boolean>>>({});
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [confirmModalOrder, setConfirmModalOrder] = useState<any | null>(null);
 
-  const pendingOrders = orders.filter(
-    (o) => o.status === 'pending' || o.status === 'PENDING_PAYMENT' || o.status === 'PAID'
+  // Setup Supabase Realtime on orders table
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel('admin-orders-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setOrders((prev) => [payload.new, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setOrders((prev) =>
+              prev.map((o) => (o.id === payload.new.id ? { ...o, ...payload.new } : o))
+            );
+            setSelectedOrder((prev: any) =>
+              prev && prev.id === payload.new.id ? { ...prev, ...payload.new } : prev
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setOrders((prev) => prev.filter((o) => o.id === payload.old.id));
+            setSelectedOrder((prev: any) => (prev && prev.id === payload.old.id ? null : prev));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Categorize orders strictly according to the new workflow
+  const pendingPaymentOrders = orders.filter(
+    (o) => o.status === 'pending' || o.status === 'PENDING_PAYMENT' || o.status === 'awaiting_payment'
   );
-  const processingOrders = orders.filter((o) => o.status === 'PROCESSING');
+
+  // Queued orders sorted by payment confirmation time (FIFO)
+  const queuedOrders = orders
+    .filter((o) => o.status === 'QUEUED' || (o.status === 'PAID' && !o.processing_started_at))
+    .sort((a, b) => {
+      const timeA = new Date(a.payment_confirmed_at || a.created_at).getTime();
+      const timeB = new Date(b.payment_confirmed_at || b.created_at).getTime();
+      return timeA - timeB;
+    });
+
+  const processingOrders = orders.filter(
+    (o) => o.status === 'PROCESSING' || o.status === 'processing'
+  );
+
   const completedOrders = orders.filter(
     (o) => o.status === 'SUCCESS' || o.status === 'completed'
   );
 
   const currentList =
     activeTab === 'pending'
-      ? pendingOrders
+      ? pendingPaymentOrders
+      : activeTab === 'queued'
+      ? queuedOrders
       : activeTab === 'processing'
       ? processingOrders
       : completedOrders;
@@ -117,13 +167,49 @@ export function AdminOrdersManager({
     return true;
   }
 
+  // Admin starts processing Queue 1
+  async function handleStartProcessing(order: any, queueIndex: number) {
+    if (queueIndex !== 0) {
+      alert('ระบบเติมตามลำดับคิว กรุณาดำเนินการคิวที่ 1 ก่อนครับ');
+      return;
+    }
+
+    setProcessingId(order.id);
+    try {
+      const res = await fetch('/api/admin/orders/start-processing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === order.id ? { ...o, status: 'PROCESSING' } : o))
+        );
+        setActiveTab('processing');
+        setSelectedOrder(order);
+      } else {
+        alert(data.message || 'ไม่สามารถเริ่มเติมได้');
+      }
+    } catch {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  // Admin completes fulfillment after ticking all packages
   async function executeComplete(order: any) {
     setCompletingId(order.id);
     try {
-      const res = await fetch('/api/admin/orders/process-topup', {
+      const items = getOrderItems(order);
+      const res = await fetch('/api/admin/orders/complete-manual', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: order.id, status: 'SUCCESS' }),
+        body: JSON.stringify({
+          id: order.id,
+          fulfilled_items: items,
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -132,6 +218,7 @@ export function AdminOrdersManager({
         );
         setSelectedOrder(null);
         setConfirmModalOrder(null);
+        setActiveTab('completed');
       } else {
         alert(data.message || 'ไม่สามารถเปลี่ยนสถานะได้');
       }
@@ -144,51 +231,66 @@ export function AdminOrdersManager({
 
   return (
     <div className="space-y-6">
-      {/* Header and Filter Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header and 4 Workflow Filter Tabs */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-sky-950">จัดการออเดอร์ (Manual Top-up)</h1>
+          <h1 className="text-xl font-black text-sky-950">จัดการออเดอร์ & ระบบคิวเติมเกม</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            ตรวจสอบสลิป, ดำเนินการเติมเกม และบันทึกประวัติการเติม
+            ระบบจัดคิวตามเวลาชำระเงินจริง (FIFO) และการตรวจสอบแพ็กเกจเติมมือ
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 bg-sky-50 rounded-2xl border border-sky-100">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-sky-50 rounded-2xl border border-sky-100">
           <button
             type="button"
             onClick={() => setActiveTab('pending')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
               activeTab === 'pending'
                 ? 'bg-white text-amber-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            รอชำระ/รอตรวจ ({pendingOrders.length})
+            1. รอชำระเงิน ({pendingPaymentOrders.length})
           </button>
+
           <button
             type="button"
-            onClick={() => setActiveTab('processing')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-              activeTab === 'processing'
+            onClick={() => setActiveTab('queued')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              activeTab === 'queued'
                 ? 'bg-white text-sky-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <PlayCircle className="w-3.5 h-3.5" />
-            กำลังดำเนินการเติม ({processingOrders.length})
+            <ListOrdered className="w-3.5 h-3.5" />
+            2. รอคิวการเติม ({queuedOrders.length})
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('processing')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              activeTab === 'processing'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <PlayCircle className="w-3.5 h-3.5" />
+            3. กำลังดำเนินการเติม ({processingOrders.length})
+          </button>
+
           <button
             type="button"
             onClick={() => setActiveTab('completed')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
               activeTab === 'completed'
                 ? 'bg-white text-emerald-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            สำเร็จ ({completedOrders.length})
+            4. เติมสำเร็จ ({completedOrders.length})
           </button>
         </div>
       </div>
@@ -200,14 +302,14 @@ export function AdminOrdersManager({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="ค้นหาเลขที่ออเดอร์, ชื่อเกม หรือลูกค้า..."
+          placeholder="ค้นหาเลขออเดอร์, ชื่อเกม หรือลูกค้า..."
           className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-sky-100 text-xs text-slate-800 outline-none focus:border-sky-400 shadow-xs"
         />
       </div>
 
       {/* Orders Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredOrders.map((o) => {
+        {filteredOrders.map((o, idx) => {
           const game = gamesMap[o.game_id];
           const profile = profilesMap[o.user_id];
           const items = getOrderItems(o);
@@ -215,40 +317,71 @@ export function AdminOrdersManager({
           const slip = pd.slip_image || pd.payment_slip || pd._slip_url || null;
           const uid = pd.uid || pd.player_id || pd.id || Object.values(pd)[0] || '-';
 
-          const totalCost = items.reduce((s: number, it: any) => s + (Number(it.cost || 0) * (it.quantity || 1)), 0);
+          const totalCost = items.reduce(
+            (s: number, it: any) => s + Number(it.cost || 0) * (it.quantity || 1),
+            0
+          );
           const totalRevenue = Number(o.total || o.amount || 0);
           const profit = totalRevenue - totalCost;
+
+          const isQueueTab = activeTab === 'queued';
+          const queueNumber = idx + 1;
+          const isFirstInQueue = idx === 0;
 
           return (
             <div
               key={o.id}
-              className="rounded-2xl border border-sky-100 bg-white p-4 space-y-3.5 shadow-xs hover:border-sky-300 transition flex flex-col justify-between"
+              className={`rounded-2xl border bg-white p-4 space-y-3.5 shadow-xs transition flex flex-col justify-between ${
+                isQueueTab && isFirstInQueue
+                  ? 'border-sky-400 ring-2 ring-sky-200/60'
+                  : 'border-sky-100 hover:border-sky-300'
+              }`}
             >
               <div className="space-y-2.5">
-                {/* Header: Order ID & Date */}
+                {/* Header: Order ID, Queue Tag, & Date */}
                 <div className="flex items-start justify-between gap-2 pb-2 border-b border-sky-50">
                   <div>
-                    <span className="font-mono text-xs font-bold text-sky-950 block">
-                      {o.order_number}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-xs font-bold text-sky-950 block">
+                        {o.order_number}
+                      </span>
+                      {isQueueTab && (
+                        <span
+                          className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                            isFirstInQueue
+                              ? 'bg-sky-500 text-white animate-pulse'
+                              : 'bg-sky-100 text-sky-800'
+                          }`}
+                        >
+                          คิวที่ {queueNumber}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[10px] text-slate-400">
-                      {new Date(o.created_at).toLocaleString('th-TH')}
+                      {o.payment_confirmed_at
+                        ? `ชำระเมื่อ: ${new Date(o.payment_confirmed_at).toLocaleTimeString('th-TH')}`
+                        : new Date(o.created_at).toLocaleString('th-TH')}
                     </span>
                   </div>
+
                   <span
                     className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                       o.status === 'SUCCESS' || o.status === 'completed'
                         ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                        : o.status === 'PROCESSING'
-                        ? 'bg-sky-50 text-sky-600 border border-sky-200 animate-pulse'
+                        : o.status === 'PROCESSING' || o.status === 'processing'
+                        ? 'bg-blue-50 text-blue-600 border border-blue-200 animate-pulse'
+                        : o.status === 'QUEUED' || o.status === 'PAID'
+                        ? 'bg-sky-50 text-sky-700 border border-sky-200'
                         : 'bg-amber-50 text-amber-600 border border-amber-200'
                     }`}
                   >
                     {o.status === 'PROCESSING'
                       ? 'กำลังดำเนินการเติม'
+                      : o.status === 'QUEUED' || o.status === 'PAID'
+                      ? `รอคิว (คิว ${queueNumber})`
                       : o.status === 'SUCCESS' || o.status === 'completed'
                       ? 'สำเร็จ'
-                      : 'รอตรวจสอบ'}
+                      : 'รอชำระเงิน'}
                   </span>
                 </div>
 
@@ -272,13 +405,13 @@ export function AdminOrdersManager({
                       {game?.name || 'เกม'}
                     </h4>
                     <p className="text-[11px] text-slate-500 truncate flex items-center gap-1">
-                      <User className="w-3 h-3 text-slate-400" />
+                      <User className="w-3 h-3 text-slate-400 shrink-0" />
                       {profile?.username || profile?.email || o.guest_email || 'ลูกค้าทั่วไป'}
                     </p>
                   </div>
                 </div>
 
-                {/* Player UID highlight */}
+                {/* Player UID highlight with copy button */}
                 <div className="bg-sky-50/60 rounded-xl p-2.5 border border-sky-100 flex items-center justify-between gap-2">
                   <div className="overflow-hidden">
                     <span className="text-[10px] text-slate-500 block">UID ผู้เล่น:</span>
@@ -302,14 +435,18 @@ export function AdminOrdersManager({
 
                 {/* Package summary */}
                 <div className="space-y-1 text-xs text-slate-600">
-                  <span className="text-[10px] text-slate-400 font-medium">รายการแพ็กเกจ ({items.length} รายการ):</span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    รายการแพ็กเกจ ({items.length} รายการ):
+                  </span>
                   <div className="bg-slate-50 rounded-lg p-2 space-y-1">
-                    {items.map((it: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-center text-[11px]">
+                    {items.map((it: any, iIdx: number) => (
+                      <div key={iIdx} className="flex justify-between items-center text-[11px]">
                         <span className="text-slate-700 truncate pr-2">
                           • {it.name} <span className="font-bold text-sky-700">×{it.quantity || 1}</span>
                         </span>
-                        <span className="font-mono text-slate-600">฿{Number(it.price * (it.quantity || 1)).toLocaleString()}</span>
+                        <span className="font-mono text-slate-600">
+                          ฿{Number(it.price * (it.quantity || 1)).toLocaleString()}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -319,19 +456,25 @@ export function AdminOrdersManager({
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-sky-50 text-center">
                   <div className="bg-sky-50/40 p-1.5 rounded-lg">
                     <span className="text-[9px] text-slate-400 block">ยอดขาย</span>
-                    <span className="text-xs font-bold text-sky-900 font-mono">฿{totalRevenue.toLocaleString()}</span>
+                    <span className="text-xs font-bold text-sky-900 font-mono">
+                      ฿{totalRevenue.toLocaleString()}
+                    </span>
                   </div>
                   <div className="bg-slate-50 p-1.5 rounded-lg">
                     <span className="text-[9px] text-slate-400 block">ต้นทุน</span>
-                    <span className="text-xs font-medium text-slate-600 font-mono">฿{totalCost.toLocaleString()}</span>
+                    <span className="text-xs font-medium text-slate-600 font-mono">
+                      ฿{totalCost.toLocaleString()}
+                    </span>
                   </div>
                   <div className="bg-emerald-50/50 p-1.5 rounded-lg">
                     <span className="text-[9px] text-emerald-600 block">กำไร</span>
-                    <span className="text-xs font-bold text-emerald-700 font-mono">฿{profit.toLocaleString()}</span>
+                    <span className="text-xs font-bold text-emerald-700 font-mono">
+                      ฿{profit.toLocaleString()}
+                    </span>
                   </div>
                 </div>
 
-                {/* Slip preview thumbnail */}
+                {/* Slip preview link */}
                 {slip && (
                   <div className="flex items-center gap-2 pt-1">
                     <button
@@ -355,7 +498,25 @@ export function AdminOrdersManager({
                   รายละเอียด
                 </button>
 
-                <AdminOrderRowActions order={o} />
+                {/* If in QUEUED tab -> show "เริ่มเติม" button (active only for Queue 1) */}
+                {isQueueTab ? (
+                  <button
+                    type="button"
+                    disabled={!isFirstInQueue || processingId === o.id}
+                    onClick={() => handleStartProcessing(o, idx)}
+                    className="px-4 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5"
+                    title={isFirstInQueue ? 'เริ่มเติมคิวนี้' : 'ต้องเติมคิวแรกก่อน'}
+                  >
+                    {processingId === o.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <PlayCircle className="w-3.5 h-3.5" />
+                    )}
+                    {isFirstInQueue ? 'เริ่มเติม (คิว 1)' : `รอคิวที่ ${queueNumber}`}
+                  </button>
+                ) : (
+                  <AdminOrderRowActions order={o} />
+                )}
               </div>
             </div>
           );
@@ -368,7 +529,7 @@ export function AdminOrdersManager({
         </div>
       )}
 
-      {/* Order Detail Modal */}
+      {/* Order Detail Modal with Package Checklist */}
       {selectedOrder && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="w-full max-w-2xl bg-white rounded-3xl border border-sky-100 shadow-2xl p-6 relative max-h-[90vh] flex flex-col">
@@ -418,7 +579,10 @@ export function AdminOrdersManager({
                 <span className="text-xs font-bold text-sky-950 block">ข้อมูลผู้เล่นสำหรับเติมเกม:</span>
                 <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-2 text-xs">
                   {Object.entries((selectedOrder.player_data as Record<string, any>) || {})
-                    .filter(([k]) => !['_order_items', 'slip_image', 'payment_slip', '_slip_url'].includes(k))
+                    .filter(
+                      ([k]) =>
+                        !['_order_items', '_fulfilled_items', 'slip_image', 'payment_slip', '_slip_url'].includes(k)
+                    )
                     .map(([k, v]) => (
                       <div key={k} className="flex items-center justify-between gap-2">
                         <span className="text-slate-500 font-medium">{k}:</span>
@@ -496,11 +660,15 @@ export function AdminOrdersManager({
               </div>
 
               {/* Slip view */}
-              {((selectedOrder.player_data as any)?._slip_url || (selectedOrder.player_data as any)?.slip_image) && (
+              {((selectedOrder.player_data as any)?._slip_url ||
+                (selectedOrder.player_data as any)?.slip_image) && (
                 <div className="pt-2 border-t border-sky-100">
                   <span className="text-xs font-bold text-sky-950 block mb-2">สลิปการโอนเงิน:</span>
                   <img
-                    src={(selectedOrder.player_data as any)?._slip_url || (selectedOrder.player_data as any)?.slip_image}
+                    src={
+                      (selectedOrder.player_data as any)?._slip_url ||
+                      (selectedOrder.player_data as any)?.slip_image
+                    }
                     alt="Slip"
                     className="max-h-60 rounded-xl border border-sky-200 object-contain mx-auto bg-slate-50"
                   />
@@ -518,7 +686,7 @@ export function AdminOrdersManager({
                 ปิด
               </button>
 
-              {selectedOrder.status === 'PROCESSING' && (
+              {(selectedOrder.status === 'PROCESSING' || selectedOrder.status === 'processing') && (
                 <button
                   type="button"
                   disabled={!areAllPacksChecked(selectedOrder) || completingId === selectedOrder.id}
@@ -530,7 +698,7 @@ export function AdminOrdersManager({
                   ) : (
                     <FileCheck className="w-3.5 h-3.5" />
                   )}
-                  เติมสำเร็จ (ยืนยัน)
+                  ยืนยันเติมสำเร็จ
                 </button>
               )}
             </div>
