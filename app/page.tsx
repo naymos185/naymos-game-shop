@@ -18,7 +18,7 @@ import { getActiveGames } from '@/lib/games/queries';
 import { getActivePromotions } from '@/lib/promotions/queries';
 import { getActiveBanners } from '@/lib/banners/queries';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60; // Cache page at edge for 60s for instant loading
 
 const STEPS = [
   { step: '1', title: 'เลือกเกม', desc: 'เลือกเกมที่ต้องการเติม', icon: '1' },
@@ -60,9 +60,12 @@ const FEATURES = [
 ];
 
 export default async function HomePage() {
-  const games = await getActiveGames();
-  const promotions = await getActivePromotions();
-  const banners = await getActiveBanners();
+  // Fetch in parallel for maximum speed
+  const [games, promotions, banners] = await Promise.all([
+    getActiveGames(),
+    getActivePromotions(),
+    getActiveBanners(),
+  ]);
 
   return (
     <CustomerLayout>
