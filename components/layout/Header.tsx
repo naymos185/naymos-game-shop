@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { User, ShoppingCart } from 'lucide-react';
@@ -6,6 +7,27 @@ import { LogoutButton } from '@/components/auth/LogoutButton';
 import { createClient } from '@/lib/supabase/server';
 import { HeaderNav } from './HeaderNav';
 
+const getActiveOrderCount = cache(async (userId: string): Promise<number> => {
+  try {
+    const supabase = await createClient();
+    const { data: orders } = await supabase
+      .from('orders')
+      .select('id, status, player_data')
+      .eq('user_id', userId)
+      .in('status', ['pending', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SUCCESS']);
+
+    if (orders && orders.length > 0) {
+      return orders.filter((o) => {
+        const pd = (o.player_data as Record<string, unknown>) || {};
+        return pd.customer_confirmed !== true;
+      }).length;
+    }
+    return 0;
+  } catch {
+    return 0;
+  }
+});
+
 export async function Header() {
   let profile = null;
   let activeOrderCount = 0;
@@ -13,19 +35,7 @@ export async function Header() {
   try {
     profile = await getProfile();
     if (profile) {
-      const supabase = await createClient();
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('id, status, player_data')
-        .eq('user_id', profile.id)
-        .in('status', ['pending', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SUCCESS']);
-
-      if (orders && orders.length > 0) {
-        activeOrderCount = orders.filter((o) => {
-          const pd = (o.player_data as Record<string, unknown>) || {};
-          return pd.customer_confirmed !== true;
-        }).length;
-      }
+      activeOrderCount = await getActiveOrderCount(profile.id);
     }
   } catch {
     profile = null;

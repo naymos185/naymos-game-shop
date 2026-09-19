@@ -1,4 +1,6 @@
-import { createClient } from '@/lib/supabase/server';
+import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
+import { createPublicClient, createClient } from '@/lib/supabase/server';
 
 export type Banner = {
   id: string;
@@ -11,6 +13,8 @@ export type Banner = {
   is_active: boolean;
   created_at: string;
 };
+
+const BANNER_COLUMNS = 'id, title, subtitle, image_url, link_url, button_text, sort_order, is_active, created_at';
 
 function mapBanner(b: Record<string, unknown>): Banner {
   return {
@@ -26,20 +30,29 @@ function mapBanner(b: Record<string, unknown>): Banner {
   };
 }
 
-export async function getActiveBanners(): Promise<Banner[]> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('banners')
-      .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
-    if (error || !data) return [];
-    return data.map(mapBanner);
-  } catch {
-    return [];
-  }
-}
+const getCachedActiveBanners = unstable_cache(
+  async (): Promise<Banner[]> => {
+    try {
+      const supabase = createPublicClient();
+      if (!supabase) return [];
+      const { data, error } = await supabase
+        .from('banners')
+        .select(BANNER_COLUMNS)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error || !data) return [];
+      return data.map(mapBanner);
+    } catch {
+      return [];
+    }
+  },
+  ['active-banners-list'],
+  { revalidate: 60, tags: ['banners'] }
+);
+
+export const getActiveBanners = cache(async (): Promise<Banner[]> => {
+  return getCachedActiveBanners();
+});
 
 export async function listBannersAdmin(): Promise<Banner[]> {
   try {

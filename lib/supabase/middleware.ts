@@ -24,7 +24,7 @@ export async function updateSession(request: NextRequest) {
 
   // If visitor has no auth cookies at all:
   // - Admin & Account routes require login immediately without remote getUser() call
-  // - Public routes skip remote getUser() completely, eliminating 150-300ms latency
+  // - Public routes skip remote getUser() completely, eliminating latency
   if (!hasAuthCookie) {
     if (isAdminRoute || isAccountRoute) {
       const loginUrl = request.nextUrl.clone();
@@ -32,6 +32,13 @@ export async function updateSession(request: NextRequest) {
       loginUrl.searchParams.set('next', pathname);
       return NextResponse.redirect(loginUrl);
     }
+    return supabaseResponse;
+  }
+
+  // For public routes (/ , /games, /promotions, /how-to, /faq, /order-tracking, etc.):
+  // Skip remote Supabase Auth network call in middleware completely!
+  // This removes 150-300ms round-trip latency on every customer navigation.
+  if (!isAdminRoute && !isAccountRoute && !isAuthRoute) {
     return supabaseResponse;
   }
 
@@ -75,6 +82,13 @@ export async function updateSession(request: NextRequest) {
       home.searchParams.set('error', 'admin_only');
       return NextResponse.redirect(home);
     }
+  }
+
+  if (isAccountRoute && !user) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = '/login';
+    loginUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   if (user && isAuthRoute) {

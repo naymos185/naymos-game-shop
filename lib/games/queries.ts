@@ -1,5 +1,6 @@
 import { cache } from 'react';
-import { createClient } from '@/lib/supabase/server';
+import { unstable_cache } from 'next/cache';
+import { createPublicClient, createClient } from '@/lib/supabase/server';
 import { MOCK_GAMES, type MockGame } from '@/lib/data/games';
 import type { Game, GameField, Product, ProductCategory } from '@/types/game';
 
@@ -17,6 +18,10 @@ const COLOR_MAP: Record<string, string> = {
   'genshin-impact': 'from-amber-500 to-orange-600',
   'pubg-mobile': 'from-yellow-600 to-amber-800',
 };
+
+const GAME_SELECT_COLUMNS = 'id, slug, name, description, category, product_category_id, icon, banner, is_active, sort_order, created_at, updated_at';
+const GAME_FIELDS_COLUMNS = 'id, game_id, name, label, type, placeholder, required, options, sort_order';
+const PRODUCTS_COLUMNS = 'id, game_id, name, description, amount, currency, price, cost, reseller_price, provider_product_id, is_active, sort_order';
 
 function mockToGameWithDetails(m: MockGame, index: number): GameWithDetails {
   return {
@@ -59,29 +64,43 @@ function mockToGameWithDetails(m: MockGame, index: number): GameWithDetails {
   };
 }
 
-export const getProductCategories = cache(async (): Promise<ProductCategory[]> => {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('product_categories')
-      .select('id, slug, name, icon, is_active, sort_order, created_at, updated_at')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
-      .order('name', { ascending: true });
+const getCachedProductCategories = unstable_cache(
+  async (): Promise<ProductCategory[]> => {
+    try {
+      const supabase = createPublicClient();
+      if (!supabase) {
+        return [
+          { id: 'cat-uid', slug: 'topup-uid', name: 'เติมเกมแบบ UID', is_active: true, sort_order: 1 },
+          { id: 'cat-id-pass', slug: 'topup-id-pass', name: 'เติมเกมแบบ ID-Pass', is_active: true, sort_order: 2 },
+        ];
+      }
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('id, slug, name, icon, is_active, sort_order, created_at, updated_at')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true });
 
-    if (error || !data) {
+      if (error || !data) {
+        return [
+          { id: 'cat-uid', slug: 'topup-uid', name: 'เติมเกมแบบ UID', is_active: true, sort_order: 1 },
+          { id: 'cat-id-pass', slug: 'topup-id-pass', name: 'เติมเกมแบบ ID-Pass', is_active: true, sort_order: 2 },
+        ];
+      }
+      return data as ProductCategory[];
+    } catch {
       return [
         { id: 'cat-uid', slug: 'topup-uid', name: 'เติมเกมแบบ UID', is_active: true, sort_order: 1 },
         { id: 'cat-id-pass', slug: 'topup-id-pass', name: 'เติมเกมแบบ ID-Pass', is_active: true, sort_order: 2 },
       ];
     }
-    return data as ProductCategory[];
-  } catch {
-    return [
-      { id: 'cat-uid', slug: 'topup-uid', name: 'เติมเกมแบบ UID', is_active: true, sort_order: 1 },
-      { id: 'cat-id-pass', slug: 'topup-id-pass', name: 'เติมเกมแบบ ID-Pass', is_active: true, sort_order: 2 },
-    ];
-  }
+  },
+  ['product-categories-active'],
+  { revalidate: 120, tags: ['categories'] }
+);
+
+export const getProductCategories = cache(async (): Promise<ProductCategory[]> => {
+  return getCachedProductCategories();
 });
 
 export const getAllProductCategoriesAdmin = cache(async (): Promise<ProductCategory[]> => {
@@ -100,46 +119,59 @@ export const getAllProductCategoriesAdmin = cache(async (): Promise<ProductCateg
   }
 });
 
-export const getActiveGames = cache(async (): Promise<GameWithDetails[]> => {
-  try {
-    const supabase = await createClient();
-    const { data: gamesData, error } = await supabase
-      .from('games')
-      .select('*, product_category:product_categories(*)')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
-
-    if (error || !gamesData || gamesData.length === 0) {
-      const fallback = await supabase
-        .from('games')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-
-      if (fallback.error || !fallback.data || fallback.data.length === 0) {
+const getCachedActiveGames = unstable_cache(
+  async (): Promise<GameWithDetails[]> => {
+    try {
+      const supabase = createPublicClient();
+      if (!supabase) {
         return MOCK_GAMES.map((m, i) => mockToGameWithDetails(m, i));
       }
-      return enrichGames(supabase, fallback.data);
-    }
 
-    return enrichGames(supabase, gamesData);
-  } catch {
-    return MOCK_GAMES.map((m, i) => mockToGameWithDetails(m, i));
-  }
+      // Query games and categories without nested join to eliminate duplicate query work
+      const [gamesRes, categories] = await Promise.all([
+        supabase
+          .from('games')
+          .select(GAME_SELECT_COLUMNS)
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true }),
+        getCachedProductCategories(),
+      ]);
+
+      const gamesData = gamesRes.data;
+      if (gamesRes.error || !gamesData || gamesData.length === 0) {
+        return MOCK_GAMES.map((m, i) => mockToGameWithDetails(m, i));
+      }
+
+      return enrichGames(supabase, gamesData, categories);
+    } catch {
+      return MOCK_GAMES.map((m, i) => mockToGameWithDetails(m, i));
+    }
+  },
+  ['active-games-catalog'],
+  { revalidate: 60, tags: ['games'] }
+);
+
+export const getActiveGames = cache(async (): Promise<GameWithDetails[]> => {
+  return getCachedActiveGames();
 });
 
-async function enrichGames(supabase: any, gamesData: any[]): Promise<GameWithDetails[]> {
+async function enrichGames(
+  supabase: any,
+  rawGamesData: any[],
+  categories: ProductCategory[] = []
+): Promise<GameWithDetails[]> {
+  const gamesData = rawGamesData as any[];
   const gameIds = gamesData.map((g) => g.id);
 
   const [fieldsRes, productsRes] = await Promise.all([
     supabase
       .from('game_fields')
-      .select('id, game_id, name, label, type, placeholder, required, options, sort_order')
+      .select(GAME_FIELDS_COLUMNS)
       .in('game_id', gameIds)
       .order('sort_order', { ascending: true }),
     supabase
       .from('products')
-      .select('id, game_id, name, description, amount, currency, price, cost, reseller_price, provider_product_id, is_active, sort_order')
+      .select(PRODUCTS_COLUMNS)
       .in('game_id', gameIds)
       .eq('is_active', true)
       .order('sort_order', { ascending: true }),
@@ -157,58 +189,85 @@ async function enrichGames(supabase: any, gamesData: any[]): Promise<GameWithDet
     productsByGame[p.game_id].push(p);
   });
 
+  const categoryMap = new Map(categories.map((c) => [c.id, c]));
+
   return gamesData.map((g) => ({
     ...g,
+    product_category: g.product_category_id ? categoryMap.get(g.product_category_id) ?? null : null,
     color: COLOR_MAP[g.slug] ?? 'from-sky-500 to-blue-600',
     game_fields: fieldsByGame[g.id] ?? [],
     products: productsByGame[g.id] ?? [],
   }));
 }
 
-export const getGameBySlug = cache(async (slug: string): Promise<GameWithDetails | null> => {
-  try {
-    const supabase = await createClient();
-    const { data: game, error } = await supabase
-      .from('games')
-      .select('*, product_category:product_categories(*)')
-      .eq('slug', slug)
-      .single();
+const getCachedGameBySlug = unstable_cache(
+  async (slug: string): Promise<GameWithDetails | null> => {
+    try {
+      const supabase = createPublicClient();
+      if (!supabase) {
+        const mockIndex = MOCK_GAMES.findIndex((m) => m.slug === slug);
+        if (mockIndex !== -1) {
+          return mockToGameWithDetails(MOCK_GAMES[mockIndex], mockIndex);
+        }
+        return null;
+      }
 
-    if (error || !game) {
+      const [gameRes, categories] = await Promise.all([
+        supabase
+          .from('games')
+          .select(GAME_SELECT_COLUMNS)
+          .eq('slug', slug)
+          .maybeSingle(),
+        getCachedProductCategories(),
+      ]);
+
+      const game = gameRes.data as any;
+      if (gameRes.error || !game) {
+        const mockIndex = MOCK_GAMES.findIndex((m) => m.slug === slug);
+        if (mockIndex !== -1) {
+          return mockToGameWithDetails(MOCK_GAMES[mockIndex], mockIndex);
+        }
+        return null;
+      }
+
+      const [fieldsRes, productsRes] = await Promise.all([
+        supabase
+          .from('game_fields')
+          .select(GAME_FIELDS_COLUMNS)
+          .eq('game_id', game.id)
+          .order('sort_order', { ascending: true }),
+        supabase
+          .from('products')
+          .select(PRODUCTS_COLUMNS)
+          .eq('game_id', game.id)
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true }),
+      ]);
+
+      const categoryMap = new Map(categories.map((c) => [c.id, c]));
+      const product_category = game.product_category_id ? categoryMap.get(game.product_category_id) ?? null : null;
+
+      return {
+        ...game,
+        product_category,
+        color: COLOR_MAP[game.slug] ?? 'from-sky-500 to-blue-600',
+        game_fields: fieldsRes.data ?? [],
+        products: productsRes.data ?? [],
+      };
+    } catch {
       const mockIndex = MOCK_GAMES.findIndex((m) => m.slug === slug);
       if (mockIndex !== -1) {
         return mockToGameWithDetails(MOCK_GAMES[mockIndex], mockIndex);
       }
       return null;
     }
+  },
+  ['game-detail-by-slug'],
+  { revalidate: 60, tags: ['games'] }
+);
 
-    const [fieldsRes, productsRes] = await Promise.all([
-      supabase
-        .from('game_fields')
-        .select('id, game_id, name, label, type, placeholder, required, options, sort_order')
-        .eq('game_id', game.id)
-        .order('sort_order', { ascending: true }),
-      supabase
-        .from('products')
-        .select('id, game_id, name, description, amount, currency, price, cost, reseller_price, provider_product_id, is_active, sort_order')
-        .eq('game_id', game.id)
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true }),
-    ]);
-
-    return {
-      ...game,
-      color: COLOR_MAP[game.slug] ?? 'from-sky-500 to-blue-600',
-      game_fields: fieldsRes.data ?? [],
-      products: productsRes.data ?? [],
-    };
-  } catch {
-    const mockIndex = MOCK_GAMES.findIndex((m) => m.slug === slug);
-    if (mockIndex !== -1) {
-      return mockToGameWithDetails(MOCK_GAMES[mockIndex], mockIndex);
-    }
-    return null;
-  }
+export const getGameBySlug = cache(async (slug: string): Promise<GameWithDetails | null> => {
+  return getCachedGameBySlug(slug);
 });
 
 export const getAllGamesAdmin = cache(async (): Promise<Game[]> => {
@@ -232,25 +291,8 @@ export const getAllGamesAdmin = cache(async (): Promise<Game[]> => {
   }
 });
 
-
 export const getGameMetadata = cache(async (slug: string): Promise<{ name: string; description: string | null } | null> => {
-  try {
-    const supabase = await createClient();
-    const { data: game, error } = await supabase
-      .from('games')
-      .select('name, description')
-      .eq('slug', slug)
-      .single();
-
-    if (error || !game) {
-      const mock = MOCK_GAMES.find((m) => m.slug === slug);
-      if (mock) return { name: mock.name, description: mock.description };
-      return null;
-    }
-    return game;
-  } catch {
-    const mock = MOCK_GAMES.find((m) => m.slug === slug);
-    if (mock) return { name: mock.name, description: mock.description };
-    return null;
-  }
+  const game = await getGameBySlug(slug);
+  if (!game) return null;
+  return { name: game.name, description: game.description ?? null };
 });
