@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { CustomerLayout } from '@/components/layout/CustomerLayout';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getGameBySlug } from '@/lib/games/queries';
+import { getGameBySlug, getGameMetadata } from '@/lib/games/queries';
 import { GameOrderForm } from '@/components/customer/GameOrderForm';
 import { getProfile } from '@/lib/auth/get-user';
+import { getStoreSettings } from '@/lib/admin/settings';
 import { Sparkles, ChevronRight, ShieldCheck } from 'lucide-react';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -13,7 +14,7 @@ export const revalidate = 60; // Cache game detail for instant clicks
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const game = await getGameBySlug(slug);
+  const game = await getGameMetadata(slug);
   if (!game) return { title: 'ไม่พบเกม' };
   return {
     title: `เติม ${game.name} | NayMos GameShop`,
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GameDetailPage({ params }: Props) {
   const { slug } = await params;
-  const [game, user] = await Promise.all([getGameBySlug(slug), getProfile()]);
+  const [game, user, storeSettings] = await Promise.all([getGameBySlug(slug), getProfile(), getStoreSettings()]);
   if (!game) notFound();
 
   return (
@@ -67,7 +68,7 @@ export default async function GameDetailPage({ params }: Props) {
         </div>
 
         {/* Cute Step Progress & Order Form */}
-        <GameOrderForm game={game} userRole={user?.role} isLoggedIn={!!user} />
+        <GameOrderForm game={game} userRole={user?.role} isLoggedIn={!!user} initialTerms={storeSettings?.terms_of_service} />
       </div>
     </CustomerLayout>
   );

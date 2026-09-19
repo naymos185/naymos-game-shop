@@ -25,10 +25,12 @@ export function GameOrderForm({
   game,
   userRole,
   isLoggedIn,
+  initialTerms = "",
 }: {
   game: GameWithDetails;
   userRole?: string;
   isLoggedIn?: boolean;
+  initialTerms?: string;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -41,7 +43,7 @@ export function GameOrderForm({
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsError, setTermsError] = useState(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
-  const [storeTerms, setStoreTerms] = useState<string>("");
+  const [storeTerms, setStoreTerms] = useState<string>(initialTerms);
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState<string | null>(null);

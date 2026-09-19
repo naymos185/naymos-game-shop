@@ -231,3 +231,26 @@ export const getAllGamesAdmin = cache(async (): Promise<Game[]> => {
     return [];
   }
 });
+
+
+export const getGameMetadata = cache(async (slug: string): Promise<{ name: string; description: string | null } | null> => {
+  try {
+    const supabase = await createClient();
+    const { data: game, error } = await supabase
+      .from('games')
+      .select('name, description')
+      .eq('slug', slug)
+      .single();
+
+    if (error || !game) {
+      const mock = MOCK_GAMES.find((m) => m.slug === slug);
+      if (mock) return { name: mock.name, description: mock.description };
+      return null;
+    }
+    return game;
+  } catch {
+    const mock = MOCK_GAMES.find((m) => m.slug === slug);
+    if (mock) return { name: mock.name, description: mock.description };
+    return null;
+  }
+});

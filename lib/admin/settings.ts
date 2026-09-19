@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 
 export type StoreSettings = {
@@ -23,7 +24,7 @@ const DEFAULTS: StoreSettings = {
   terms_of_service: DEFAULT_TERMS,
 };
 
-export async function getStoreSettings(): Promise<StoreSettings> {
+export const getStoreSettings = cache(async (): Promise<StoreSettings> => {
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -44,7 +45,7 @@ export async function getStoreSettings(): Promise<StoreSettings> {
   } catch {
     return DEFAULTS;
   }
-}
+});
 
 export async function saveStoreSettings(
   settings: StoreSettings
