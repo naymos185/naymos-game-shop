@@ -119,17 +119,7 @@ export function OrderTrackingForm() {
             <span className="text-zinc-500">สร้างเมื่อ</span>
             <span className="text-slate-600">{new Date(order.created_at).toLocaleString('th-TH')}</span>
           </div>
-          {order.player_data && Object.keys(order.player_data).length > 0 && (
-            <div className="pt-2 border-t border-sky-100">
-              <p className="text-zinc-500 mb-2">ข้อมูลผู้เล่น</p>
-              {Object.entries(order.player_data).map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-2 py-0.5">
-                  <span className="text-zinc-500">{k}</span>
-                  <span className="text-slate-800 font-mono text-xs">{String(v)}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          
         </div>
       )}
     </div>

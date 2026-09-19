@@ -33,7 +33,7 @@ export default async function AdminOrdersPage() {
       });
     }
     if (userIds.length) {
-      const { data: profiles } = await supabase.from('profiles').select('id, username, full_name, email').in('id', userIds);
+      const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
       (profiles ?? []).forEach((u) => {
         profilesMap[u.id] = u;
       });

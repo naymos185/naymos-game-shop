@@ -40,7 +40,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, message: 'ไม่พบออเดอร์' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, order });
+    // Public order tracking: return strictly non-sensitive fields
+    const sanitizedOrder = {
+      order_number: order.order_number,
+      status: order.status,
+      total: order.total,
+      created_at: order.created_at,
+      updated_at: order.updated_at,
+      game_name: order.game_name,
+      product_name: order.product_name,
+    };
+
+    return NextResponse.json({ success: true, order: sanitizedOrder });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'เกิดข้อผิดพลาด';
     return NextResponse.json({ success: false, message }, { status: 500 });

@@ -111,7 +111,7 @@ export function AdminOrdersManager({
   const filteredOrders = currentList.filter((o) => {
     const q = search.toLowerCase();
     const g = gamesMap[o.game_id]?.name || '';
-    const u = profilesMap[o.user_id]?.username || profilesMap[o.user_id]?.email || '';
+    const u = profilesMap[o.user_id]?.full_name || profilesMap[o.user_id]?.email || '';
     return (
       o.order_number?.toLowerCase().includes(q) ||
       g.toLowerCase().includes(q) ||
@@ -406,7 +406,7 @@ export function AdminOrdersManager({
                     </h4>
                     <p className="text-[11px] text-slate-500 truncate flex items-center gap-1">
                       <User className="w-3 h-3 text-slate-400 shrink-0" />
-                      {profile?.username || profile?.email || o.guest_email || 'ลูกค้าทั่วไป'}
+                      {profile?.full_name || profile?.email || o.guest_email || 'ลูกค้าทั่วไป'}
                     </p>
                   </div>
                 </div>

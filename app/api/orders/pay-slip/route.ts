@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { incrementCouponUsage } from '@/lib/coupons/validate';
 
 export async function POST(request: Request) {
   try {
@@ -20,6 +21,14 @@ export async function POST(request: Request) {
 
     if (error || !order) {
       return NextResponse.json({ success: false, message: 'ไม่พบหมายเลขออเดอร์นี้' }, { status: 404 });
+    }
+
+    // Only orders in PENDING_PAYMENT can attach payment slip
+    if (order.status !== 'PENDING_PAYMENT') {
+      return NextResponse.json({ 
+        success: false, 
+        message: `ไม่สามารถแนบสลิปได้ เนื่องจากออเดอร์อยู่ในสถานะ ${order.status}` 
+      }, { status: 400 });
     }
 
     const currentData = (order.player_data as Record<string, unknown>) || {};
@@ -44,6 +53,14 @@ export async function POST(request: Request) {
 
     if (updateErr) {
       return NextResponse.json({ success: false, message: 'ไม่สามารถอัปเดตสถานะได้' }, { status: 500 });
+    }
+
+    // Commit coupon usage if coupon was applied to this order
+    const couponId = currentData._coupon_id as string | undefined;
+    if (couponId) {
+      try {
+        await incrementCouponUsage(couponId);
+      } catch {}
     }
 
     return NextResponse.json({ 
