@@ -11,6 +11,30 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  const pathname = request.nextUrl.pathname;
+  const isAdminRoute = pathname.startsWith('/admin');
+  const isAccountRoute = pathname.startsWith('/account');
+  const isAuthRoute = pathname === '/login' || pathname === '/register';
+
+  // Check if request has any Supabase auth cookies
+  const allCookies = request.cookies.getAll();
+  const hasAuthCookie = allCookies.some(
+    (c) => c.name.startsWith('sb-') || c.name.includes('auth-token')
+  );
+
+  // If visitor has no auth cookies at all:
+  // - Admin & Account routes require login immediately without remote getUser() call
+  // - Public routes skip remote getUser() completely, eliminating 150-300ms latency
+  if (!hasAuthCookie) {
+    if (isAdminRoute || isAccountRoute) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = '/login';
+      loginUrl.searchParams.set('next', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll() {
@@ -30,9 +54,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
-
-  if (pathname.startsWith('/admin')) {
+  if (isAdminRoute) {
     if (!user) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = '/login';
@@ -55,7 +77,7 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  if (user && (pathname === '/login' || pathname === '/register')) {
+  if (user && isAuthRoute) {
     const next = request.nextUrl.searchParams.get('next') || '/account';
     const dest = request.nextUrl.clone();
     dest.pathname = next.startsWith('/') ? next : '/account';

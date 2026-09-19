@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { User, ShoppingCart, Sparkles, Gamepad2, Gift, HelpCircle } from 'lucide-react';
+import { User, ShoppingCart } from 'lucide-react';
 import { getProfile } from '@/lib/auth/get-user';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 import { createClient } from '@/lib/supabase/server';
@@ -16,7 +16,7 @@ export async function Header() {
       const supabase = await createClient();
       const { data: orders } = await supabase
         .from('orders')
-        .select('id, status, player_data, created_at')
+        .select('id, status, player_data')
         .eq('user_id', profile.id)
         .in('status', ['pending', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SUCCESS']);
 

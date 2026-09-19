@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { MOCK_GAMES, type MockGame } from '@/lib/data/games';
 import type { Game, GameField, Product, ProductCategory } from '@/types/game';
@@ -58,12 +59,12 @@ function mockToGameWithDetails(m: MockGame, index: number): GameWithDetails {
   };
 }
 
-export async function getProductCategories(): Promise<ProductCategory[]> {
+export const getProductCategories = cache(async (): Promise<ProductCategory[]> => {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('product_categories')
-      .select('*')
+      .select('id, slug, name, icon, is_active, sort_order, created_at, updated_at')
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true });
@@ -81,9 +82,9 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
       { id: 'cat-id-pass', slug: 'topup-id-pass', name: 'เติมเกมแบบ ID-Pass', is_active: true, sort_order: 2 },
     ];
   }
-}
+});
 
-export async function getAllProductCategoriesAdmin(): Promise<ProductCategory[]> {
+export const getAllProductCategoriesAdmin = cache(async (): Promise<ProductCategory[]> => {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -97,9 +98,9 @@ export async function getAllProductCategoriesAdmin(): Promise<ProductCategory[]>
   } catch {
     return [];
   }
-}
+});
 
-export async function getActiveGames(): Promise<GameWithDetails[]> {
+export const getActiveGames = cache(async (): Promise<GameWithDetails[]> => {
   try {
     const supabase = await createClient();
     const { data: gamesData, error } = await supabase
@@ -109,7 +110,6 @@ export async function getActiveGames(): Promise<GameWithDetails[]> {
       .order('sort_order', { ascending: true });
 
     if (error || !gamesData || gamesData.length === 0) {
-      // Fallback without product_category join if table doesn't exist yet
       const fallback = await supabase
         .from('games')
         .select('*')
@@ -126,7 +126,7 @@ export async function getActiveGames(): Promise<GameWithDetails[]> {
   } catch {
     return MOCK_GAMES.map((m, i) => mockToGameWithDetails(m, i));
   }
-}
+});
 
 async function enrichGames(supabase: any, gamesData: any[]): Promise<GameWithDetails[]> {
   const gameIds = gamesData.map((g) => g.id);
@@ -134,12 +134,12 @@ async function enrichGames(supabase: any, gamesData: any[]): Promise<GameWithDet
   const [fieldsRes, productsRes] = await Promise.all([
     supabase
       .from('game_fields')
-      .select('*')
+      .select('id, game_id, name, label, type, placeholder, required, options, sort_order')
       .in('game_id', gameIds)
       .order('sort_order', { ascending: true }),
     supabase
       .from('products')
-      .select('*')
+      .select('id, game_id, name, description, amount, currency, price, cost, reseller_price, provider_product_id, is_active, sort_order')
       .in('game_id', gameIds)
       .eq('is_active', true)
       .order('sort_order', { ascending: true }),
@@ -165,7 +165,7 @@ async function enrichGames(supabase: any, gamesData: any[]): Promise<GameWithDet
   }));
 }
 
-export async function getGameBySlug(slug: string): Promise<GameWithDetails | null> {
+export const getGameBySlug = cache(async (slug: string): Promise<GameWithDetails | null> => {
   try {
     const supabase = await createClient();
     const { data: game, error } = await supabase
@@ -185,12 +185,12 @@ export async function getGameBySlug(slug: string): Promise<GameWithDetails | nul
     const [fieldsRes, productsRes] = await Promise.all([
       supabase
         .from('game_fields')
-        .select('*')
+        .select('id, game_id, name, label, type, placeholder, required, options, sort_order')
         .eq('game_id', game.id)
         .order('sort_order', { ascending: true }),
       supabase
         .from('products')
-        .select('*')
+        .select('id, game_id, name, description, amount, currency, price, cost, reseller_price, provider_product_id, is_active, sort_order')
         .eq('game_id', game.id)
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
@@ -209,9 +209,9 @@ export async function getGameBySlug(slug: string): Promise<GameWithDetails | nul
     }
     return null;
   }
-}
+});
 
-export async function getAllGamesAdmin(): Promise<Game[]> {
+export const getAllGamesAdmin = cache(async (): Promise<Game[]> => {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -230,4 +230,4 @@ export async function getAllGamesAdmin(): Promise<Game[]> {
   } catch {
     return [];
   }
-}
+});

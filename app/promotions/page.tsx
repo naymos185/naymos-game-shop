@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'โปรโมชั่น | NayMos GameShop',
   description: 'โปรโมชั่นและดีลพิเศษสุดคุ้มจากร้าน NayMos GameShop',
 };
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function PromotionsPage() {
   const promotions = await getActivePromotions();

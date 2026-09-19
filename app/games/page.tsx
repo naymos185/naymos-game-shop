@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: 'รายการสินค้าและบริการทั้งหมดที่ NayMos GameShop สะดวก รวดเร็ว ปลอดภัย 100% ให้บริการ 24 ชม.',
 };
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function GamesPage() {
   const [games, categories] = await Promise.all([

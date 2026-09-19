@@ -5,7 +5,7 @@ import { getSessionUser } from '@/lib/auth/get-user';
 import { MessageCircle, Facebook } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'ติดต่อซัพพอร์ต' };
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function SupportPage() {
   const user = await getSessionUser();
